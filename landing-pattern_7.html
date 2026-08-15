@@ -68,13 +68,6 @@
   }
   .leg-row .unit{font-size:11px;color:var(--muted);width:20px;}
 
-  .coord-row{display:flex;gap:8px;margin-bottom:10px;}
-  .coord-field{flex:1;}
-  .coord-field label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;}
-  .coord-field input{
-    width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--text);
-    font-family:var(--mono);font-size:13px;padding:7px 8px;border-radius:6px;
-  }
   .nudge-wrap{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;}
   .nudge-pad{display:grid;grid-template-columns:repeat(3,32px);grid-template-rows:repeat(3,32px);gap:3px;}
   .nudge-pad button{
@@ -311,16 +304,6 @@
 
     <div class="section">
       <div class="label">Zielpunkt</div>
-      <div class="coord-row">
-        <div class="coord-field">
-          <label>Breite (lat)</label>
-          <input type="number" id="latInput" step="0.000001">
-        </div>
-        <div class="coord-field">
-          <label>Länge (lon)</label>
-          <input type="number" id="lonInput" step="0.000001">
-        </div>
-      </div>
       <div class="nudge-wrap">
         <div class="nudge-pad">
           <span></span><button id="nudgeN">▲</button><span></span>
@@ -343,7 +326,7 @@
         </div>
       </div>
       <div class="wind-warning" id="windWarning" style="display:none;">
-        ⚠ Windgeschwindigkeit ≥ Vorwärtsfahrt der Kappe — der korrigierte Plan (Plot 3) ist so nicht zu halten, keine Berechnung möglich.
+        ⚠ Windgeschwindigkeit ≥ Vorwärtsfahrt der Kappe — die korrigierte Flugbahn (Plot 3) ist so nicht zu halten, keine Berechnung möglich.
       </div>
       <div class="perf-row">
         <label>Windgeschwindigkeit</label>
@@ -389,17 +372,17 @@
       <div class="plot-row">
         <input type="checkbox" id="plotNowind" checked>
         <span class="plot-swatch dashed"></span>
-        <label for="plotNowind">Windstille (Referenzgröße)</label>
+        <label for="plotNowind">Referenz-Flugbahn (ohne Wind)</label>
       </div>
       <div class="plot-row">
         <input type="checkbox" id="plotUncorrected" checked>
         <span class="plot-swatch solid"></span>
-        <label for="plotUncorrected">Unkorrigiert (Drift auf Base)</label>
+        <label for="plotUncorrected">Reale Flugbahn (mit Winddrift)</label>
       </div>
       <div class="plot-row">
         <input type="checkbox" id="plotCorrected" checked>
         <span class="plot-swatch red-dashed"></span>
-        <label for="plotCorrected">Korrigiert (aktueller Plan)</label>
+        <label for="plotCorrected">Korrigierte Flugbahn (durch Gegensteuern)</label>
       </div>
     </div>
 
@@ -459,7 +442,7 @@
     <div class="hint" id="calcHint">
       <b>Zeit</b> = Höhenverlust ÷ Sinkrate &nbsp;·&nbsp; <b>Strecke</b> = Zeit × Groundspeed<br>
       Downwind = Rückenwind &nbsp;·&nbsp; Final = Gegenwind &nbsp;·&nbsp; Base = Vorhaltewinkel gegen Seitenwind<br>
-      <span style="color:var(--danger);">Rot gestrichelt</span> = korrigierter Plan &nbsp;·&nbsp; farbig durchgezogen = Drift ohne Korrektur<br>
+      <span style="color:var(--danger);">Rot gestrichelt</span> = korrigierte Flugbahn &nbsp;·&nbsp; farbig durchgezogen = reale Flugbahn mit Winddrift<br>
       Vereinfachtes Modell — Formeln, Skizzen &amp; Grenzen: „i"-Button oben.
     </div>
 
@@ -545,7 +528,7 @@
     <p class="muted">Gestrichelt: die Zerlegung des Wind-Vektors in <b>quer</b> (senkrecht zur Kursrichtung) und <b>längs</b> (parallel dazu) — genau die zwei Größen aus der Formel unten. Der Wind-Pfeil selbst beginnt bewusst an der Spitze von Fahrt, nicht am Ursprung — das ist die Vektor-Addition, keine eigene Bewegung ab Nullpunkt.</p>
     <div class="formula">längs = Wind × cos(Windrichtung + 180° − Kurs)<br>quer = Wind × sin(Windrichtung + 180° − Kurs)</div>
 
-    <h3>Korrigierter Plan <span style="color:var(--danger);">(rot gestrichelt)</span></h3>
+    <h3>Korrigierte Flugbahn <span style="color:var(--danger);">(rot gestrichelt)</span></h3>
     <p>Um trotz Seitenwind exakt geradeaus zu fliegen, dreht die Kappe die Nase in den Wind (Crab), im Bild sichtbar am Winkel δ zwischen Fahrt und Kursrichtung. Dadurch liegt Groundspeed exakt auf der Kursrichtung. Geometrisch bilden Fahrt (Hypotenuse), quer (eine Kathete, die der Vorhaltewinkel exakt ausgleicht) und der verbleibende Vortrieb ein rechtwinkliges Dreieck:</p>
     <div class="formula">Groundspeed = längs + √(Fahrt² − quer²)<br>Vorhaltewinkel δ = −asin(quer ÷ Fahrt)</div>
     <p class="muted">Ist |quer| ≥ Fahrt, lässt sich die Linie gar nicht mehr halten — daher die Windwarnung (Windgeschwindigkeit ≥ Vorwärtsfahrt).</p>
@@ -555,11 +538,11 @@
     <div class="formula">Zeit = 76,2 m ÷ 3,6 m/s = 21,2 s<br><br>Kurs (Base) = 270° + 90° = 0° (Nord)<br>quer = 4,17 × sin(270° + 180° − 0°) = 4,17 × sin(90°) = 4,17 m/s<br>längs = 4,17 × cos(90°) = 0 m/s<br><br>Groundspeed = 0 + √(10,56² − 4,17²) = √94,1 = 9,70 m/s<br>Vorhaltewinkel δ = −asin(4,17 ÷ 10,56) = −23,3°<br>Strecke = 9,70 m/s × 21,2 s ≈ 205 m</div>
     <p class="muted">Genau diese Zahlen siehst du, wenn du die App mit den Standardwerten öffnest und "Landerichtung = gegen Wind" angehakt lässt (Base-Zeile: ≈205 m, 21 s, Vorhaltewinkel 23°).</p>
 
-    <h3>Unkorrigiert <span style="color:#9D8CFF;">(durchgezogen, farbig)</span></h3>
+    <h3>Reale Flugbahn <span style="color:#9D8CFF;">(durchgezogen, farbig)</span></h3>
     <p>Bleibt die Nase starr auf Kursrichtung ohne Gegenlenken, drückt der Wind seitlich ab:</p>
     <div class="formula">Strecke längs Kurs = (Fahrt + längs) × Zeit<br>Seitlicher Versatz = quer × Zeit</div>
 
-    <h3>Windstille <span style="color:var(--muted);">(gestrichelt, gedämpft)</span></h3>
+    <h3>Referenz-Flugbahn <span style="color:var(--muted);">(gestrichelt, gedämpft)</span></h3>
     <p>Reine Referenzgröße mit Wind = 0 auf allen drei Legs — zeigt, wie groß das Muster ganz ohne Windeinfluss wäre.</p>
 
     <h3>Landerichtung ≠ Windrichtung</h3>
@@ -569,7 +552,7 @@
     <p><span class="swatch-inline" style="background:#3ED9C7;"></span>Downwind &nbsp;
        <span class="swatch-inline" style="background:#9D8CFF;"></span>Base &nbsp;
        <span class="swatch-inline" style="background:#FFB020;"></span>Final &nbsp;
-       <span class="swatch-inline" style="background:#FF5D5D;"></span>Zielpunkt / korrigierter Plan</p>
+       <span class="swatch-inline" style="background:#FF5D5D;"></span>Zielpunkt / korrigierte Flugbahn</p>
 
     <h3>Grenzen des Modells</h3>
     <ul>
@@ -593,7 +576,7 @@
     <p>Standardmäßig gesperrt und identisch mit der Windrichtung. Bei einer vorgeschriebenen Landerichtung (z.B. feste Bahnrichtung am Flugplatz) das Häkchen "Landerichtung = gegen Wind" entfernen und den eigenen Dial einstellen.</p>
 
     <h3>3. Zielpunkt</h3>
-    <p>Karte antippen, Koordinaten direkt eintippen, per Ortssuche (auch Dropzone-Namen) suchen, oder mit dem Steuerkreuz in 1/5/20 m Schritten feinjustieren.</p>
+    <p>Karte antippen, um den Zielpunkt zu setzen — per Ortssuche (auch Dropzone-Namen) erst hinnavigieren, dann antippen, oder mit dem Steuerkreuz in 1/5/20 m Schritten feinjustieren.</p>
 
     <h3>4. Wind &amp; Fahrt</h3>
     <p>Windgeschwindigkeit, Vorwärtsfahrt der Kappe (km/h ⟷ kn umschaltbar) und Sinkrate (m/s ⟷ ft/min umschaltbar) eingeben. Die Schätzhilfe (Wingload) liefert aus Gewicht und Kappengröße einen groben Richtwert für Fahrt und Sinkrate.</p>
@@ -602,7 +585,7 @@
     <p>Links- oder Rechtsplatz wählen — bestimmt die Kurvenrichtung von Downwind über Base nach Final.</p>
 
     <h3>6. Plots auf der Karte</h3>
-    <p>Drei Checkboxen blenden die Windstille-Referenz, den unkorrigierten Drift-Plot und den korrigierten Plan einzeln ein oder aus.</p>
+    <p>Drei Checkboxen blenden die Referenz-, reale und korrigierte Flugbahn einzeln ein oder aus.</p>
 
     <h3>7. Legs</h3>
     <p>Höhenverlust bis zu den Turnpunkten eingeben (m ⟷ ft umschaltbar, gilt auch für die Streckenlängen) — Streckenlängen und Zeiten werden automatisch berechnet.</p>
@@ -837,8 +820,6 @@ function render() {
   legLayers = []; arrowLayers = []; canopyLayers = [];
 
   targetMarker.setLatLng(state.target);
-  if (document.activeElement !== latInput) latInput.value = state.target[0].toFixed(6);
-  if (document.activeElement !== lonInput) lonInput.value = state.target[1].toFixed(6);
 
   const allPts = [state.target];
   const crabDeg = baseCrabAngleDeg();
@@ -1159,20 +1140,6 @@ function setUnit(u) {
 }
 unitM.addEventListener('click', () => setUnit('m'));
 unitFt.addEventListener('click', () => setUnit('ft'));
-
-// ---------- Precise landing point: lat/lon fields ----------
-const latInput = document.getElementById('latInput');
-const lonInput = document.getElementById('lonInput');
-function applyCoordInputs() {
-  const lat = parseFloat(latInput.value), lon = parseFloat(lonInput.value);
-  if (!isNaN(lat) && !isNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
-    state.target = [lat, lon];
-    map.panTo(state.target);
-    render();
-  }
-}
-latInput.addEventListener('change', applyCoordInputs);
-lonInput.addEventListener('change', applyCoordInputs);
 
 // ---------- Nudge pad (fine-tune target position) ----------
 function nudge(bearing) {
