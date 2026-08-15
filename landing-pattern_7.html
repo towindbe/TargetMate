@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Landing Pattern</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<style>
+  :root{
+    --bg:#0B0E13;
+    --panel:#12161D;
+    --panel-2:#171C25;
+    --line:#242B36;
+    --text:#E7ECF3;
+    --muted:#7C8798;
+    --amber:#FFB020;
+    --cyan:#3ED9C7;
+    --violet:#9D8CFF;
+    --danger:#FF5D5D;
+    --mono: ui-monospace, "SF Mono", "IBM Plex Mono", Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);overflow:hidden;}
+  #app{display:flex;height:100%;width:100%;}
+  #panel{
+    width:320px;min-width:320px;background:var(--panel);border-right:1px solid var(--line);
+    display:flex;flex-direction:column;overflow-y:auto;
+  }
+  #map{position:absolute;inset:0;background:#000;}
+
+  .header{padding:18px 18px 14px;border-bottom:1px solid var(--line);}
+  .eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--amber);text-transform:uppercase;}
+  h1{font-size:17px;margin:4px 0 2px;font-weight:600;letter-spacing:-.01em;}
+  .sub{font-size:12px;color:var(--muted);line-height:1.4;}
+
+  .section{padding:16px 18px;border-bottom:1px solid var(--line);}
+  .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}
+  .label b{color:var(--text);font-family:var(--mono);font-weight:600;font-size:13px;letter-spacing:0;}
+
+  /* Wind dial */
+  .dial-wrap{display:flex;align-items:center;gap:16px;}
+  #dial{width:112px;height:112px;flex:none;position:relative;cursor:grab;touch-action:none;}
+  #dial svg{position:absolute;inset:0;}
+  #dial:active{cursor:grabbing;}
+  .dial-readout{font-family:var(--mono);}
+  .dial-readout .deg{font-size:26px;font-weight:700;color:var(--amber);line-height:1;}
+  .dial-readout .card{font-size:12px;color:var(--muted);margin-top:4px;}
+  .num-row{display:flex;gap:6px;margin-top:10px;}
+  .num-row input[type=number]{
+    width:64px;background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+    font-family:var(--mono);font-size:13px;padding:6px 8px;border-radius:6px;
+  }
+  .num-row span{font-size:12px;color:var(--muted);align-self:center;}
+
+  .toggle{display:flex;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+  .toggle button{flex:1;background:none;border:none;color:var(--muted);font-family:var(--sans);font-size:13px;padding:9px 0;cursor:pointer;}
+  .toggle button.active{background:var(--amber);color:#1a1204;font-weight:600;}
+
+  .leg-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .leg-row:last-child{margin-bottom:0;}
+  .swatch{width:10px;height:10px;border-radius:2px;flex:none;}
+  .leg-row label{flex:1;font-size:13px;color:var(--text);}
+  .leg-row input{
+    width:64px;background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+    font-family:var(--mono);font-size:13px;padding:6px 8px;border-radius:6px;text-align:right;
+  }
+  .leg-row .unit{font-size:11px;color:var(--muted);width:20px;}
+
+  .coord-row{display:flex;gap:8px;margin-bottom:10px;}
+  .coord-field{flex:1;}
+  .coord-field label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;}
+  .coord-field input{
+    width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+    font-family:var(--mono);font-size:13px;padding:7px 8px;border-radius:6px;
+  }
+  .nudge-wrap{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;}
+  .nudge-pad{display:grid;grid-template-columns:repeat(3,32px);grid-template-rows:repeat(3,32px);gap:3px;}
+  .nudge-pad button{
+    background:var(--panel-2);border:1px solid var(--line);color:var(--muted);border-radius:6px;
+    font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  }
+  .nudge-pad button:hover{color:var(--amber);border-color:var(--amber);}
+  .nudge-pad button:active{background:var(--amber);color:#1a1204;}
+  .nudge-step{display:flex;flex-direction:column;gap:4px;margin-left:10px;}
+  .nudge-step button{
+    background:var(--panel-2);border:1px solid var(--line);color:var(--muted);border-radius:6px;
+    font-family:var(--mono);font-size:11px;padding:4px 8px;cursor:pointer;
+  }
+  .nudge-step button.active{background:var(--amber);color:#1a1204;border-color:var(--amber);}
+
+  .hint{font-size:12px;color:var(--muted);line-height:1.5;padding:14px 18px;}
+  .hint b{color:var(--text);}
+
+  .footer{margin-top:auto;padding:14px 18px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);font-family:var(--mono);}
+
+  /* map arrow icon */
+  .leg-arrow{
+    width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;
+    border-bottom:11px solid currentColor;transform-origin:center;filter:drop-shadow(0 0 3px rgba(0,0,0,.6));
+  }
+  .target-icon{
+    width:20px;height:20px;border-radius:50%;border:2px solid var(--danger);
+    background:radial-gradient(circle,var(--danger) 0 3px,transparent 3px);
+    box-shadow:0 0 0 4px rgba(255,93,93,.15);
+  }
+  .canopy-icon{
+    width:26px;height:26px;transform-origin:center;
+    filter:drop-shadow(0 0 3px rgba(0,0,0,.6));
+  }
+  .canopy-icon svg{display:block;width:100%;height:100%;overflow:visible;}
+  .angle-label{
+    font-family:var(--mono);font-size:11px;font-weight:700;white-space:nowrap;
+    background:rgba(18,22,29,.85);padding:2px 6px;border-radius:4px;
+    transform:translate(-50%,-50%);
+  }
+  .leaflet-container{background:#0B0E13;}
+
+  .map-toggle{
+    position:absolute;top:12px;right:12px;z-index:1000;
+    display:flex;background:rgba(18,22,29,.92);border:1px solid var(--line);border-radius:8px;
+    overflow:hidden;backdrop-filter:blur(4px);
+  }
+  .map-toggle button{
+    background:none;border:none;color:var(--muted);font-family:var(--sans);font-size:12px;
+    padding:8px 12px;cursor:pointer;
+  }
+  .map-toggle button.active{background:var(--amber);color:#1a1204;font-weight:600;}
+
+  .map-search{
+    position:absolute;top:12px;left:12px;z-index:1000;width:260px;
+  }
+  .map-search input{
+    width:100%;background:rgba(18,22,29,.92);border:1px solid var(--line);color:var(--text);
+    font-family:var(--sans);font-size:13px;padding:9px 12px;border-radius:8px;backdrop-filter:blur(4px);
+    outline:none;
+  }
+  .map-search input:focus{border-color:var(--amber);}
+  .map-search input::placeholder{color:var(--muted);}
+  .search-results{
+    margin-top:4px;background:rgba(18,22,29,.96);border:1px solid var(--line);border-radius:8px;
+    overflow:hidden;backdrop-filter:blur(4px);display:none;max-height:240px;overflow-y:auto;
+  }
+  .search-results div{
+    padding:9px 12px;font-size:12px;color:var(--text);cursor:pointer;border-bottom:1px solid var(--line);
+  }
+  .search-results div:last-child{border-bottom:none;}
+  .search-results div:hover{background:var(--amber);color:#1a1204;}
+  .search-results .sr-empty{color:var(--muted);cursor:default;}
+  .search-results .sr-empty:hover{background:none;color:var(--muted);}
+
+  .perf-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .perf-row:last-child{margin-bottom:0;}
+  .perf-row label{flex:1;font-size:13px;color:var(--text);}
+  .perf-row input{
+    width:72px;background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+    font-family:var(--mono);font-size:13px;padding:6px 8px;border-radius:6px;text-align:right;
+  }
+  .perf-row .unit{font-size:11px;color:var(--muted);width:38px;}
+
+  .link-btn{
+    background:none;border:none;color:var(--cyan);font-family:var(--sans);font-size:12px;
+    cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;
+  }
+  .estimator{
+    margin-top:12px;padding:12px;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;
+  }
+  .estimator .perf-row input{width:64px;}
+  .estimator-result{font-family:var(--mono);font-size:12px;color:var(--muted);margin:8px 0;}
+  .estimator-result b{color:var(--amber);}
+  .estimator-apply{
+    width:100%;background:var(--amber);color:#1a1204;border:none;border-radius:6px;
+    font-family:var(--sans);font-size:12px;font-weight:600;padding:8px 0;cursor:pointer;
+  }
+
+  .leg-row input[readonly]{color:var(--muted);border-style:dashed;}
+  .leg-time{font-family:var(--mono);font-size:10px;color:var(--muted);width:38px;text-align:right;}
+  .alt-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:12px;}
+  .alt-row label{flex:1;color:var(--muted);}
+  .alt-row input{
+    width:64px;background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+    font-family:var(--mono);font-size:13px;padding:5px 8px;border-radius:6px;text-align:right;
+  }
+  .alt-row span{font-size:11px;color:var(--muted);width:46px;}
+  .alt-block{margin-bottom:14px;padding-bottom:14px;border-bottom:1px dashed var(--line);}
+  .alt-block-title{font-size:11px;color:var(--text);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
+
+  .wind-warning{
+    background:rgba(255,93,93,.12);border:1px solid var(--danger);color:var(--danger);
+    font-size:12px;line-height:1.5;padding:10px 12px;border-radius:8px;margin-bottom:12px;font-weight:600;
+  }
+  .crab-hint{font-size:11px;color:var(--muted);margin:-4px 0 10px 20px;font-family:var(--mono);}
+  .crab-hint b{color:var(--cyan);}
+
+  .plot-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .plot-row:last-child{margin-bottom:0;}
+  .plot-row input[type=checkbox]{accent-color:var(--amber);width:15px;height:15px;cursor:pointer;flex:none;}
+  .plot-row label{flex:1;font-size:13px;color:var(--text);cursor:pointer;}
+  .plot-swatch{width:30px;height:0;border-top:2px solid var(--muted);flex:none;}
+  .plot-swatch.dashed{border-top-style:dashed;border-top-width:3px;opacity:.75;}
+  .plot-swatch.solid{border-top-style:solid;border-top-width:3px;opacity:1;}
+  .plot-swatch.red-dashed{border-top-style:dashed;border-top-width:3px;border-color:var(--danger);opacity:1;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="panel">
+    <div class="header">
+      <div class="eyebrow">Windberg / Flight Ops</div>
+      <h1>Landing Pattern</h1>
+      <div class="sub">Karte antippen, um den Zielpunkt zu setzen. Pattern rotiert automatisch mit dem Wind.</div>
+    </div>
+
+    <div class="section">
+      <div class="label">Windrichtung (woher) <b id="windDegLabel">270°</b></div>
+      <div class="dial-wrap">
+        <div id="dial">
+          <svg viewBox="0 0 112 112">
+            <circle cx="56" cy="56" r="52" fill="#171C25" stroke="#242B36" stroke-width="1"/>
+            <g id="ticks" stroke="#3A4353" stroke-width="1"></g>
+            <text x="56" y="14" fill="#7C8798" font-size="9" text-anchor="middle" font-family="ui-monospace,monospace">N</text>
+            <text x="102" y="59" fill="#7C8798" font-size="9" text-anchor="middle" font-family="ui-monospace,monospace">O</text>
+            <text x="56" y="103" fill="#7C8798" font-size="9" text-anchor="middle" font-family="ui-monospace,monospace">S</text>
+            <text x="10" y="59" fill="#7C8798" font-size="9" text-anchor="middle" font-family="ui-monospace,monospace">W</text>
+            <g id="needle">
+              <line x1="56" y1="56" x2="56" y2="16" stroke="#FFB020" stroke-width="3" stroke-linecap="round"/>
+              <circle cx="56" cy="56" r="5" fill="#FFB020"/>
+            </g>
+          </svg>
+        </div>
+        <div class="dial-readout">
+          <div class="deg" id="dialDeg">270°</div>
+          <div class="card" id="dialCard">West</div>
+        </div>
+      </div>
+      <div class="num-row">
+        <input type="number" id="windDegInput" min="0" max="359" value="270">
+        <span>Grad · Windsack-Richtung, aus der der Wind kommt</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="label">Zielpunkt</div>
+      <div class="coord-row">
+        <div class="coord-field">
+          <label>Breite (lat)</label>
+          <input type="number" id="latInput" step="0.000001">
+        </div>
+        <div class="coord-field">
+          <label>Länge (lon)</label>
+          <input type="number" id="lonInput" step="0.000001">
+        </div>
+      </div>
+      <div class="nudge-wrap">
+        <div class="nudge-pad">
+          <span></span><button id="nudgeN">▲</button><span></span>
+          <button id="nudgeW">◀</button><span style="display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:9px;">●</span><button id="nudgeE">▶</button>
+          <span></span><button id="nudgeS">▼</button><span></span>
+        </div>
+        <div class="nudge-step">
+          <button class="step-btn" data-step="1">1 m</button>
+          <button class="step-btn active" data-step="5">5 m</button>
+          <button class="step-btn" data-step="20">20 m</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="label"><span>Wind &amp; Fahrt</span>
+        <div class="toggle" style="width:120px;">
+          <button id="windUnitKmh" class="active">km/h</button>
+          <button id="windUnitKn">kn</button>
+        </div>
+      </div>
+      <div class="wind-warning" id="windWarning" style="display:none;">
+        ⚠ Windgeschwindigkeit ≥ Vorwärtsfahrt der Kappe — der korrigierte Plan (Plot 3) ist so nicht zu halten, keine Berechnung möglich.
+      </div>
+      <div class="perf-row">
+        <label>Windgeschwindigkeit</label>
+        <input type="number" id="windSpeedInput" value="15" step="1" min="0"><span class="unit" id="windSpeedUnitLabel">km/h</span>
+      </div>
+      <div class="perf-row">
+        <label>Vorwärtsfahrt</label>
+        <input type="number" id="fwdSpeedInput" value="38" step="1" min="0"><span class="unit" id="fwdSpeedUnitLabel">km/h</span>
+      </div>
+      <div class="perf-row">
+        <label>Sinkrate</label>
+        <input type="number" id="sinkRateInput" value="3.6" step="0.1" min="0"><span class="unit">m/s</span>
+      </div>
+      <button class="link-btn" id="estimatorToggle">Schätzhilfe (Wingload) ▾</button>
+      <div class="estimator" id="estimatorBox" style="display:none;">
+        <div class="perf-row">
+          <label>Gewicht (Springer + Ausrüstung)</label>
+          <input type="number" id="estWeight" value="90" step="1"><span class="unit">kg</span>
+        </div>
+        <div class="perf-row">
+          <label>Kappengröße</label>
+          <input type="number" id="estCanopy" value="170" step="1"><span class="unit">sqft</span>
+        </div>
+        <div class="estimator-result" id="estResult">Wingload: <b>–</b> lb/sqft</div>
+        <button class="estimator-apply" id="estApply">Geschätzte Werte übernehmen</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="label">Platzrunde</div>
+      <div class="toggle">
+        <button id="handLeft" class="active">Linksplatz</button>
+        <button id="handRight">Rechtsplatz</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="label">Plots auf der Karte</div>
+      <div class="plot-row">
+        <input type="checkbox" id="plotNowind" checked>
+        <span class="plot-swatch dashed"></span>
+        <label for="plotNowind">Windstille (Referenzgröße)</label>
+      </div>
+      <div class="plot-row">
+        <input type="checkbox" id="plotUncorrected" checked>
+        <span class="plot-swatch solid"></span>
+        <label for="plotUncorrected">Unkorrigiert (Drift auf Base)</label>
+      </div>
+      <div class="plot-row">
+        <input type="checkbox" id="plotCorrected" checked>
+        <span class="plot-swatch red-dashed"></span>
+        <label for="plotCorrected">Korrigiert (aktueller Plan)</label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="label"><span>Legs <span style="font-weight:400;">— horizontal, über Grund</span></span>
+        <div class="toggle" style="width:100px;">
+          <button id="unitM" class="active">m</button>
+          <button id="unitFt">ft</button>
+        </div>
+      </div>
+      <div class="alt-block" id="altBlock">
+        <div class="alt-block-title">Höhenverlust bis Turnpunkt <span style="font-weight:400;color:var(--muted);">— vertikal, AGL</span></div>
+        <div class="alt-row">
+          <label>Downwind-Start</label>
+          <input type="number" id="altDownwind" value="1000" step="50"><span>ft AGL</span>
+        </div>
+        <div class="alt-row">
+          <label>Turn zu Base</label>
+          <input type="number" id="altBase" value="500" step="50"><span>ft AGL</span>
+        </div>
+        <div class="alt-row">
+          <label>Turn zu Final</label>
+          <input type="number" id="altFinal" value="250" step="50"><span>ft AGL</span>
+        </div>
+        <div class="alt-row"><label style="color:var(--muted);font-style:italic;">Landung bei 0 ft angenommen</label></div>
+      </div>
+
+      <div class="leg-row">
+        <div class="swatch" style="background:var(--cyan)"></div>
+        <label>Downwind</label>
+        <span class="leg-time" id="timeDownwind"></span>
+        <input type="number" id="lenDownwind" readonly><span class="unit" id="unitDownwind">m</span>
+      </div>
+      <div class="leg-row">
+        <div class="swatch" style="background:var(--violet)"></div>
+        <label>Base</label>
+        <span class="leg-time" id="timeBase"></span>
+        <input type="number" id="lenBase" readonly><span class="unit" id="unitBase">m</span>
+      </div>
+      <div class="crab-hint" id="crabHint" style="display:none;"></div>
+      <div class="leg-row">
+        <div class="swatch" style="background:var(--amber)"></div>
+        <label>Final</label>
+        <span class="leg-time" id="timeFinal"></span>
+        <input type="number" id="lenFinal" readonly><span class="unit" id="unitFinal">m</span>
+      </div>
+
+      <div class="leg-row" style="margin-top:6px;padding-top:10px;border-top:1px solid var(--line);">
+        <label style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;">Gesamt</label>
+        <span class="leg-time" id="timeTotal"></span>
+        <span id="lenTotal" style="font-family:var(--mono);font-size:13px;width:64px;text-align:right;color:var(--text);"></span>
+        <span class="unit" id="unitTotal">m</span>
+      </div>
+    </div>
+
+    <div class="hint" id="calcHint">
+      Zeit pro Leg = Höhenverlust ÷ Sinkrate, Strecke = Zeit × Groundspeed. Downwind mit Rückenwind (Fahrt + Wind), Final gegen den Wind (Fahrt − Wind), Base mit Vorhaltewinkel gegen den Seitenwind (√(Fahrt² − Wind²)) — die durchgezogene, farbige Linie auf der Karte (Plot "Unkorrigiert") zeigt, wohin es dich ohne diese Korrektur tatsächlich trägt, bis zum Aufsetzpunkt. Der rot gestrichelte Plot ist der korrigierte Plan. Vereinfachtes Modell: konstante Sinkrate/Fahrt im Vollflug, keine Bremsen, keine Öffnungshöhe berücksichtigt.
+    </div>
+
+    <div class="footer">MANUELLE WINDEINGABE · MVP</div>
+  </div>
+
+  <div id="mapWrap" style="position:relative;flex:1;">
+    <div id="map"></div>
+    <div class="map-search">
+      <input type="text" id="searchInput" placeholder="Ort suchen, z. B. Byron Bay …" autocomplete="off">
+      <div class="search-results" id="searchResults"></div>
+    </div>
+    <div class="map-toggle">
+      <button id="baseSat">Satellit</button>
+      <button id="baseDark">Dark</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------- State ----------
+let state = {
+  target: [47.2692, 11.4041], // Innsbruck default, tap map to change
+  windDir: 270,
+  hand: 'left',
+  legs: { downwind: 0, base: 0, final: 0 }, // meters, always derived from altitude + performance
+  legTimes: { downwind: null, base: null, final: null }, // seconds
+  unit: 'm',
+  nudgeStep: 5,
+  perf: { windSpeedKmh: 15, fwdSpeedKmh: 38, sinkRateMs: 3.6 },
+  speedUnit: 'kmh', // 'kmh' | 'kn' — display unit for wind + forward speed, state.perf always stores km/h
+  altitudes: { downwind: 1000, base: 500, final: 250 }, // ft
+  plots: { nowind: true, uncorrected: true, corrected: true }
+};
+const M_PER_FT = 0.3048;
+const KMH_PER_KN = 1.852;
+function mToDisplay(m) { return state.unit === 'ft' ? m / M_PER_FT : m; }
+function kmhToSpeedDisplay(kmh) { return state.speedUnit === 'kn' ? kmh / KMH_PER_KN : kmh; }
+function speedDisplayToKmh(v) { return state.speedUnit === 'kn' ? v * KMH_PER_KN : v; }
+
+// ---------- Map ----------
+const map = L.map('map', { zoomControl: true, attributionControl: true }).setView(state.target, 15);
+map.createPane('labelsPane');
+map.getPane('labelsPane').style.zIndex = 350;
+map.getPane('labelsPane').style.pointerEvents = 'none';
+
+const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', maxZoom: 20
+});
+const satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+  attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics', maxZoom: 19
+});
+const labelsLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+  attribution: 'Labels &copy; Esri', maxZoom: 19, pane: 'labelsPane'
+});
+
+const baseSatBtn = document.getElementById('baseSat');
+const baseDarkBtn = document.getElementById('baseDark');
+function setBasemap(kind) {
+  if (kind === 'sat') {
+    if (map.hasLayer(darkLayer)) map.removeLayer(darkLayer);
+    satLayer.addTo(map);
+    labelsLayer.addTo(map);
+    baseSatBtn.classList.add('active'); baseDarkBtn.classList.remove('active');
+  } else {
+    if (map.hasLayer(satLayer)) map.removeLayer(satLayer);
+    if (map.hasLayer(labelsLayer)) map.removeLayer(labelsLayer);
+    darkLayer.addTo(map);
+    baseDarkBtn.classList.add('active'); baseSatBtn.classList.remove('active');
+  }
+}
+baseSatBtn.addEventListener('click', () => setBasemap('sat'));
+baseDarkBtn.addEventListener('click', () => setBasemap('dark'));
+
+// Default: satellite by day (06:00-20:00 local), dark map at night for contrast
+const hourNow = new Date().getHours();
+setBasemap(hourNow >= 6 && hourNow < 20 ? 'sat' : 'dark');
+
+let targetMarker = L.marker(state.target, {
+  draggable: true,
+  icon: L.divIcon({ className: '', html: '<div class="target-icon"></div>', iconSize: [20,20], iconAnchor: [10,10] })
+}).addTo(map);
+
+let legLayers = [];
+let arrowLayers = [];
+let canopyLayers = [];
+
+targetMarker.on('drag', (e) => { state.target = [e.latlng.lat, e.latlng.lng]; render(); });
+map.on('click', (e) => { state.target = [e.latlng.lat, e.latlng.lng]; targetMarker.setLatLng(e.latlng); render(); });
+
+// ---------- Geometry ----------
+function destPoint(lat, lon, bearingDeg, distM) {
+  const R = 6378137;
+  const brng = bearingDeg * Math.PI / 180;
+  const dLat = (distM * Math.cos(brng)) / R;
+  const dLon = (distM * Math.sin(brng)) / (R * Math.cos(lat * Math.PI / 180));
+  return [lat + dLat * 180 / Math.PI, lon + dLon * 180 / Math.PI];
+}
+function norm(deg) { return ((deg % 360) + 360) % 360; }
+
+function midpoint(a, b) { return [(a[0]+b[0])/2, (a[1]+b[1])/2]; }
+
+function distanceM(a, b) {
+  const R = 6378137;
+  const dLat = (b[0] - a[0]) * Math.PI / 180;
+  const dLon = (b[1] - a[1]) * Math.PI / 180;
+  const meanLat = (a[0] + b[0]) / 2 * Math.PI / 180;
+  const x = dLon * Math.cos(meanLat) * R;
+  const y = dLat * R;
+  return Math.sqrt(x * x + y * y);
+}
+
+// Nose-direction ray + angle arc back to the base-leg line, to visualize the crab correction geometrically.
+function crabAnnotation(center, baseHeading, noseHeading, crabDeg, scaleLenM) {
+  const rayLen = Math.max(12, Math.min(35, scaleLenM * 0.4));
+  const arcRadius = rayLen * 0.55;
+  const noseRayEnd = destPoint(center[0], center[1], noseHeading, rayLen);
+
+  const signedCrab = state.hand === 'left' ? -crabDeg : crabDeg;
+  const steps = 12;
+  const arcPts = [];
+  for (let i = 0; i <= steps; i++) {
+    const ang = norm(baseHeading + signedCrab * (i / steps));
+    arcPts.push(destPoint(center[0], center[1], ang, arcRadius));
+  }
+  const labelPt = destPoint(center[0], center[1], norm(baseHeading + signedCrab / 2), arcRadius + rayLen * 0.35);
+
+  return { noseRayEnd, arcPts, labelPt };
+}
+
+function textMarker(latlng, text, colorHex) {
+  return L.marker(latlng, {
+    icon: L.divIcon({
+      className: '',
+      html: `<div class="angle-label" style="color:${colorHex}">${text}</div>`,
+      iconSize: [1, 1], iconAnchor: [0, 0]
+    })
+  });
+}
+
+// Pure altitude-budget time for a leg — independent of wind/groundspeed, so it's valid for all 3 variants.
+function legTimeFromAlt(lossFt) {
+  const lossM = Math.max(0, lossFt) * M_PER_FT;
+  return state.perf.sinkRateMs > 0 ? lossM / state.perf.sinkRateMs : 0;
+}
+
+// Builds one full pattern backward from the fixed target point, for one of 3 flying assumptions.
+// All 3 variants share the same target (p0) and, since final/downwind have no crosswind component
+// by construction, the same final leg — only base (and therefore the entry point into downwind) differs:
+//  'nowind'      — as if there were no wind at all (pure reference size/shape).
+//  'uncorrected' — real wind, but the pilot holds base-heading on base without crabbing (drifts).
+//  'corrected'   — real wind, pilot crabs on base to hold the straight ground track (the actual plan).
+function computeVariant(mode) {
+  const { target, windDir, hand, altitudes } = state;
+  const fwdMs = state.perf.fwdSpeedKmh / 3.6;
+  const windMs = state.perf.windSpeedKmh / 3.6;
+  const finalHeading = windDir;
+  const baseHeading = norm(hand === 'left' ? finalHeading + 90 : finalHeading - 90);
+  const downwindHeading = norm(finalHeading + 180);
+
+  const tDownwind = legTimeFromAlt(altitudes.downwind - altitudes.base);
+  const tBase = legTimeFromAlt(altitudes.base - altitudes.final);
+  const tFinal = legTimeFromAlt(altitudes.final - 0);
+
+  const p0 = target;
+  let p1, p2, p3, downwindLen;
+
+  if (mode === 'nowind') {
+    const finalLen = fwdMs * tFinal;
+    p1 = destPoint(p0[0], p0[1], norm(finalHeading + 180), finalLen);
+    const baseLen = fwdMs * tBase;
+    p2 = destPoint(p1[0], p1[1], norm(baseHeading + 180), baseLen);
+    downwindLen = fwdMs * tDownwind;
+  } else {
+    const finalLen = Math.max(0, fwdMs - windMs) * tFinal;
+    p1 = destPoint(p0[0], p0[1], norm(finalHeading + 180), finalLen);
+    downwindLen = (fwdMs + windMs) * tDownwind;
+
+    if (mode === 'corrected') {
+      const baseGsSq = fwdMs * fwdMs - windMs * windMs;
+      const baseLen = baseGsSq > 0 ? Math.sqrt(baseGsSq) * tBase : 0;
+      p2 = destPoint(p1[0], p1[1], norm(baseHeading + 180), baseLen);
+    } else { // uncorrected — nose stays at baseHeading, wind drifts the ground track sideways
+      const step1 = destPoint(p1[0], p1[1], norm(baseHeading + 180), fwdMs * tBase);
+      p2 = destPoint(step1[0], step1[1], finalHeading, windMs * tBase);
+    }
+  }
+  p3 = destPoint(p2[0], p2[1], norm(downwindHeading + 180), downwindLen);
+
+  return {
+    p0, p1, p2, p3,
+    legs: [
+      { name: 'downwind', from: p3, to: p2, heading: downwindHeading, hex: '#3ED9C7' },
+      { name: 'base',     from: p2, to: p1, heading: baseHeading,     hex: '#9D8CFF' },
+      { name: 'final',    from: p1, to: p0, heading: finalHeading,    hex: '#FFB020' },
+    ]
+  };
+}
+
+// Top-down canopy glyph: wing pill + nose tip + jumper, in currentColor so it inherits the marker's color.
+function canopyIconSvg() {
+  return '<svg viewBox="0 0 100 90">'
+    + '<rect x="20" y="30" width="60" height="16" rx="8" fill="none" stroke="currentColor" stroke-width="6"/>'
+    + '<polygon points="50,8 41,30 59,30" fill="currentColor"/>'
+    + '<line x1="50" y1="46" x2="50" y2="64" stroke="currentColor" stroke-width="4"/>'
+    + '<circle cx="50" cy="70" r="6" fill="currentColor"/>'
+    + '</svg>';
+}
+function canopyMarker(latlng, headingDeg, colorHex) {
+  return L.marker(latlng, {
+    icon: L.divIcon({
+      className: '',
+      html: `<div class="canopy-icon" style="color:${colorHex}; transform:rotate(${headingDeg}deg)">${canopyIconSvg()}</div>`,
+      iconSize: [26, 26], iconAnchor: [13, 13]
+    })
+  });
+}
+
+const PLOT_STYLE = {
+  nowind:      { dashArray: '10 6', weight: 2.5, opacity: 0.65 },
+  uncorrected: { dashArray: null,   weight: 3.5, opacity: 0.9 },
+  corrected:   { dashArray: '9 5',  weight: 4,   opacity: 0.95, color: '#FF5D5D' }
+};
+
+function render() {
+  legLayers.forEach(l => map.removeLayer(l));
+  arrowLayers.forEach(l => map.removeLayer(l));
+  canopyLayers.forEach(l => map.removeLayer(l));
+  legLayers = []; arrowLayers = []; canopyLayers = [];
+
+  targetMarker.setLatLng(state.target);
+  if (document.activeElement !== latInput) latInput.value = state.target[0].toFixed(6);
+  if (document.activeElement !== lonInput) lonInput.value = state.target[1].toFixed(6);
+
+  const allPts = [state.target];
+  const crabDeg = baseCrabAngleDeg();
+  const windBlocked = windExceedsForward();
+
+  function drawVariant(mode) {
+    if (mode === 'corrected' && windBlocked) return; // crabbed track can't be held at all in this case
+    const variant = computeVariant(mode);
+    const style = PLOT_STYLE[mode];
+
+    variant.legs.forEach(leg => {
+      const color = style.color || leg.hex;
+      const line = L.polyline([leg.from, leg.to], {
+        color, weight: style.weight, opacity: style.opacity, dashArray: style.dashArray
+      }).addTo(map);
+      legLayers.push(line);
+      allPts.push(leg.from, leg.to);
+
+      if (mode === 'corrected') {
+        const mid = midpoint(leg.from, leg.to);
+        const arrow = L.marker(mid, {
+          icon: L.divIcon({
+            className: '',
+            html: `<div class="leg-arrow" style="color:${color}; transform:rotate(${leg.heading}deg)"></div>`,
+            iconSize: [12, 12], iconAnchor: [6, 6]
+          })
+        }).addTo(map);
+        arrowLayers.push(arrow);
+      }
+    });
+
+    if (mode === 'corrected' || mode === 'uncorrected') {
+      const baseLeg = variant.legs.find(l => l.name === 'base');
+      const iconColor = style.color || baseLeg.hex;
+      const noseHeading = (mode === 'corrected' && crabDeg != null)
+        ? norm(baseLeg.heading + (state.hand === 'left' ? -crabDeg : crabDeg))
+        : baseLeg.heading; // uncorrected: nose stays fixed on base-heading, no crab
+      const iconCenter = midpoint(baseLeg.from, baseLeg.to);
+      const icon = canopyMarker(iconCenter, noseHeading, iconColor).addTo(map);
+      icon.getElement() && (icon.getElement().style.opacity = style.opacity);
+      canopyLayers.push(icon);
+
+      if (mode === 'corrected' && crabDeg != null) {
+        const scaleLenM = distanceM(baseLeg.from, baseLeg.to);
+        const ann = crabAnnotation(iconCenter, baseLeg.heading, noseHeading, crabDeg, scaleLenM);
+        const rayLine = L.polyline([iconCenter, ann.noseRayEnd], {
+          color: iconColor, weight: 1.5, opacity: 0.85, dashArray: '2 3'
+        }).addTo(map);
+        legLayers.push(rayLine);
+        const arcLine = L.polyline(ann.arcPts, { color: iconColor, weight: 1.5, opacity: 0.9 }).addTo(map);
+        legLayers.push(arcLine);
+        const label = textMarker(ann.labelPt, `Korrektur ${Math.round(crabDeg)}°`, iconColor).addTo(map);
+        canopyLayers.push(label);
+        allPts.push(ann.noseRayEnd, ann.labelPt);
+      }
+    }
+  }
+
+  if (state.plots.nowind) drawVariant('nowind');
+  if (state.plots.uncorrected) drawVariant('uncorrected');
+  if (state.plots.corrected) drawVariant('corrected');
+
+  updateCrabDisplay(crabDeg);
+
+  // fit bounds on first render / when pattern moves far off screen
+  const bounds = L.latLngBounds(allPts);
+  if (!map.getBounds().contains(bounds)) {
+    map.fitBounds(bounds, { padding: [40, 40] });
+  }
+}
+
+// ---------- Wind dial ----------
+const dial = document.getElementById('dial');
+const needle = document.getElementById('needle');
+const dialDeg = document.getElementById('dialDeg');
+const dialCard = document.getElementById('dialCard');
+const windDegLabel = document.getElementById('windDegLabel');
+const windDegInput = document.getElementById('windDegInput');
+
+const cardinals = ['Nord','Nordost','Ost','Südost','Süd','Südwest','West','Nordwest'];
+function cardinalName(deg) {
+  const idx = Math.round(norm(deg) / 45) % 8;
+  return cardinals[idx];
+}
+
+function setWind(deg, skipInput) {
+  state.windDir = norm(Math.round(deg));
+  needle.setAttribute('transform', `rotate(${state.windDir} 56 56)`);
+  dialDeg.textContent = state.windDir + '°';
+  windDegLabel.textContent = state.windDir + '°';
+  dialCard.textContent = cardinalName(state.windDir);
+  if (!skipInput) windDegInput.value = state.windDir;
+  render();
+}
+
+function dialAngleFromEvent(clientX, clientY) {
+  const rect = dial.getBoundingClientRect();
+  const cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
+  const dx = clientX - cx, dy = clientY - cy;
+  let deg = Math.atan2(dx, -dy) * 180 / Math.PI; // 0 = up = North
+  return norm(deg);
+}
+
+let dragging = false;
+dial.addEventListener('pointerdown', (e) => { dragging = true; dial.setPointerCapture(e.pointerId); setWind(dialAngleFromEvent(e.clientX, e.clientY)); });
+dial.addEventListener('pointermove', (e) => { if (dragging) setWind(dialAngleFromEvent(e.clientX, e.clientY)); });
+dial.addEventListener('pointerup', () => dragging = false);
+dial.addEventListener('pointercancel', () => dragging = false);
+
+windDegInput.addEventListener('input', () => {
+  const v = parseFloat(windDegInput.value);
+  if (!isNaN(v)) setWind(v, true);
+});
+
+// tick marks every 30deg
+const ticksG = document.getElementById('ticks');
+for (let d = 0; d < 360; d += 30) {
+  const rad = d * Math.PI / 180;
+  const r1 = 46, r2 = d % 90 === 0 ? 40 : 43;
+  const x1 = 56 + r1 * Math.sin(rad), y1 = 56 - r1 * Math.cos(rad);
+  const x2 = 56 + r2 * Math.sin(rad), y2 = 56 - r2 * Math.cos(rad);
+  const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+  line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+  line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+  ticksG.appendChild(line);
+}
+
+// ---------- Plot visibility checkboxes ----------
+const plotCheckboxes = {
+  nowind: document.getElementById('plotNowind'),
+  uncorrected: document.getElementById('plotUncorrected'),
+  corrected: document.getElementById('plotCorrected')
+};
+Object.entries(plotCheckboxes).forEach(([key, el]) => {
+  el.addEventListener('change', () => { state.plots[key] = el.checked; render(); });
+});
+
+// ---------- Pattern hand toggle ----------
+const handLeft = document.getElementById('handLeft');
+const handRight = document.getElementById('handRight');
+handLeft.addEventListener('click', () => { state.hand = 'left'; handLeft.classList.add('active'); handRight.classList.remove('active'); render(); });
+handRight.addEventListener('click', () => { state.hand = 'right'; handRight.classList.add('active'); handLeft.classList.remove('active'); render(); });
+
+// ---------- Leg length inputs (unit-aware) ----------
+const lenInputs = {
+  downwind: document.getElementById('lenDownwind'),
+  base: document.getElementById('lenBase'),
+  final: document.getElementById('lenFinal')
+};
+function windExceedsForward() {
+  return state.perf.fwdSpeedKmh > 0 && state.perf.windSpeedKmh >= state.perf.fwdSpeedKmh;
+}
+
+function groundspeeds() {
+  const windMs = state.perf.windSpeedKmh / 3.6;
+  const fwdMs = state.perf.fwdSpeedKmh / 3.6;
+  const baseGsSq = fwdMs * fwdMs - windMs * windMs;
+  return {
+    downwind: fwdMs + windMs,
+    base: baseGsSq > 0 ? Math.sqrt(baseGsSq) : 0, // crosswind on base: crabbed groundspeed
+    final: Math.max(0, fwdMs - windMs)
+  };
+}
+
+// Vorhaltewinkel (wind correction angle) needed on base to hold the ground track against direct crosswind
+function baseCrabAngleDeg() {
+  const windMs = state.perf.windSpeedKmh / 3.6;
+  const fwdMs = state.perf.fwdSpeedKmh / 3.6;
+  if (fwdMs <= 0 || windMs <= 0 || windMs >= fwdMs) return null;
+  return Math.asin(windMs / fwdMs) * 180 / Math.PI;
+}
+
+const windWarningEl = document.getElementById('windWarning');
+function updateWindWarning() {
+  const bad = windExceedsForward();
+  windWarningEl.style.display = bad ? 'block' : 'none';
+  return bad;
+}
+
+const crabHintEl = document.getElementById('crabHint');
+function updateCrabDisplay(deg) {
+  if (deg == null) { crabHintEl.style.display = 'none'; return; }
+  crabHintEl.style.display = 'block';
+  crabHintEl.innerHTML = `Vorhaltewinkel Base: <b>${Math.round(deg)}°</b> in den Wind (Seitenwind-Crab). Kappen-Symbole zeigen die Nasenausrichtung — gedreht beim korrigierten Plan, geradeaus beim unkorrigierten Plot.`;
+}
+
+function fmtTime(s) {
+  if (s == null || !isFinite(s)) return '—';
+  const m = Math.floor(s / 60), sec = Math.round(s % 60);
+  return m > 0 ? `${m}m${String(sec).padStart(2,'0')}s` : `${sec}s`;
+}
+
+function refreshLegInputs() {
+  lenInputs.downwind.value = round1(mToDisplay(state.legs.downwind));
+  lenInputs.base.value = round1(mToDisplay(state.legs.base));
+  lenInputs.final.value = round1(mToDisplay(state.legs.final));
+
+  const invalid = updateWindWarning();
+  const timeEls = {
+    downwind: document.getElementById('timeDownwind'),
+    base: document.getElementById('timeBase'),
+    final: document.getElementById('timeFinal')
+  };
+  ['downwind','base','final'].forEach(k => { timeEls[k].textContent = fmtTime(state.legTimes[k]); });
+
+  const totalM = state.legs.downwind + state.legs.base + state.legs.final;
+  const totalT = (state.legTimes.downwind || 0) + (state.legTimes.base || 0) + (state.legTimes.final || 0);
+  document.getElementById('lenTotal').textContent = round1(mToDisplay(totalM));
+  document.getElementById('timeTotal').textContent = invalid ? '—' : fmtTime(totalT);
+}
+function round1(v) { return Math.round(v * 10) / 10; }
+
+// ---------- Unit toggle ----------
+const unitM = document.getElementById('unitM');
+const unitFt = document.getElementById('unitFt');
+function setUnit(u) {
+  state.unit = u;
+  unitM.classList.toggle('active', u === 'm');
+  unitFt.classList.toggle('active', u === 'ft');
+  document.querySelectorAll('.leg-row .unit').forEach(el => el.textContent = u);
+  refreshLegInputs();
+}
+unitM.addEventListener('click', () => setUnit('m'));
+unitFt.addEventListener('click', () => setUnit('ft'));
+
+// ---------- Precise landing point: lat/lon fields ----------
+const latInput = document.getElementById('latInput');
+const lonInput = document.getElementById('lonInput');
+function applyCoordInputs() {
+  const lat = parseFloat(latInput.value), lon = parseFloat(lonInput.value);
+  if (!isNaN(lat) && !isNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+    state.target = [lat, lon];
+    map.panTo(state.target);
+    render();
+  }
+}
+latInput.addEventListener('change', applyCoordInputs);
+lonInput.addEventListener('change', applyCoordInputs);
+
+// ---------- Nudge pad (fine-tune target position) ----------
+function nudge(bearing) {
+  state.target = destPoint(state.target[0], state.target[1], bearing, state.nudgeStep);
+  render();
+}
+document.getElementById('nudgeN').addEventListener('click', () => nudge(0));
+document.getElementById('nudgeE').addEventListener('click', () => nudge(90));
+document.getElementById('nudgeS').addEventListener('click', () => nudge(180));
+document.getElementById('nudgeW').addEventListener('click', () => nudge(270));
+document.querySelectorAll('.step-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    state.nudgeStep = parseFloat(btn.dataset.step);
+    document.querySelectorAll('.step-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+// ---------- Performance-based auto calculation ----------
+const perfInputs = {
+  windSpeed: document.getElementById('windSpeedInput'),
+  fwdSpeed: document.getElementById('fwdSpeedInput'),
+  sinkRate: document.getElementById('sinkRateInput')
+};
+const altInputs = {
+  downwind: document.getElementById('altDownwind'),
+  base: document.getElementById('altBase'),
+  final: document.getElementById('altFinal')
+};
+
+function recomputeLegs() {
+  if (updateWindWarning()) {
+    state.legs = { downwind: 0, base: 0, final: 0 };
+    state.legTimes = { downwind: null, base: null, final: null };
+    refreshLegInputs();
+    render();
+    return;
+  }
+
+  const sinkMs = state.perf.sinkRateMs;
+  const gs = groundspeeds();
+  const { downwind: altDown, base: altBase, final: altFinal } = state.altitudes;
+
+  function legCalc(lossFt, groundspeedMs) {
+    const lossM = Math.max(0, lossFt) * M_PER_FT;
+    const timeS = sinkMs > 0 ? lossM / sinkMs : 0;
+    const distM = Math.max(0, groundspeedMs) * timeS;
+    return { distM, timeS };
+  }
+
+  const dw = legCalc(altDown - altBase, gs.downwind); // tailwind on downwind
+  const ba = legCalc(altBase - altFinal, gs.base);     // crabbed groundspeed on crosswind base
+  const fi = legCalc(altFinal - 0, gs.final);          // headwind on final
+
+  state.legs = { downwind: dw.distM, base: ba.distM, final: fi.distM };
+  state.legTimes = { downwind: dw.timeS, base: ba.timeS, final: fi.timeS };
+
+  refreshLegInputs();
+  render();
+}
+
+perfInputs.windSpeed.addEventListener('input', () => {
+  let v = parseFloat(perfInputs.windSpeed.value);
+  if (isNaN(v) || v < 0) { v = 0; perfInputs.windSpeed.value = 0; }
+  state.perf.windSpeedKmh = speedDisplayToKmh(v);
+  recomputeLegs();
+});
+perfInputs.fwdSpeed.addEventListener('input', () => {
+  let v = parseFloat(perfInputs.fwdSpeed.value);
+  if (isNaN(v) || v < 0) { v = 0; perfInputs.fwdSpeed.value = 0; }
+  state.perf.fwdSpeedKmh = speedDisplayToKmh(v);
+  recomputeLegs();
+});
+perfInputs.sinkRate.addEventListener('input', () => {
+  let v = parseFloat(perfInputs.sinkRate.value);
+  if (isNaN(v) || v < 0) { v = 0; perfInputs.sinkRate.value = 0; }
+  state.perf.sinkRateMs = v;
+  recomputeLegs();
+});
+
+// ---------- Speed unit toggle (km/h / kn) — applies to wind speed and forward speed ----------
+const speedUnitKmhBtn = document.getElementById('windUnitKmh');
+const speedUnitKnBtn = document.getElementById('windUnitKn');
+const windSpeedUnitLabel = document.getElementById('windSpeedUnitLabel');
+const fwdSpeedUnitLabel = document.getElementById('fwdSpeedUnitLabel');
+function setSpeedUnit(u) {
+  state.speedUnit = u;
+  speedUnitKmhBtn.classList.toggle('active', u === 'kmh');
+  speedUnitKnBtn.classList.toggle('active', u === 'kn');
+  const label = u === 'kn' ? 'kn' : 'km/h';
+  windSpeedUnitLabel.textContent = label;
+  fwdSpeedUnitLabel.textContent = label;
+  perfInputs.windSpeed.value = round1(kmhToSpeedDisplay(state.perf.windSpeedKmh));
+  perfInputs.fwdSpeed.value = round1(kmhToSpeedDisplay(state.perf.fwdSpeedKmh));
+}
+speedUnitKmhBtn.addEventListener('click', () => setSpeedUnit('kmh'));
+speedUnitKnBtn.addEventListener('click', () => setSpeedUnit('kn'));
+Object.values(altInputs).forEach(el => el.addEventListener('input', () => {
+  state.altitudes.downwind = parseFloat(altInputs.downwind.value) || 0;
+  state.altitudes.base = parseFloat(altInputs.base.value) || 0;
+  state.altitudes.final = parseFloat(altInputs.final.value) || 0;
+  recomputeLegs();
+}));
+
+// ---------- Wingload estimator ----------
+const estimatorToggle = document.getElementById('estimatorToggle');
+const estimatorBox = document.getElementById('estimatorBox');
+const estWeight = document.getElementById('estWeight');
+const estCanopy = document.getElementById('estCanopy');
+const estResult = document.getElementById('estResult');
+const estApply = document.getElementById('estApply');
+
+estimatorToggle.addEventListener('click', () => {
+  const open = estimatorBox.style.display !== 'none';
+  estimatorBox.style.display = open ? 'none' : 'block';
+  estimatorToggle.textContent = open ? 'Schätzhilfe (Wingload) ▾' : 'Schätzhilfe (Wingload) ▴';
+  if (!open) updateEstimate();
+});
+
+// Rough interpolation points from typical sport ram-air canopy behavior in straight-ahead full flight.
+// These are ballpark figures for orientation only, not manufacturer flight data — always override with real numbers if you have them.
+const WINGLOAD_TABLE = [
+  { wl: 0.7, fwdKmh: 28, sinkMs: 2.8 },
+  { wl: 1.0, fwdKmh: 34, sinkMs: 3.3 },
+  { wl: 1.3, fwdKmh: 40, sinkMs: 3.8 },
+  { wl: 1.6, fwdKmh: 48, sinkMs: 4.5 },
+  { wl: 2.0, fwdKmh: 58, sinkMs: 5.5 },
+  { wl: 2.4, fwdKmh: 70, sinkMs: 6.8 }
+];
+function estimateFromWingload(weightKg, canopySqft) {
+  const weightLb = weightKg * 2.20462;
+  const wl = canopySqft > 0 ? weightLb / canopySqft : 0;
+  const clamped = Math.max(WINGLOAD_TABLE[0].wl, Math.min(WINGLOAD_TABLE[WINGLOAD_TABLE.length-1].wl, wl));
+  let lo = WINGLOAD_TABLE[0], hi = WINGLOAD_TABLE[WINGLOAD_TABLE.length-1];
+  for (let i = 0; i < WINGLOAD_TABLE.length - 1; i++) {
+    if (clamped >= WINGLOAD_TABLE[i].wl && clamped <= WINGLOAD_TABLE[i+1].wl) {
+      lo = WINGLOAD_TABLE[i]; hi = WINGLOAD_TABLE[i+1]; break;
+    }
+  }
+  const t = hi.wl === lo.wl ? 0 : (clamped - lo.wl) / (hi.wl - lo.wl);
+  return {
+    wingload: wl,
+    fwdKmh: lo.fwdKmh + t * (hi.fwdKmh - lo.fwdKmh),
+    sinkMs: lo.sinkMs + t * (hi.sinkMs - lo.sinkMs)
+  };
+}
+function updateEstimate() {
+  const w = parseFloat(estWeight.value) || 0;
+  const c = parseFloat(estCanopy.value) || 1;
+  const est = estimateFromWingload(w, c);
+  estResult.innerHTML = `Wingload: <b>${est.wingload.toFixed(2)}</b> lb/sqft · grober Richtwert: ~${Math.round(est.fwdKmh)} km/h vor, ~${est.sinkMs.toFixed(1)} m/s Sinkrate`;
+}
+estWeight.addEventListener('input', updateEstimate);
+estCanopy.addEventListener('input', updateEstimate);
+estApply.addEventListener('click', () => {
+  const w = parseFloat(estWeight.value) || 0;
+  const c = parseFloat(estCanopy.value) || 1;
+  const est = estimateFromWingload(w, c);
+  perfInputs.fwdSpeed.value = round1(kmhToSpeedDisplay(est.fwdKmh));
+  perfInputs.sinkRate.value = est.sinkMs.toFixed(1);
+  state.perf.fwdSpeedKmh = est.fwdKmh;
+  state.perf.sinkRateMs = est.sinkMs;
+  recomputeLegs();
+});
+
+// ---------- Place search (OSM Nominatim geocoding) ----------
+const searchInput = document.getElementById('searchInput');
+const searchResults = document.getElementById('searchResults');
+let searchDebounce = null;
+let searchAbort = null;
+
+function hideResults() { searchResults.style.display = 'none'; searchResults.innerHTML = ''; }
+
+function renderResults(items) {
+  if (!items.length) {
+    searchResults.innerHTML = '<div class="sr-empty">Keine Treffer</div>';
+    searchResults.style.display = 'block';
+    return;
+  }
+  searchResults.innerHTML = '';
+  items.forEach(item => {
+    const row = document.createElement('div');
+    row.textContent = item.display_name;
+    row.addEventListener('click', () => {
+      const lat = parseFloat(item.lat), lon = parseFloat(item.lon);
+      state.target = [lat, lon];
+      map.setView(state.target, 15);
+      targetMarker.setLatLng(state.target);
+      render();
+      searchInput.value = item.display_name;
+      hideResults();
+    });
+    searchResults.appendChild(row);
+  });
+  searchResults.style.display = 'block';
+}
+
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.trim();
+  clearTimeout(searchDebounce);
+  if (q.length < 3) { hideResults(); return; }
+  searchDebounce = setTimeout(async () => {
+    if (searchAbort) searchAbort.abort();
+    searchAbort = new AbortController();
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=0&limit=10&q=${encodeURIComponent(q)}`;
+      const res = await fetch(url, { signal: searchAbort.signal });
+      const data = await res.json();
+      renderResults(data);
+    } catch (err) {
+      if (err.name !== 'AbortError') { searchResults.innerHTML = '<div class="sr-empty">Suche fehlgeschlagen</div>'; searchResults.style.display = 'block'; }
+    }
+  }, 400);
+});
+document.addEventListener('click', (e) => { if (!e.target.closest('.map-search')) hideResults(); });
+
+// ---------- Init ----------
+setWind(270, true);
+recomputeLegs();
+</script>
+</body>
+</html>
