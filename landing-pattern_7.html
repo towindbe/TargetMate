@@ -238,7 +238,7 @@
 <div id="app">
   <div id="panel">
     <div class="header">
-      <div class="eyebrow">Windberg / Flight Ops</div>
+      <div class="eyebrow">Landing Pattern Simulator</div>
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
         <h1>Landing Pattern</h1>
         <div style="display:flex;gap:6px;flex:none;margin-top:2px;">
@@ -280,7 +280,7 @@
         <div class="label" style="margin-bottom:8px;">Landerichtung <b id="landingDegLabel">270°</b></div>
         <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:12px;color:var(--muted);cursor:pointer;">
           <input type="checkbox" id="landingIntoWind" checked style="accent-color:var(--amber);width:15px;height:15px;cursor:pointer;flex:none;">
-          Landerichtung = gegen Wind (deaktivieren bei vorgeschriebener Landerichtung)
+          Landerichtung = in den Wind (deaktivieren bei vorgeschriebener Landerichtung)
         </label>
         <div class="dial-wrap" id="landingDialWrap" style="opacity:.4;pointer-events:none;">
           <div id="landingDial">
@@ -459,13 +459,13 @@
       Zeit pro Leg = Höhenverlust ÷ Sinkrate, Strecke = Zeit × Groundspeed. Downwind mit Rückenwind (Fahrt + Wind), Final gegen den Wind (Fahrt − Wind), Base mit Vorhaltewinkel gegen den Seitenwind (√(Fahrt² − Wind²)) — die durchgezogene, farbige Linie auf der Karte (Plot "Unkorrigiert") zeigt, wohin es dich ohne diese Korrektur tatsächlich trägt, bis zum Aufsetzpunkt. Der rot gestrichelte Plot ist der korrigierte Plan. Vereinfachtes Modell: konstante Sinkrate/Fahrt im Vollflug, keine Bremsen, keine Öffnungshöhe, keine Kurvenkosten bei den 90°-Turns berücksichtigt. Wind wird für den ganzen Sinkflug als konstant angenommen (keine Windscherung mit der Höhe), und reale Kappensteuerung ist ungenauer als der berechnete Vorhaltewinkel suggeriert.
     </div>
 
-    <div class="footer">MANUELLE WINDEINGABE · MVP</div>
+    <div class="footer">developped by Tobias Windberg</div>
   </div>
 
   <div id="mapWrap" style="position:relative;flex:1;">
     <div id="map"></div>
     <div class="map-search">
-      <input type="text" id="searchInput" placeholder="Ort suchen, z. B. Byron Bay …" autocomplete="off">
+      <input type="text" id="searchInput" placeholder="Dropzone suchen…" autocomplete="off">
       <div class="search-results" id="searchResults"></div>
     </div>
     <div class="map-wind-badge" title="Windrichtung (Pfeil zeigt, wohin der Wind weht)">
@@ -569,7 +569,7 @@
 
     <h3>Grenzen des Modells</h3>
     <ul>
-      <li>Konstante Sinkrate und Fahrt im Vollflug — keine Bremsen, kein Timing für die Kappenöffnung</li>
+      <li>Konstante Sinkrate und Fahrt im Vollflug — kein Bremsen</li>
       <li>Keine "Kurvenkosten": die 90°-Turns zwischen den Legs kosten in Wirklichkeit etwas Höhe/Zeit, hier nicht berücksichtigt</li>
       <li>Wind gilt als konstant über den gesamten Sinkflug — keine Windscherung mit der Höhe (real oft stärker/anders oben als am Boden)</li>
       <li>Reale Kappensteuerung ist ungenauer als der berechnete Vorhaltewinkel suggeriert — er ist eine Zielgröße, keine exakt fliegbare Führung</li>
