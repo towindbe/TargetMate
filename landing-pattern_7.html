@@ -41,9 +41,9 @@
 
   /* Wind dial */
   .dial-wrap{display:flex;align-items:center;gap:16px;}
-  #dial{width:112px;height:112px;flex:none;position:relative;cursor:grab;touch-action:none;}
-  #dial svg{position:absolute;inset:0;}
-  #dial:active{cursor:grabbing;}
+  #dial, #landingDial{width:112px;height:112px;flex:none;position:relative;cursor:grab;touch-action:none;}
+  #dial svg, #landingDial svg{position:absolute;inset:0;}
+  #dial:active, #landingDial:active{cursor:grabbing;}
   .dial-readout{font-family:var(--mono);}
   .dial-readout .deg{font-size:26px;font-weight:700;color:var(--amber);line-height:1;}
   .dial-readout .card{font-size:12px;color:var(--muted);margin-top:4px;}
@@ -117,16 +117,47 @@
   }
   .leaflet-container{background:#0B0E13;}
 
-  .map-toggle{
+  .map-wind-badge{
     position:absolute;top:12px;right:12px;z-index:1000;
-    display:flex;background:rgba(18,22,29,.92);border:1px solid var(--line);border-radius:8px;
-    overflow:hidden;backdrop-filter:blur(4px);
+    display:flex;align-items:center;justify-content:center;
+    filter:drop-shadow(0 1px 2px rgba(0,0,0,.9)) drop-shadow(0 0 4px rgba(0,0,0,.7));
   }
-  .map-toggle button{
-    background:none;border:none;color:var(--muted);font-family:var(--sans);font-size:12px;
-    padding:8px 12px;cursor:pointer;
+
+  .info-btn{
+    background:var(--panel-2);border:1px solid var(--line);color:var(--muted);
+    width:26px;height:26px;border-radius:50%;cursor:pointer;font-family:var(--mono);font-size:13px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;line-height:1;
   }
-  .map-toggle button.active{background:var(--amber);color:#1a1204;font-weight:600;}
+  .info-btn:hover{color:var(--amber);border-color:var(--amber);}
+
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:3000;
+    display:none;align-items:flex-start;justify-content:center;padding:36px 20px;overflow-y:auto;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-box{
+    position:relative;background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    max-width:640px;width:100%;padding:28px 30px;
+  }
+  .modal-close{
+    position:absolute;top:14px;right:14px;background:var(--panel-2);border:1px solid var(--line);
+    color:var(--text);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:15px;line-height:1;
+  }
+  .modal-close:hover{color:var(--amber);border-color:var(--amber);}
+  .modal-box h2{font-size:17px;margin:0 0 14px;padding-right:32px;}
+  .modal-box h3{font-size:12px;margin:22px 0 8px;color:var(--amber);text-transform:uppercase;letter-spacing:.06em;}
+  .modal-box h3:first-of-type{margin-top:0;}
+  .modal-box p{font-size:13px;line-height:1.65;color:var(--text);margin:0 0 10px;}
+  .modal-box p.muted{color:var(--muted);font-size:12px;}
+  .modal-box ol, .modal-box ul{margin:0 0 10px;padding-left:20px;font-size:13px;line-height:1.65;color:var(--text);}
+  .modal-box li{margin-bottom:4px;}
+  .modal-box b{color:var(--text);}
+  .modal-box .formula{
+    font-family:var(--mono);background:var(--panel-2);border:1px solid var(--line);
+    padding:9px 12px;border-radius:6px;font-size:12.5px;margin:8px 0;color:var(--cyan);overflow-x:auto;
+  }
+  .modal-box svg{display:block;margin:12px auto;max-width:100%;}
+  .modal-box .swatch-inline{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;}
 
   .map-search{
     position:absolute;top:12px;left:12px;z-index:1000;width:260px;
@@ -208,7 +239,13 @@
   <div id="panel">
     <div class="header">
       <div class="eyebrow">Windberg / Flight Ops</div>
-      <h1>Landing Pattern</h1>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+        <h1>Landing Pattern</h1>
+        <div style="display:flex;gap:6px;flex:none;margin-top:2px;">
+          <button class="info-btn" id="openInfoBtn" title="Wie wird berechnet?">i</button>
+          <button class="info-btn" id="openHelpBtn" title="Bedienanleitung">?</button>
+        </div>
+      </div>
       <div class="sub">Karte antippen, um den Zielpunkt zu setzen. Pattern rotiert automatisch mit dem Wind.</div>
     </div>
 
@@ -237,6 +274,38 @@
       <div class="num-row">
         <input type="number" id="windDegInput" min="0" max="359" value="270">
         <span>Grad · Windsack-Richtung, aus der der Wind kommt</span>
+      </div>
+
+      <div style="margin-top:16px;padding-top:16px;border-top:1px dashed var(--line);">
+        <div class="label" style="margin-bottom:8px;">Landerichtung <b id="landingDegLabel">270°</b></div>
+        <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:12px;color:var(--muted);cursor:pointer;">
+          <input type="checkbox" id="landingIntoWind" checked style="accent-color:var(--amber);width:15px;height:15px;cursor:pointer;flex:none;">
+          Landerichtung = gegen Wind (deaktivieren bei vorgeschriebener Landerichtung)
+        </label>
+        <div class="dial-wrap" id="landingDialWrap" style="opacity:.4;pointer-events:none;">
+          <div id="landingDial">
+            <svg viewBox="0 0 112 112">
+              <circle cx="56" cy="56" r="52" fill="#171C25" stroke="#242B36" stroke-width="1"/>
+              <g id="landingTicks" stroke="#3A4353" stroke-width="1"></g>
+              <text x="56" y="14" fill="#7C8798" font-size="9" text-anchor="middle" font-family="ui-monospace,monospace">N</text>
+              <text x="102" y="59" fill="#7C8798" font-size="9" text-anchor="middle" font-family="ui-monospace,monospace">O</text>
+              <text x="56" y="103" fill="#7C8798" font-size="9" text-anchor="middle" font-family="ui-monospace,monospace">S</text>
+              <text x="10" y="59" fill="#7C8798" font-size="9" text-anchor="middle" font-family="ui-monospace,monospace">W</text>
+              <g id="landingNeedle">
+                <line x1="56" y1="56" x2="56" y2="16" stroke="#E7ECF3" stroke-width="3" stroke-linecap="round"/>
+                <circle cx="56" cy="56" r="5" fill="#E7ECF3"/>
+              </g>
+            </svg>
+          </div>
+          <div class="dial-readout">
+            <div class="deg" id="landingDialDeg" style="color:var(--text);">270°</div>
+            <div class="card" id="landingDialCard">West</div>
+          </div>
+        </div>
+        <div class="num-row">
+          <input type="number" id="landingDegInput" min="0" max="359" value="270" disabled>
+          <span>Grad · vorgeschriebene Landerichtung</span>
+        </div>
       </div>
     </div>
 
@@ -286,7 +355,11 @@
       </div>
       <div class="perf-row">
         <label>Sinkrate</label>
-        <input type="number" id="sinkRateInput" value="3.6" step="0.1" min="0"><span class="unit">m/s</span>
+        <input type="number" id="sinkRateInput" value="3.6" step="0.1" min="0">
+        <div class="toggle" style="width:92px;flex:none;">
+          <button id="sinkUnitMs" class="active">m/s</button>
+          <button id="sinkUnitFtmin">ft/min</button>
+        </div>
       </div>
       <button class="link-btn" id="estimatorToggle">Schätzhilfe (Wingload) ▾</button>
       <div class="estimator" id="estimatorBox" style="display:none;">
@@ -341,17 +414,17 @@
         <div class="alt-block-title">Höhenverlust bis Turnpunkt <span style="font-weight:400;color:var(--muted);">— vertikal, AGL</span></div>
         <div class="alt-row">
           <label>Downwind-Start</label>
-          <input type="number" id="altDownwind" value="1000" step="50"><span>ft AGL</span>
+          <input type="number" id="altDownwind" value="1000" step="50"><span class="alt-unit">ft AGL</span>
         </div>
         <div class="alt-row">
           <label>Turn zu Base</label>
-          <input type="number" id="altBase" value="500" step="50"><span>ft AGL</span>
+          <input type="number" id="altBase" value="500" step="50"><span class="alt-unit">ft AGL</span>
         </div>
         <div class="alt-row">
           <label>Turn zu Final</label>
-          <input type="number" id="altFinal" value="250" step="50"><span>ft AGL</span>
+          <input type="number" id="altFinal" value="250" step="50"><span class="alt-unit">ft AGL</span>
         </div>
-        <div class="alt-row"><label style="color:var(--muted);font-style:italic;">Landung bei 0 ft angenommen</label></div>
+        <div class="alt-row"><label style="color:var(--muted);font-style:italic;" id="altZeroNote">Landung bei 0 ft angenommen</label></div>
       </div>
 
       <div class="leg-row">
@@ -395,18 +468,152 @@
       <input type="text" id="searchInput" placeholder="Ort suchen, z. B. Byron Bay …" autocomplete="off">
       <div class="search-results" id="searchResults"></div>
     </div>
-    <div class="map-toggle">
-      <button id="baseSat">Satellit</button>
-      <button id="baseDark">Dark</button>
+    <div class="map-wind-badge" title="Windrichtung (Pfeil zeigt, wohin der Wind weht)">
+      <svg viewBox="0 0 40 62" width="34" height="53">
+        <g id="mapWindArrowGroup">
+          <line x1="20" y1="34" x2="20" y2="6" stroke="#3B8BD4" stroke-width="4" stroke-linecap="round"/>
+          <polygon points="20,0 11,17 29,17" fill="#3B8BD4"/>
+        </g>
+        <text x="20" y="54" fill="#3B8BD4" font-size="13" font-weight="700" letter-spacing="1" text-anchor="middle" font-family="ui-monospace,monospace">WIND</text>
+      </svg>
     </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="infoModal">
+  <div class="modal-box">
+    <button class="modal-close" data-close-modal="infoModal">✕</button>
+    <h2>Wie wird berechnet?</h2>
+    <p class="muted">Einheiten-Umrechnung, überall gleich: 1 ft = 0,3048 m · 1 m/s = 3,6 km/h · 1 m/s = 196,85 ft/min. In den Formeln unten stehen darum nur noch die fertig umgerechneten Werte in m bzw. m/s.</p>
+
+    <h3>Grundprinzip</h3>
+    <p>Das Muster wird <b>rückwärts vom Zielpunkt</b> aufgebaut: erst Final, dann Base, dann Downwind. Dadurch enden alle drei Plots exakt am selben Zielpunkt — nur der Einstiegspunkt in die Platzrunde verschiebt sich je nach Wind-Annahme.</p>
+    <svg viewBox="0 0 320 220" width="100%" style="max-width:320px;">
+      <line x1="40" y1="40" x2="260" y2="40" stroke="#3ED9C7" stroke-width="3"/>
+      <polygon points="150,34 150,46 162,40" fill="#3ED9C7"/>
+      <text x="150" y="26" fill="#3ED9C7" font-size="11" text-anchor="middle" font-family="ui-monospace,monospace">Downwind</text>
+      <line x1="260" y1="40" x2="260" y2="160" stroke="#9D8CFF" stroke-width="3"/>
+      <polygon points="254,100 266,100 260,112" fill="#9D8CFF"/>
+      <text x="296" y="104" fill="#9D8CFF" font-size="11" text-anchor="middle" font-family="ui-monospace,monospace">Base</text>
+      <line x1="260" y1="160" x2="70" y2="160" stroke="#FFB020" stroke-width="3"/>
+      <polygon points="170,154 170,166 158,160" fill="#FFB020"/>
+      <text x="165" y="182" fill="#FFB020" font-size="11" text-anchor="middle" font-family="ui-monospace,monospace">Final</text>
+      <circle cx="60" cy="160" r="7" fill="none" stroke="#FF5D5D" stroke-width="2"/>
+      <circle cx="60" cy="160" r="2.5" fill="#FF5D5D"/>
+      <text x="60" y="200" fill="#FF5D5D" font-size="10" text-anchor="middle" font-family="ui-monospace,monospace">Ziel (p0)</text>
+      <line x1="260" y1="100" x2="238" y2="68" stroke="#FF5D5D" stroke-width="1.5" stroke-dasharray="2 3"/>
+      <path d="M 260,85 A 15,15 0 0,0 248,73" fill="none" stroke="#FF5D5D" stroke-width="1.3"/>
+      <text x="218" y="76" fill="#FF5D5D" font-size="11" font-weight="700" font-family="ui-monospace,monospace">δ</text>
+      <g transform="translate(292,190)">
+        <line x1="0" y1="14" x2="0" y2="0" stroke="#3B8BD4" stroke-width="2.5"/>
+        <polygon points="0,-4 -5,4 5,4" fill="#3B8BD4"/>
+        <text x="0" y="24" fill="#3B8BD4" font-size="9" text-anchor="middle" font-family="ui-monospace,monospace">Wind</text>
+      </g>
+    </svg>
+    <p class="muted">δ = Vorhaltewinkel (Crab) auf Base, sichtbar wenn Seitenwind vorliegt.</p>
+
+    <h3>Zeit pro Leg</h3>
+    <p>Zuerst wird für jedes Leg die Flugzeit rein aus dem Höhenverlust bestimmt — unabhängig von Wind oder Fahrt. Höhenverlust und Sinkrate werden dafür auf dieselbe Längeneinheit gebracht:</p>
+    <div class="formula">Zeit = Höhenverlust ÷ Sinkrate</div>
+    <p class="muted">Egal ob du in ft/m oder m/s/ft/min eingibst — intern rechnet die App alles einheitlich in Meter und m/s um, bevor gerechnet wird.</p>
+
+    <h3>Wind-Dreieck (für jedes Leg)</h3>
+    <p>Groundspeed ist die tatsächliche Bewegung über Grund — sie entsteht aus <b>Fahrt</b> (was die Kappe selbst durch die Luft macht, steuerbar über die Nase) plus <b>Wind</b> (kommt automatisch oben drauf): Groundspeed = Fahrt + Wind, Spitze an Spitze addiert. Der Wind-Vektor wird dafür in zwei Anteile zur Kursrichtung zerlegt:</p>
+    <svg viewBox="0 0 280 200" width="100%" style="max-width:280px;">
+      <line x1="140" y1="180" x2="140" y2="20" stroke="#7C8798" stroke-width="1.5" stroke-dasharray="4 4"/>
+      <text x="140" y="12" fill="#7C8798" font-size="10" text-anchor="middle" font-family="ui-monospace,monospace">Kursrichtung</text>
+      <line x1="95" y1="50" x2="140" y2="50" stroke="#7C8798" stroke-width="1" stroke-dasharray="2 3"/>
+      <line x1="140" y1="50" x2="140" y2="30" stroke="#7C8798" stroke-width="1" stroke-dasharray="2 3"/>
+      <text x="118" y="74" fill="#7C8798" font-size="10" text-anchor="middle" font-family="ui-monospace,monospace">quer</text>
+      <text x="152" y="42" fill="#7C8798" font-size="10" font-family="ui-monospace,monospace">längs</text>
+      <line x1="140" y1="180" x2="140" y2="30" stroke="#FFB020" stroke-width="3"/>
+      <polygon points="134,42 146,42 140,30" fill="#FFB020"/>
+      <text x="150" y="110" fill="#FFB020" font-size="10" font-family="ui-monospace,monospace">Groundspeed</text>
+      <line x1="140" y1="180" x2="95" y2="50" stroke="#9D8CFF" stroke-width="2.5"/>
+      <polygon points="95,50 105,59 93,63" fill="#9D8CFF"/>
+      <text x="46" y="80" fill="#9D8CFF" font-size="10" font-family="ui-monospace,monospace">Fahrt</text>
+      <line x1="95" y1="50" x2="140" y2="30" stroke="#3B8BD4" stroke-width="2.5"/>
+      <polygon points="140,30 131,40 127,29" fill="#3B8BD4"/>
+      <text x="98" y="24" fill="#3B8BD4" font-size="10" font-family="ui-monospace,monospace">Wind</text>
+      <path d="M 140,152 A 28,28 0 0,0 130.8,153.5" fill="none" stroke="#FF5D5D" stroke-width="1.5"/>
+      <text x="123" y="148" fill="#FF5D5D" font-size="11" font-weight="700" font-family="ui-monospace,monospace">δ</text>
+    </svg>
+    <p class="muted">Gestrichelt: die Zerlegung des Wind-Vektors in <b>quer</b> (senkrecht zur Kursrichtung) und <b>längs</b> (parallel dazu) — genau die zwei Größen aus der Formel unten. Der Wind-Pfeil selbst beginnt bewusst an der Spitze von Fahrt, nicht am Ursprung — das ist die Vektor-Addition, keine eigene Bewegung ab Nullpunkt.</p>
+    <div class="formula">längs = Wind × cos(Windrichtung + 180° − Kurs)<br>quer = Wind × sin(Windrichtung + 180° − Kurs)</div>
+
+    <h3>Korrigierter Plan <span style="color:var(--danger);">(rot gestrichelt)</span></h3>
+    <p>Um trotz Seitenwind exakt geradeaus zu fliegen, dreht die Kappe die Nase in den Wind (Crab), im Bild sichtbar am Winkel δ zwischen Fahrt und Kursrichtung. Dadurch liegt Groundspeed exakt auf der Kursrichtung. Geometrisch bilden Fahrt (Hypotenuse), quer (eine Kathete, die der Vorhaltewinkel exakt ausgleicht) und der verbleibende Vortrieb ein rechtwinkliges Dreieck:</p>
+    <div class="formula">Groundspeed = längs + √(Fahrt² − quer²)<br>Vorhaltewinkel δ = −asin(quer ÷ Fahrt)</div>
+    <p class="muted">Ist |quer| ≥ Fahrt, lässt sich die Linie gar nicht mehr halten — daher die Windwarnung (Windgeschwindigkeit ≥ Vorwärtsfahrt).</p>
+
+    <h3>Rechenbeispiel (Base, Standardwerte)</h3>
+    <p>Mit den Standardwerten der App: Wind 4,17 m/s aus 270°, Fahrt 10,56 m/s, Sinkrate 3,6 m/s, Höhenverlust Base 76,2 m, Landerichtung = Wind, Linksplatz:</p>
+    <div class="formula">Zeit = 76,2 m ÷ 3,6 m/s = 21,2 s<br><br>Kurs (Base) = 270° + 90° = 0° (Nord)<br>quer = 4,17 × sin(270° + 180° − 0°) = 4,17 × sin(90°) = 4,17 m/s<br>längs = 4,17 × cos(90°) = 0 m/s<br><br>Groundspeed = 0 + √(10,56² − 4,17²) = √94,1 = 9,70 m/s<br>Vorhaltewinkel δ = −asin(4,17 ÷ 10,56) = −23,3°<br>Strecke = 9,70 m/s × 21,2 s ≈ 205 m</div>
+    <p class="muted">Genau diese Zahlen siehst du, wenn du die App mit den Standardwerten öffnest und "Landerichtung = gegen Wind" angehakt lässt (Base-Zeile: ≈205 m, 21 s, Vorhaltewinkel 23°).</p>
+
+    <h3>Unkorrigiert <span style="color:#9D8CFF;">(durchgezogen, farbig)</span></h3>
+    <p>Bleibt die Nase starr auf Kursrichtung ohne Gegenlenken, drückt der Wind seitlich ab:</p>
+    <div class="formula">Strecke längs Kurs = (Fahrt + längs) × Zeit<br>Seitlicher Versatz = quer × Zeit</div>
+
+    <h3>Windstille <span style="color:var(--muted);">(gestrichelt, gedämpft)</span></h3>
+    <p>Reine Referenzgröße mit Wind = 0 auf allen drei Legs — zeigt, wie groß das Muster ganz ohne Windeinfluss wäre.</p>
+
+    <h3>Landerichtung ≠ Windrichtung</h3>
+    <p>Ist die vorgeschriebene Landerichtung nicht identisch mit der Windrichtung, gilt dieselbe Zerlegung für <b>alle drei</b> Legs, nicht nur für Base. Dann zeigen Kappen-Symbol, Korrektur-Winkel und Nasenlinie auf jedem betroffenen Leg.</p>
+
+    <h3>Farblegende</h3>
+    <p><span class="swatch-inline" style="background:#3ED9C7;"></span>Downwind &nbsp;
+       <span class="swatch-inline" style="background:#9D8CFF;"></span>Base &nbsp;
+       <span class="swatch-inline" style="background:#FFB020;"></span>Final &nbsp;
+       <span class="swatch-inline" style="background:#FF5D5D;"></span>Zielpunkt / korrigierter Plan</p>
+
+    <p class="muted" style="margin-top:16px;">Vereinfachtes Modell: konstante Sinkrate und Fahrt im Vollflug, keine Bremsen, kein Timing für die Kappenöffnung berücksichtigt.</p>
+  </div>
+</div>
+
+<div class="modal-overlay" id="helpModal">
+  <div class="modal-box">
+    <button class="modal-close" data-close-modal="helpModal">✕</button>
+    <h2>Bedienanleitung</h2>
+
+    <h3>1. Windrichtung</h3>
+    <p>Dial ziehen oder Gradzahl eintippen — die Richtung, <b>aus der</b> der Wind kommt (Windsack-Konvention).</p>
+
+    <h3>2. Landerichtung</h3>
+    <p>Standardmäßig gesperrt und identisch mit der Windrichtung. Bei einer vorgeschriebenen Landerichtung (z.B. feste Bahnrichtung am Flugplatz) das Häkchen "Landerichtung = gegen Wind" entfernen und den eigenen Dial einstellen.</p>
+
+    <h3>3. Zielpunkt</h3>
+    <p>Karte antippen, Koordinaten direkt eintippen, per Ortssuche (auch Dropzone-Namen) suchen, oder mit dem Steuerkreuz in 1/5/20 m Schritten feinjustieren.</p>
+
+    <h3>4. Wind &amp; Fahrt</h3>
+    <p>Windgeschwindigkeit, Vorwärtsfahrt der Kappe (km/h ⟷ kn umschaltbar) und Sinkrate (m/s ⟷ ft/min umschaltbar) eingeben. Die Schätzhilfe (Wingload) liefert aus Gewicht und Kappengröße einen groben Richtwert für Fahrt und Sinkrate.</p>
+
+    <h3>5. Platzrunde</h3>
+    <p>Links- oder Rechtsplatz wählen — bestimmt die Kurvenrichtung von Downwind über Base nach Final.</p>
+
+    <h3>6. Plots auf der Karte</h3>
+    <p>Drei Checkboxen blenden die Windstille-Referenz, den unkorrigierten Drift-Plot und den korrigierten Plan einzeln ein oder aus.</p>
+
+    <h3>7. Legs</h3>
+    <p>Höhenverlust bis zu den Turnpunkten eingeben (m ⟷ ft umschaltbar, gilt auch für die Streckenlängen) — Streckenlängen und Zeiten werden automatisch berechnet.</p>
+
+    <h3>8. Kartensymbole</h3>
+    <ul>
+      <li>Kappen-Symbol: zeigt die tatsächliche Nasenausrichtung</li>
+      <li>"Korrektur X°": nötiger Vorhaltewinkel gegen den Seitenwind</li>
+      <li>Weiße Zahl: Flugzeit des Legs in Sekunden</li>
+      <li>Blauer Pfeil oben rechts: Windrichtung (wohin der Wind weht)</li>
+    </ul>
   </div>
 </div>
 
 <script>
 // ---------- State ----------
 let state = {
-  target: [47.2692, 11.4041], // Innsbruck default, tap map to change
+  target: [-20.587432, 148.649694], // Skydive Airlie Beach default, tap map to change
   windDir: 270,
+  landingIntoWind: true, // when false, landingHeadingManual sets the prescribed landing direction
+  landingHeadingManual: 270,
   hand: 'left',
   legs: { downwind: 0, base: 0, final: 0 }, // meters, always derived from altitude + performance
   legTimes: { downwind: null, base: null, final: null }, // seconds
@@ -414,52 +621,37 @@ let state = {
   nudgeStep: 5,
   perf: { windSpeedKmh: 15, fwdSpeedKmh: 38, sinkRateMs: 3.6 },
   speedUnit: 'kmh', // 'kmh' | 'kn' — display unit for wind + forward speed, state.perf always stores km/h
-  altitudes: { downwind: 1000, base: 500, final: 250 }, // ft
+  sinkUnit: 'ms', // 'ms' | 'ftmin' — display unit only, state.perf.sinkRateMs always stores m/s
+  altitudes: { downwind: 1000, base: 500, final: 250 }, // always stored in ft
   plots: { nowind: true, uncorrected: true, corrected: true }
 };
 const M_PER_FT = 0.3048;
 const KMH_PER_KN = 1.852;
+const FTMIN_PER_MS = 60 / M_PER_FT; // 1 m/s = ~196.85 ft/min
+// Single m/ft preference shared by leg lengths (horizontal) and altitudes (vertical) — one toggle for both.
 function mToDisplay(m) { return state.unit === 'ft' ? m / M_PER_FT : m; }
+function ftToAltDisplay(ft) { return state.unit === 'm' ? ft * M_PER_FT : ft; }
+function altDisplayToFt(v) { return state.unit === 'm' ? v / M_PER_FT : v; }
 function kmhToSpeedDisplay(kmh) { return state.speedUnit === 'kn' ? kmh / KMH_PER_KN : kmh; }
 function speedDisplayToKmh(v) { return state.speedUnit === 'kn' ? v * KMH_PER_KN : v; }
+function sinkToDisplay(ms) { return state.sinkUnit === 'ftmin' ? ms * FTMIN_PER_MS : ms; }
+function sinkDisplayToMs(v) { return state.sinkUnit === 'ftmin' ? v / FTMIN_PER_MS : v; }
 
 // ---------- Map ----------
-const map = L.map('map', { zoomControl: true, attributionControl: true }).setView(state.target, 15);
+const map = L.map('map', { zoomControl: false, attributionControl: true }).setView(state.target, 15);
+L.control.zoom({ position: 'bottomleft' }).addTo(map); // top-left is taken by the search bar
 map.createPane('labelsPane');
 map.getPane('labelsPane').style.zIndex = 350;
 map.getPane('labelsPane').style.pointerEvents = 'none';
 
-const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', maxZoom: 20
-});
 const satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
   attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics', maxZoom: 19
 });
 const labelsLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
   attribution: 'Labels &copy; Esri', maxZoom: 19, pane: 'labelsPane'
 });
-
-const baseSatBtn = document.getElementById('baseSat');
-const baseDarkBtn = document.getElementById('baseDark');
-function setBasemap(kind) {
-  if (kind === 'sat') {
-    if (map.hasLayer(darkLayer)) map.removeLayer(darkLayer);
-    satLayer.addTo(map);
-    labelsLayer.addTo(map);
-    baseSatBtn.classList.add('active'); baseDarkBtn.classList.remove('active');
-  } else {
-    if (map.hasLayer(satLayer)) map.removeLayer(satLayer);
-    if (map.hasLayer(labelsLayer)) map.removeLayer(labelsLayer);
-    darkLayer.addTo(map);
-    baseDarkBtn.classList.add('active'); baseSatBtn.classList.remove('active');
-  }
-}
-baseSatBtn.addEventListener('click', () => setBasemap('sat'));
-baseDarkBtn.addEventListener('click', () => setBasemap('dark'));
-
-// Default: satellite by day (06:00-20:00 local), dark map at night for contrast
-const hourNow = new Date().getHours();
-setBasemap(hourNow >= 6 && hourNow < 20 ? 'sat' : 'dark');
+satLayer.addTo(map);
+labelsLayer.addTo(map);
 
 let targetMarker = L.marker(state.target, {
   draggable: true,
@@ -495,22 +687,23 @@ function distanceM(a, b) {
   return Math.sqrt(x * x + y * y);
 }
 
-// Nose-direction ray + angle arc back to the base-leg line, to visualize the crab correction geometrically.
-function crabAnnotation(center, baseHeading, noseHeading, crabDeg, scaleLenM) {
+// Nose-direction ray + angle arc back to the leg's ground-track line, to visualize a crab correction geometrically.
+// offsetDeg is the signed nose-vs-track angle (already includes hand + landing-direction effects).
+function crabAnnotation(center, heading, offsetDeg, scaleLenM) {
   const rayLen = Math.max(12, Math.min(35, scaleLenM * 0.4));
   const arcRadius = rayLen * 0.55;
+  const noseHeading = norm(heading + offsetDeg);
   const noseRayEnd = destPoint(center[0], center[1], noseHeading, rayLen);
 
-  const signedCrab = state.hand === 'left' ? -crabDeg : crabDeg;
   const steps = 12;
   const arcPts = [];
   for (let i = 0; i <= steps; i++) {
-    const ang = norm(baseHeading + signedCrab * (i / steps));
+    const ang = norm(heading + offsetDeg * (i / steps));
     arcPts.push(destPoint(center[0], center[1], ang, arcRadius));
   }
-  const labelPt = destPoint(center[0], center[1], norm(baseHeading + signedCrab / 2), arcRadius + rayLen * 0.35);
+  const labelPt = destPoint(center[0], center[1], norm(heading + offsetDeg / 2), arcRadius + rayLen * 0.35);
 
-  return { noseRayEnd, arcPts, labelPt };
+  return { noseHeading, noseRayEnd, arcPts, labelPt };
 }
 
 function textMarker(latlng, text, colorHex) {
@@ -529,17 +722,57 @@ function legTimeFromAlt(lossFt) {
   return state.perf.sinkRateMs > 0 ? lossM / state.perf.sinkRateMs : 0;
 }
 
+// The prescribed landing direction the pattern is flown to. When locked to the wind (the common case),
+// this always equals windDir; a dropzone with a fixed landing direction can unlock it independently —
+// then downwind and final can also carry a crosswind component, not just base.
+function getLandingHeading() {
+  return state.landingIntoWind ? state.windDir : state.landingHeadingManual;
+}
+
+// Decomposes the wind into components relative to a given ground-track heading:
+// 'along' = tailwind component (negative = headwind), 'cross' = crosswind component (signed).
+function windComponents(heading, windMs, windDir) {
+  const rad = (windDir + 180 - heading) * Math.PI / 180;
+  return { along: windMs * Math.cos(rad), cross: windMs * Math.sin(rad) };
+}
+
+// Signed nose-vs-track offset needed to crab a given leg's crosswind component away entirely.
+function crabOffsetDeg(heading, fwdMs, windMs, windDir) {
+  if (fwdMs <= 0 || windMs <= 0) return null;
+  const { cross } = windComponents(heading, windMs, windDir);
+  const ratio = cross / fwdMs;
+  if (Math.abs(ratio) >= 1) return null; // can't hold this track at all
+  return -Math.asin(ratio) * 180 / Math.PI;
+}
+
+// One leg, built backward from its endpoint: 'corrected' crabs to hold the straight track exactly;
+// otherwise the nose stays fixed on 'heading' for the leg's time and the wind pushes it off that line.
+function backwardLeg(to, heading, fwdMs, windMs, windDir, timeS, corrected) {
+  const { along, cross } = windComponents(heading, windMs, windDir);
+  if (corrected) {
+    const gsSq = fwdMs * fwdMs - cross * cross;
+    const gs = along + (gsSq > 0 ? Math.sqrt(gsSq) : 0);
+    const dist = Math.max(0, gs) * timeS;
+    return destPoint(to[0], to[1], norm(heading + 180), dist);
+  }
+  const step1 = destPoint(to[0], to[1], norm(heading + 180), (fwdMs + along) * timeS);
+  return destPoint(step1[0], step1[1], norm(heading - 90), cross * timeS);
+}
+
 // Builds one full pattern backward from the fixed target point, for one of 3 flying assumptions.
-// All 3 variants share the same target (p0) and, since final/downwind have no crosswind component
-// by construction, the same final leg — only base (and therefore the entry point into downwind) differs:
+// All 3 variants share the same target (p0); how much each leg drifts/needs correction depends on
+// the angle between its heading and the wind — no longer just base, once landing direction != wind:
 //  'nowind'      — as if there were no wind at all (pure reference size/shape).
-//  'uncorrected' — real wind, but the pilot holds base-heading on base without crabbing (drifts).
-//  'corrected'   — real wind, pilot crabs on base to hold the straight ground track (the actual plan).
+//  'uncorrected' — real wind, pilot holds each leg's heading without crabbing (drifts).
+//  'corrected'   — real wind, pilot crabs every leg to hold its straight ground track (the actual plan).
 function computeVariant(mode) {
   const { target, windDir, hand, altitudes } = state;
+  const landingHeading = getLandingHeading();
   const fwdMs = state.perf.fwdSpeedKmh / 3.6;
-  const windMs = state.perf.windSpeedKmh / 3.6;
-  const finalHeading = windDir;
+  const windMs = mode === 'nowind' ? 0 : state.perf.windSpeedKmh / 3.6;
+  const corrected = mode !== 'uncorrected';
+
+  const finalHeading = landingHeading;
   const baseHeading = norm(hand === 'left' ? finalHeading + 90 : finalHeading - 90);
   const downwindHeading = norm(finalHeading + 180);
 
@@ -548,36 +781,16 @@ function computeVariant(mode) {
   const tFinal = legTimeFromAlt(altitudes.final - 0);
 
   const p0 = target;
-  let p1, p2, p3, downwindLen;
-
-  if (mode === 'nowind') {
-    const finalLen = fwdMs * tFinal;
-    p1 = destPoint(p0[0], p0[1], norm(finalHeading + 180), finalLen);
-    const baseLen = fwdMs * tBase;
-    p2 = destPoint(p1[0], p1[1], norm(baseHeading + 180), baseLen);
-    downwindLen = fwdMs * tDownwind;
-  } else {
-    const finalLen = Math.max(0, fwdMs - windMs) * tFinal;
-    p1 = destPoint(p0[0], p0[1], norm(finalHeading + 180), finalLen);
-    downwindLen = (fwdMs + windMs) * tDownwind;
-
-    if (mode === 'corrected') {
-      const baseGsSq = fwdMs * fwdMs - windMs * windMs;
-      const baseLen = baseGsSq > 0 ? Math.sqrt(baseGsSq) * tBase : 0;
-      p2 = destPoint(p1[0], p1[1], norm(baseHeading + 180), baseLen);
-    } else { // uncorrected — nose stays at baseHeading, wind drifts the ground track sideways
-      const step1 = destPoint(p1[0], p1[1], norm(baseHeading + 180), fwdMs * tBase);
-      p2 = destPoint(step1[0], step1[1], finalHeading, windMs * tBase);
-    }
-  }
-  p3 = destPoint(p2[0], p2[1], norm(downwindHeading + 180), downwindLen);
+  const p1 = backwardLeg(p0, finalHeading, fwdMs, windMs, windDir, tFinal, corrected);
+  const p2 = backwardLeg(p1, baseHeading, fwdMs, windMs, windDir, tBase, corrected);
+  const p3 = backwardLeg(p2, downwindHeading, fwdMs, windMs, windDir, tDownwind, corrected);
 
   return {
     p0, p1, p2, p3,
     legs: [
-      { name: 'downwind', from: p3, to: p2, heading: downwindHeading, hex: '#3ED9C7' },
-      { name: 'base',     from: p2, to: p1, heading: baseHeading,     hex: '#9D8CFF' },
-      { name: 'final',    from: p1, to: p0, heading: finalHeading,    hex: '#FFB020' },
+      { name: 'downwind', from: p3, to: p2, heading: downwindHeading, hex: '#3ED9C7', timeS: tDownwind },
+      { name: 'base',     from: p2, to: p1, heading: baseHeading,     hex: '#9D8CFF', timeS: tBase },
+      { name: 'final',    from: p1, to: p0, heading: finalHeading,    hex: '#FFB020', timeS: tFinal },
     ]
   };
 }
@@ -620,6 +833,17 @@ function render() {
   const allPts = [state.target];
   const crabDeg = baseCrabAngleDeg();
   const windBlocked = windExceedsForward();
+  const fwdMs = state.perf.fwdSpeedKmh / 3.6;
+  const windMs = state.perf.windSpeedKmh / 3.6;
+  // Landing into wind: only base ever needs a crab correction (final/downwind are wind-axis-aligned).
+  // Prescribed landing direction: any leg can carry a crosswind component, so all three get annotated.
+  const annotatedLegs = state.landingIntoWind ? ['base'] : ['downwind', 'base', 'final'];
+  // Flight time per leg is identical across all 3 modes, so show it once — on whichever visible plot
+  // ranks highest (the actual plan beats the risk-preview beats the pure reference), not on every one.
+  const timeLabelMode = (state.plots.corrected && !windBlocked) ? 'corrected'
+    : state.plots.uncorrected ? 'uncorrected'
+    : state.plots.nowind ? 'nowind'
+    : null;
 
   function drawVariant(mode) {
     if (mode === 'corrected' && windBlocked) return; // crabbed track can't be held at all in this case
@@ -633,9 +857,9 @@ function render() {
       }).addTo(map);
       legLayers.push(line);
       allPts.push(leg.from, leg.to);
+      const mid = midpoint(leg.from, leg.to);
 
       if (mode === 'corrected') {
-        const mid = midpoint(leg.from, leg.to);
         const arrow = L.marker(mid, {
           icon: L.divIcon({
             className: '',
@@ -645,33 +869,42 @@ function render() {
         }).addTo(map);
         arrowLayers.push(arrow);
       }
+
+      // Flight time per leg is purely altitude/sink-rate driven — identical across all 3 modes — so it's
+      // shown once, in a neutral color, rather than tied to one mode's own color.
+      if (mode === timeLabelMode && leg.timeS != null) {
+        const timePt = destPoint(mid[0], mid[1], norm(leg.heading + 90), 14);
+        const timeLabel = textMarker(timePt, `${Math.round(leg.timeS)}s`, '#E7ECF3').addTo(map);
+        canopyLayers.push(timeLabel);
+      }
     });
 
-    if (mode === 'corrected' || mode === 'uncorrected') {
-      const baseLeg = variant.legs.find(l => l.name === 'base');
-      const iconColor = style.color || baseLeg.hex;
-      const noseHeading = (mode === 'corrected' && crabDeg != null)
-        ? norm(baseLeg.heading + (state.hand === 'left' ? -crabDeg : crabDeg))
-        : baseLeg.heading; // uncorrected: nose stays fixed on base-heading, no crab
-      const iconCenter = midpoint(baseLeg.from, baseLeg.to);
+    if (mode !== 'corrected' && mode !== 'uncorrected') return;
+
+    annotatedLegs.forEach(legName => {
+      const leg = variant.legs.find(l => l.name === legName);
+      const iconColor = style.color || leg.hex;
+      const offset = mode === 'corrected' ? crabOffsetDeg(leg.heading, fwdMs, windMs, state.windDir) : null;
+      const noseHeading = offset != null ? norm(leg.heading + offset) : leg.heading; // uncorrected: fixed nose
+      const iconCenter = midpoint(leg.from, leg.to);
       const icon = canopyMarker(iconCenter, noseHeading, iconColor).addTo(map);
       icon.getElement() && (icon.getElement().style.opacity = style.opacity);
       canopyLayers.push(icon);
 
-      if (mode === 'corrected' && crabDeg != null) {
-        const scaleLenM = distanceM(baseLeg.from, baseLeg.to);
-        const ann = crabAnnotation(iconCenter, baseLeg.heading, noseHeading, crabDeg, scaleLenM);
+      if (mode === 'corrected' && offset != null && Math.abs(offset) > 0.5) {
+        const scaleLenM = distanceM(leg.from, leg.to);
+        const ann = crabAnnotation(iconCenter, leg.heading, offset, scaleLenM);
         const rayLine = L.polyline([iconCenter, ann.noseRayEnd], {
           color: iconColor, weight: 1.5, opacity: 0.85, dashArray: '2 3'
         }).addTo(map);
         legLayers.push(rayLine);
         const arcLine = L.polyline(ann.arcPts, { color: iconColor, weight: 1.5, opacity: 0.9 }).addTo(map);
         legLayers.push(arcLine);
-        const label = textMarker(ann.labelPt, `Korrektur ${Math.round(crabDeg)}°`, iconColor).addTo(map);
+        const label = textMarker(ann.labelPt, `Korrektur ${Math.round(Math.abs(offset))}°`, iconColor).addTo(map);
         canopyLayers.push(label);
         allPts.push(ann.noseRayEnd, ann.labelPt);
       }
-    }
+    });
   }
 
   if (state.plots.nowind) drawVariant('nowind');
@@ -701,6 +934,12 @@ function cardinalName(deg) {
   return cardinals[idx];
 }
 
+const mapWindArrowGroup = document.getElementById('mapWindArrowGroup');
+function updateMapWindArrow() {
+  const pushDir = norm(state.windDir + 180); // arrow shows where the wind is blowing TO
+  mapWindArrowGroup.setAttribute('transform', `rotate(${pushDir} 20 20)`);
+}
+
 function setWind(deg, skipInput) {
   state.windDir = norm(Math.round(deg));
   needle.setAttribute('transform', `rotate(${state.windDir} 56 56)`);
@@ -708,11 +947,13 @@ function setWind(deg, skipInput) {
   windDegLabel.textContent = state.windDir + '°';
   dialCard.textContent = cardinalName(state.windDir);
   if (!skipInput) windDegInput.value = state.windDir;
+  updateLandingReadout(); // locked landing dial mirrors the wind dial
+  updateMapWindArrow();
   render();
 }
 
-function dialAngleFromEvent(clientX, clientY) {
-  const rect = dial.getBoundingClientRect();
+function dialAngleFromEvent(dialEl, clientX, clientY) {
+  const rect = dialEl.getBoundingClientRect();
   const cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
   const dx = clientX - cx, dy = clientY - cy;
   let deg = Math.atan2(dx, -dy) * 180 / Math.PI; // 0 = up = North
@@ -720,8 +961,8 @@ function dialAngleFromEvent(clientX, clientY) {
 }
 
 let dragging = false;
-dial.addEventListener('pointerdown', (e) => { dragging = true; dial.setPointerCapture(e.pointerId); setWind(dialAngleFromEvent(e.clientX, e.clientY)); });
-dial.addEventListener('pointermove', (e) => { if (dragging) setWind(dialAngleFromEvent(e.clientX, e.clientY)); });
+dial.addEventListener('pointerdown', (e) => { dragging = true; dial.setPointerCapture(e.pointerId); setWind(dialAngleFromEvent(dial, e.clientX, e.clientY)); });
+dial.addEventListener('pointermove', (e) => { if (dragging) setWind(dialAngleFromEvent(dial, e.clientX, e.clientY)); });
 dial.addEventListener('pointerup', () => dragging = false);
 dial.addEventListener('pointercancel', () => dragging = false);
 
@@ -730,18 +971,71 @@ windDegInput.addEventListener('input', () => {
   if (!isNaN(v)) setWind(v, true);
 });
 
-// tick marks every 30deg
-const ticksG = document.getElementById('ticks');
-for (let d = 0; d < 360; d += 30) {
-  const rad = d * Math.PI / 180;
-  const r1 = 46, r2 = d % 90 === 0 ? 40 : 43;
-  const x1 = 56 + r1 * Math.sin(rad), y1 = 56 - r1 * Math.cos(rad);
-  const x2 = 56 + r2 * Math.sin(rad), y2 = 56 - r2 * Math.cos(rad);
-  const line = document.createElementNS('http://www.w3.org/2000/svg','line');
-  line.setAttribute('x1', x1); line.setAttribute('y1', y1);
-  line.setAttribute('x2', x2); line.setAttribute('y2', y2);
-  ticksG.appendChild(line);
+function drawDialTicks(groupEl) {
+  for (let d = 0; d < 360; d += 30) {
+    const rad = d * Math.PI / 180;
+    const r1 = 46, r2 = d % 90 === 0 ? 40 : 43;
+    const x1 = 56 + r1 * Math.sin(rad), y1 = 56 - r1 * Math.cos(rad);
+    const x2 = 56 + r2 * Math.sin(rad), y2 = 56 - r2 * Math.cos(rad);
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+    groupEl.appendChild(line);
+  }
 }
+drawDialTicks(document.getElementById('ticks'));
+drawDialTicks(document.getElementById('landingTicks'));
+
+// ---------- Landing direction dial ----------
+const landingDial = document.getElementById('landingDial');
+const landingNeedle = document.getElementById('landingNeedle');
+const landingDialDeg = document.getElementById('landingDialDeg');
+const landingDialCard = document.getElementById('landingDialCard');
+const landingDegLabel = document.getElementById('landingDegLabel');
+const landingDegInput = document.getElementById('landingDegInput');
+const landingIntoWindCheckbox = document.getElementById('landingIntoWind');
+const landingDialWrap = document.getElementById('landingDialWrap');
+
+function updateLandingReadout() {
+  const deg = getLandingHeading();
+  landingNeedle.setAttribute('transform', `rotate(${deg} 56 56)`);
+  landingDialDeg.textContent = deg + '°';
+  landingDegLabel.textContent = deg + '°';
+  landingDialCard.textContent = cardinalName(deg);
+  landingDegInput.value = deg;
+}
+
+function setLandingHeading(deg) {
+  state.landingHeadingManual = norm(Math.round(deg));
+  updateLandingReadout();
+  render();
+}
+
+function setLandingIntoWind(checked) {
+  state.landingIntoWind = checked;
+  landingDialWrap.style.opacity = checked ? '.4' : '1';
+  landingDialWrap.style.pointerEvents = checked ? 'none' : 'auto';
+  landingDegInput.disabled = checked;
+  if (checked) state.landingHeadingManual = state.windDir; // resume point for next unlock
+  updateLandingReadout();
+  render();
+}
+landingIntoWindCheckbox.addEventListener('change', () => setLandingIntoWind(landingIntoWindCheckbox.checked));
+
+let landingDragging = false;
+landingDial.addEventListener('pointerdown', (e) => {
+  if (state.landingIntoWind) return;
+  landingDragging = true; landingDial.setPointerCapture(e.pointerId);
+  setLandingHeading(dialAngleFromEvent(landingDial, e.clientX, e.clientY));
+});
+landingDial.addEventListener('pointermove', (e) => { if (landingDragging) setLandingHeading(dialAngleFromEvent(landingDial, e.clientX, e.clientY)); });
+landingDial.addEventListener('pointerup', () => landingDragging = false);
+landingDial.addEventListener('pointercancel', () => landingDragging = false);
+
+landingDegInput.addEventListener('input', () => {
+  const v = parseFloat(landingDegInput.value);
+  if (!isNaN(v) && !state.landingIntoWind) setLandingHeading(v);
+});
 
 // ---------- Plot visibility checkboxes ----------
 const plotCheckboxes = {
@@ -769,23 +1063,34 @@ function windExceedsForward() {
   return state.perf.fwdSpeedKmh > 0 && state.perf.windSpeedKmh >= state.perf.fwdSpeedKmh;
 }
 
+// Corrected (crabbed) groundspeed per leg — generalizes to whatever the landing direction actually is;
+// reduces to the classic downwind=fwd+wind / final=fwd-wind / base=√(fwd²−wind²) when landing is into wind.
 function groundspeeds() {
-  const windMs = state.perf.windSpeedKmh / 3.6;
   const fwdMs = state.perf.fwdSpeedKmh / 3.6;
-  const baseGsSq = fwdMs * fwdMs - windMs * windMs;
-  return {
-    downwind: fwdMs + windMs,
-    base: baseGsSq > 0 ? Math.sqrt(baseGsSq) : 0, // crosswind on base: crabbed groundspeed
-    final: Math.max(0, fwdMs - windMs)
-  };
+  const windMs = state.perf.windSpeedKmh / 3.6;
+  const landingHeading = getLandingHeading();
+  const finalHeading = landingHeading;
+  const baseHeading = norm(state.hand === 'left' ? finalHeading + 90 : finalHeading - 90);
+  const downwindHeading = norm(finalHeading + 180);
+
+  function gsFor(heading) {
+    const { along, cross } = windComponents(heading, windMs, state.windDir);
+    const gsSq = fwdMs * fwdMs - cross * cross;
+    return Math.max(0, along + (gsSq > 0 ? Math.sqrt(gsSq) : 0));
+  }
+
+  return { downwind: gsFor(downwindHeading), base: gsFor(baseHeading), final: gsFor(finalHeading) };
 }
 
-// Vorhaltewinkel (wind correction angle) needed on base to hold the ground track against direct crosswind
+// Vorhaltewinkel (signed nose-vs-track offset) needed on base to hold the ground track — shown in the
+// sidebar hint. Downwind/final can need their own offset too once landing direction != wind; those are
+// shown directly on the map (canopy icons) rather than duplicated here.
 function baseCrabAngleDeg() {
-  const windMs = state.perf.windSpeedKmh / 3.6;
   const fwdMs = state.perf.fwdSpeedKmh / 3.6;
-  if (fwdMs <= 0 || windMs <= 0 || windMs >= fwdMs) return null;
-  return Math.asin(windMs / fwdMs) * 180 / Math.PI;
+  const windMs = state.perf.windSpeedKmh / 3.6;
+  const landingHeading = getLandingHeading();
+  const baseHeading = norm(state.hand === 'left' ? landingHeading + 90 : landingHeading - 90);
+  return crabOffsetDeg(baseHeading, fwdMs, windMs, state.windDir);
 }
 
 const windWarningEl = document.getElementById('windWarning');
@@ -799,7 +1104,10 @@ const crabHintEl = document.getElementById('crabHint');
 function updateCrabDisplay(deg) {
   if (deg == null) { crabHintEl.style.display = 'none'; return; }
   crabHintEl.style.display = 'block';
-  crabHintEl.innerHTML = `Vorhaltewinkel Base: <b>${Math.round(deg)}°</b> in den Wind (Seitenwind-Crab). Kappen-Symbole zeigen die Nasenausrichtung — gedreht beim korrigierten Plan, geradeaus beim unkorrigierten Plot.`;
+  const extra = state.landingIntoWind
+    ? ''
+    : ' Bei abweichender Landerichtung braucht jedes Leg seinen eigenen Vorhaltewinkel — siehe Kappen-Symbole auf der Karte.';
+  crabHintEl.innerHTML = `Vorhaltewinkel Base: <b>${Math.round(Math.abs(deg))}°</b> in den Wind (Seitenwind-Crab).${extra}`;
 }
 
 function fmtTime(s) {
@@ -837,6 +1145,7 @@ function setUnit(u) {
   unitFt.classList.toggle('active', u === 'ft');
   document.querySelectorAll('.leg-row .unit').forEach(el => el.textContent = u);
   refreshLegInputs();
+  refreshAltInputs(); // same toggle drives the altitude (vertical) inputs too
 }
 unitM.addEventListener('click', () => setUnit('m'));
 unitFt.addEventListener('click', () => setUnit('ft'));
@@ -930,9 +1239,21 @@ perfInputs.fwdSpeed.addEventListener('input', () => {
 perfInputs.sinkRate.addEventListener('input', () => {
   let v = parseFloat(perfInputs.sinkRate.value);
   if (isNaN(v) || v < 0) { v = 0; perfInputs.sinkRate.value = 0; }
-  state.perf.sinkRateMs = v;
+  state.perf.sinkRateMs = sinkDisplayToMs(v);
   recomputeLegs();
 });
+
+// ---------- Sink rate unit toggle (m/s / ft/min) ----------
+const sinkUnitMsBtn = document.getElementById('sinkUnitMs');
+const sinkUnitFtminBtn = document.getElementById('sinkUnitFtmin');
+function setSinkUnit(u) {
+  state.sinkUnit = u;
+  sinkUnitMsBtn.classList.toggle('active', u === 'ms');
+  sinkUnitFtminBtn.classList.toggle('active', u === 'ftmin');
+  perfInputs.sinkRate.value = round1(sinkToDisplay(state.perf.sinkRateMs));
+}
+sinkUnitMsBtn.addEventListener('click', () => setSinkUnit('ms'));
+sinkUnitFtminBtn.addEventListener('click', () => setSinkUnit('ftmin'));
 
 // ---------- Speed unit toggle (km/h / kn) — applies to wind speed and forward speed ----------
 const speedUnitKmhBtn = document.getElementById('windUnitKmh');
@@ -952,11 +1273,21 @@ function setSpeedUnit(u) {
 speedUnitKmhBtn.addEventListener('click', () => setSpeedUnit('kmh'));
 speedUnitKnBtn.addEventListener('click', () => setSpeedUnit('kn'));
 Object.values(altInputs).forEach(el => el.addEventListener('input', () => {
-  state.altitudes.downwind = parseFloat(altInputs.downwind.value) || 0;
-  state.altitudes.base = parseFloat(altInputs.base.value) || 0;
-  state.altitudes.final = parseFloat(altInputs.final.value) || 0;
+  state.altitudes.downwind = altDisplayToFt(parseFloat(altInputs.downwind.value) || 0);
+  state.altitudes.base = altDisplayToFt(parseFloat(altInputs.base.value) || 0);
+  state.altitudes.final = altDisplayToFt(parseFloat(altInputs.final.value) || 0);
   recomputeLegs();
 }));
+
+const altZeroNote = document.getElementById('altZeroNote');
+function refreshAltInputs() {
+  altInputs.downwind.value = round1(ftToAltDisplay(state.altitudes.downwind));
+  altInputs.base.value = round1(ftToAltDisplay(state.altitudes.base));
+  altInputs.final.value = round1(ftToAltDisplay(state.altitudes.final));
+  const unitLabel = state.unit === 'm' ? 'm AGL' : 'ft AGL';
+  document.querySelectorAll('.alt-unit').forEach(el => el.textContent = unitLabel);
+  altZeroNote.textContent = `Landung bei 0 ${state.unit} angenommen`;
+}
 
 // ---------- Wingload estimator ----------
 const estimatorToggle = document.getElementById('estimatorToggle');
@@ -1013,7 +1344,7 @@ estApply.addEventListener('click', () => {
   const c = parseFloat(estCanopy.value) || 1;
   const est = estimateFromWingload(w, c);
   perfInputs.fwdSpeed.value = round1(kmhToSpeedDisplay(est.fwdKmh));
-  perfInputs.sinkRate.value = est.sinkMs.toFixed(1);
+  perfInputs.sinkRate.value = round1(sinkToDisplay(est.sinkMs));
   state.perf.fwdSpeedKmh = est.fwdKmh;
   state.perf.sinkRateMs = est.sinkMs;
   recomputeLegs();
@@ -1070,8 +1401,24 @@ searchInput.addEventListener('input', () => {
 });
 document.addEventListener('click', (e) => { if (!e.target.closest('.map-search')) hideResults(); });
 
+// ---------- Info / Help modals ----------
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.getElementById('openInfoBtn').addEventListener('click', () => openModal('infoModal'));
+document.getElementById('openHelpBtn').addEventListener('click', () => openModal('helpModal'));
+document.querySelectorAll('[data-close-modal]').forEach(btn => {
+  btn.addEventListener('click', () => closeModal(btn.dataset.closeModal));
+});
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(overlay.id); });
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(o => closeModal(o.id));
+});
+
 // ---------- Init ----------
 setWind(270, true);
+refreshAltInputs();
 recomputeLegs();
 </script>
 </body>
