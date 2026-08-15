@@ -85,14 +85,18 @@
     box-shadow:0 0 0 4px rgba(255,93,93,.15);
   }
   .canopy-icon{
-    width:26px;height:26px;transform-origin:center;
-    filter:drop-shadow(0 0 3px rgba(0,0,0,.6));
+    width:34px;height:34px;transform-origin:center;
+    filter:drop-shadow(0 1px 2px rgba(0,0,0,.95)) drop-shadow(0 0 5px rgba(0,0,0,.85)) drop-shadow(0 0 5px rgba(0,0,0,.85));
   }
   .canopy-icon svg{display:block;width:100%;height:100%;overflow:visible;}
   .angle-label{
-    font-family:var(--mono);font-size:11px;font-weight:700;white-space:nowrap;
+    font-family:var(--mono);font-size:11px;font-weight:700;white-space:nowrap;line-height:1.4;
     background:rgba(18,22,29,.85);padding:2px 6px;border-radius:4px;
     transform:translate(-50%,-50%);
+  }
+  .angle-label.plain{
+    background:none;padding:0;
+    text-shadow:0 1px 3px rgba(0,0,0,.95),0 0 5px rgba(0,0,0,.8);
   }
   .leaflet-container{background:#0B0E13;}
 
@@ -108,6 +112,12 @@
     display:flex;align-items:center;justify-content:center;line-height:1;
   }
   .info-btn:hover{color:var(--amber);border-color:var(--amber);}
+  .lang-btn{
+    background:var(--panel-2);border:1px solid var(--line);color:var(--muted);
+    border-radius:6px;cursor:pointer;font-family:var(--mono);font-size:11px;font-weight:700;
+    padding:0 8px;height:26px;display:flex;align-items:center;justify-content:center;line-height:1;
+  }
+  .lang-btn:hover{color:var(--amber);border-color:var(--amber);}
 
   .modal-overlay{
     position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:3000;
@@ -221,15 +231,16 @@
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
         <h1>Landing Pattern</h1>
         <div style="display:flex;gap:6px;flex:none;margin-top:2px;">
-          <button class="info-btn" id="openInfoBtn" title="Wie wird berechnet?">i</button>
-          <button class="info-btn" id="openHelpBtn" title="Bedienanleitung">?</button>
+          <button class="lang-btn" id="langToggleBtn" title="Switch to English">EN</button>
+          <button class="info-btn" id="openInfoBtn" data-i18n-title="infoBtnTitle" title="Wie wird berechnet?">i</button>
+          <button class="info-btn" id="openHelpBtn" data-i18n-title="helpBtnTitle" title="Bedienanleitung">?</button>
         </div>
       </div>
-      <div class="sub">Karte antippen, um den Zielpunkt zu setzen. Pattern rotiert automatisch mit dem Wind.</div>
+      <div class="sub" data-i18n="headerSub">Karte antippen, um den Zielpunkt zu setzen. Pattern rotiert automatisch mit dem Wind.</div>
     </div>
 
     <div class="section">
-      <div class="label">Windrichtung (woher) <b id="windDegLabel">270°</b></div>
+      <div class="label"><span data-i18n="windDirLabel">Windrichtung (woher)</span> <b id="windDegLabel">270°</b></div>
       <div class="dial-wrap">
         <div id="dial">
           <svg viewBox="0 0 112 112">
@@ -252,14 +263,14 @@
       </div>
       <div class="num-row">
         <input type="number" id="windDegInput" min="0" max="359" value="270">
-        <span>Grad · Richtung, aus der der Wind kommt</span>
+        <span data-i18n="windDegHint">Grad · Richtung, aus der der Wind kommt</span>
       </div>
 
       <div style="margin-top:16px;padding-top:16px;border-top:1px dashed var(--line);">
-        <div class="label" style="margin-bottom:8px;">Landerichtung <b id="landingDegLabel">270°</b></div>
+        <div class="label" style="margin-bottom:8px;"><span data-i18n="landingDirLabel">Landerichtung</span> <b id="landingDegLabel">270°</b></div>
         <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:12px;color:var(--muted);cursor:pointer;">
           <input type="checkbox" id="landingIntoWind" checked style="accent-color:var(--amber);width:15px;height:15px;cursor:pointer;flex:none;">
-          Landerichtung = in den Wind (deaktivieren bei vorgeschriebener Landerichtung)
+          <span data-i18n="landingIntoWindLabel">Landerichtung = in den Wind (deaktivieren bei vorgeschriebener Landerichtung)</span>
         </label>
         <div class="dial-wrap" id="landingDialWrap" style="opacity:.4;pointer-events:none;">
           <div id="landingDial">
@@ -283,104 +294,104 @@
         </div>
         <div class="num-row">
           <input type="number" id="landingDegInput" min="0" max="359" value="270" disabled>
-          <span>Grad · vorgeschriebene Landerichtung</span>
+          <span data-i18n="landingDegHint">Grad · vorgeschriebene Landerichtung</span>
         </div>
       </div>
     </div>
 
     <div class="section">
-      <div class="label"><span>Wind &amp; Fahrt</span>
+      <div class="label"><span data-i18n="windFahrtLabel">Wind &amp; Fahrt</span>
         <div class="toggle" style="width:120px;">
           <button id="windUnitKmh" class="active">km/h</button>
           <button id="windUnitKn">kn</button>
         </div>
       </div>
-      <div class="wind-warning" id="windWarning" style="display:none;">
+      <div class="wind-warning" id="windWarning" style="display:none;" data-i18n="windWarningText">
         ⚠ Windgeschwindigkeit ≥ Vorwärtsfahrt der Kappe — die korrigierte Flugbahn (Plot 3) ist so nicht zu halten, keine Berechnung möglich.
       </div>
       <div class="perf-row">
-        <label>Windgeschwindigkeit</label>
+        <label data-i18n="windSpeedLabel">Windgeschwindigkeit</label>
         <input type="number" id="windSpeedInput" value="15" step="1" min="0"><span class="unit" id="windSpeedUnitLabel">km/h</span>
       </div>
       <div class="perf-row">
-        <label>Vorwärtsfahrt</label>
+        <label data-i18n="fwdSpeedLabel">Vorwärtsfahrt</label>
         <input type="number" id="fwdSpeedInput" value="38" step="1" min="0"><span class="unit" id="fwdSpeedUnitLabel">km/h</span>
       </div>
       <div class="perf-row">
-        <label>Sinkrate</label>
+        <label data-i18n="sinkRateLabel">Sinkrate</label>
         <input type="number" id="sinkRateInput" value="3.6" step="0.1" min="0">
         <div class="toggle" style="width:92px;flex:none;">
           <button id="sinkUnitMs" class="active">m/s</button>
           <button id="sinkUnitFtmin">ft/min</button>
         </div>
       </div>
-      <button class="link-btn" id="estimatorToggle">Schätzhilfe (Wingload) ▾</button>
+      <button class="link-btn" id="estimatorToggle" data-i18n="estimatorToggleClosed">Schätzhilfe (Wingload) ▾</button>
       <div class="estimator" id="estimatorBox" style="display:none;">
         <div class="perf-row">
-          <label>Gewicht (Springer + Ausrüstung)</label>
+          <label data-i18n="estWeightLabel">Gewicht (Springer + Ausrüstung)</label>
           <input type="number" id="estWeight" value="90" step="1"><span class="unit">kg</span>
         </div>
         <div class="perf-row">
-          <label>Kappengröße</label>
+          <label data-i18n="estCanopyLabel">Kappengröße</label>
           <input type="number" id="estCanopy" value="170" step="1"><span class="unit">sqft</span>
         </div>
         <div class="estimator-result" id="estResult">Wingload: <b>–</b> lb/sqft</div>
-        <button class="estimator-apply" id="estApply">Geschätzte Werte übernehmen</button>
+        <button class="estimator-apply" id="estApply" data-i18n="estApplyBtn">Geschätzte Werte übernehmen</button>
       </div>
     </div>
 
     <div class="section">
-      <div class="label">Platzrunde</div>
+      <div class="label" data-i18n="handLabel">Platzrunde</div>
       <div class="toggle">
-        <button id="handLeft" class="active">Linksplatz</button>
-        <button id="handRight">Rechtsplatz</button>
+        <button id="handLeft" class="active" data-i18n="handLeftBtn">Linksplatz</button>
+        <button id="handRight" data-i18n="handRightBtn">Rechtsplatz</button>
       </div>
     </div>
 
     <div class="section">
-      <div class="label">Plots auf der Karte</div>
+      <div class="label" data-i18n="plotsLabel">Plots auf der Karte</div>
       <div class="plot-row">
         <input type="checkbox" id="plotNowind" checked>
         <span class="plot-swatch dashed"></span>
-        <label for="plotNowind">Referenz-Flugbahn (ohne Wind)</label>
+        <label for="plotNowind" data-i18n="plotNowindLabel">Referenz-Flugbahn (ohne Wind)</label>
       </div>
       <div class="plot-row">
         <input type="checkbox" id="plotUncorrected" checked>
         <span class="plot-swatch solid"></span>
-        <label for="plotUncorrected">Reale Flugbahn (mit Winddrift)</label>
+        <label for="plotUncorrected" data-i18n="plotUncorrectedLabel">Reale Flugbahn (mit Winddrift)</label>
       </div>
       <div class="plot-row">
         <input type="checkbox" id="plotCorrected" checked>
         <span class="plot-swatch red-dashed"></span>
-        <label for="plotCorrected">Korrigierte Flugbahn (durch Gegensteuern)</label>
+        <label for="plotCorrected" data-i18n="plotCorrectedLabel">Korrigierte Flugbahn (durch Gegensteuern)</label>
       </div>
     </div>
 
     <div class="section">
-      <div class="label"><span>Legs</span>
+      <div class="label"><span data-i18n="legsLabel">Legs</span>
         <div class="toggle" style="width:100px;">
           <button id="unitM" class="active">m</button>
           <button id="unitFt">ft</button>
         </div>
       </div>
       <div class="alt-block" id="altBlock">
-        <div class="alt-block-title">Höhenverlust bis Turnpunkt <span style="font-weight:400;color:var(--muted);">— vertikal</span></div>
+        <div class="alt-block-title"><span data-i18n="altBlockTitle">Höhenverlust bis Turnpunkt</span> <span style="font-weight:400;color:var(--muted);" data-i18n="altBlockSub">— vertikal</span></div>
         <div class="alt-row">
-          <label>Downwind-Start</label>
+          <label data-i18n="altDownwindLabel">Downwind-Start</label>
           <input type="number" id="altDownwind" value="1000" step="50"><span class="alt-unit">ft AGL</span>
         </div>
         <div class="alt-row">
-          <label>Turn zu Base</label>
+          <label data-i18n="altBaseLabel">Turn zu Base</label>
           <input type="number" id="altBase" value="500" step="50"><span class="alt-unit">ft AGL</span>
         </div>
         <div class="alt-row">
-          <label>Turn zu Final</label>
+          <label data-i18n="altFinalLabel">Turn zu Final</label>
           <input type="number" id="altFinal" value="250" step="50"><span class="alt-unit">ft AGL</span>
         </div>
         <div class="alt-row"><label style="color:var(--muted);font-style:italic;" id="altZeroNote">Landung bei 0 ft angenommen</label></div>
       </div>
 
-      <div class="alt-block-title" style="margin-top:2px;">Strecke <span style="font-weight:400;color:var(--muted);">— horizontal, über Grund</span></div>
+      <div class="alt-block-title" style="margin-top:2px;"><span data-i18n="streckeTitle">Strecke</span> <span style="font-weight:400;color:var(--muted);" data-i18n="streckeSub">— horizontal, über Grund</span></div>
       <div class="leg-row">
         <div class="swatch" style="background:var(--cyan)"></div>
         <label>Downwind</label>
@@ -402,14 +413,14 @@
       </div>
 
       <div class="leg-row" style="margin-top:6px;padding-top:10px;border-top:1px solid var(--line);">
-        <label style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;">Gesamt</label>
+        <label style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;" data-i18n="totalLabel">Gesamt</label>
         <span class="leg-time" id="timeTotal"></span>
         <span id="lenTotal" style="font-family:var(--mono);font-size:13px;width:64px;text-align:right;color:var(--text);"></span>
         <span class="unit" id="unitTotal">m</span>
       </div>
     </div>
 
-    <div class="hint" id="calcHint">
+    <div class="hint" id="calcHint" data-i18n="calcHintText">
       <b>Zeit</b> = Höhenverlust ÷ Sinkrate &nbsp;·&nbsp; <b>Strecke</b> = Zeit × Groundspeed<br>
       Downwind = Rückenwind &nbsp;·&nbsp; Final = Gegenwind &nbsp;·&nbsp; Base = Vorhaltewinkel gegen Seitenwind<br>
       <span style="color:var(--danger);">Rot gestrichelt</span> = korrigierte Flugbahn &nbsp;·&nbsp; farbig durchgezogen = reale Flugbahn mit Winddrift<br>
@@ -422,11 +433,11 @@
   <div id="mapWrap" style="position:relative;flex:1;">
     <div id="map"></div>
     <div class="map-search">
-      <input type="text" id="searchInput" placeholder="Dropzone suchen…" autocomplete="off">
+      <input type="text" id="searchInput" placeholder="Dropzone suchen…" data-i18n-placeholder="searchPlaceholder" autocomplete="off">
       <div class="search-results" id="searchResults"></div>
     </div>
-    <div class="map-wind-badge" title="Windrichtung (Pfeil zeigt, wohin der Wind weht)">
-      <svg viewBox="0 0 40 62" width="34" height="53">
+    <div class="map-wind-badge" title="Windrichtung (Pfeil zeigt, wohin der Wind weht)" data-i18n-title="windBadgeTitle">
+      <svg viewBox="0 0 40 62" width="46" height="71">
         <g id="mapWindArrowGroup">
           <line x1="20" y1="34" x2="20" y2="6" stroke="#3B8BD4" stroke-width="4" stroke-linecap="round"/>
           <polygon points="20,0 11,17 29,17" fill="#3B8BD4"/>
@@ -440,11 +451,11 @@
 <div class="modal-overlay" id="infoModal">
   <div class="modal-box">
     <button class="modal-close" data-close-modal="infoModal">✕</button>
-    <h2>Wie wird berechnet?</h2>
-    <p class="muted">Einheiten-Umrechnung, überall gleich: 1 ft = 0,3048 m · 1 m/s = 3,6 km/h · 1 m/s = 196,85 ft/min. In den Formeln unten stehen darum nur noch die fertig umgerechneten Werte in m bzw. m/s.</p>
+    <h2 data-i18n="infoTitle">Wie wird berechnet?</h2>
+    <p class="muted" data-i18n="infoUnitNote">Einheiten-Umrechnung, überall gleich: 1 ft = 0,3048 m · 1 m/s = 3,6 km/h · 1 m/s = 196,85 ft/min. In den Formeln unten stehen darum nur noch die fertig umgerechneten Werte in m bzw. m/s.</p>
 
-    <h3>Grundprinzip</h3>
-    <p>Das Muster wird <b>rückwärts vom Zielpunkt</b> aufgebaut: erst Final, dann Base, dann Downwind. Dadurch enden alle drei Plots exakt am selben Zielpunkt — nur der Einstiegspunkt in die Platzrunde verschiebt sich je nach Wind-Annahme.</p>
+    <h3 data-i18n="infoPrincipleH">Grundprinzip</h3>
+    <p data-i18n="infoPrincipleP">Das Muster wird <b>rückwärts vom Zielpunkt</b> aufgebaut: erst Final, dann Base, dann Downwind. Dadurch enden alle drei Plots exakt am selben Zielpunkt — nur der Einstiegspunkt in die Platzrunde verschiebt sich je nach Wind-Annahme.</p>
     <svg viewBox="0 0 320 220" width="100%" style="max-width:320px;">
       <line x1="40" y1="40" x2="260" y2="40" stroke="#3ED9C7" stroke-width="3"/>
       <polygon points="150,34 150,46 162,40" fill="#3ED9C7"/>
@@ -457,7 +468,7 @@
       <text x="165" y="182" fill="#FFB020" font-size="11" text-anchor="middle" font-family="ui-monospace,monospace">Final</text>
       <circle cx="60" cy="160" r="7" fill="none" stroke="#FF5D5D" stroke-width="2"/>
       <circle cx="60" cy="160" r="2.5" fill="#FF5D5D"/>
-      <text x="60" y="200" fill="#FF5D5D" font-size="10" text-anchor="middle" font-family="ui-monospace,monospace">Ziel (p0)</text>
+      <text x="60" y="200" fill="#FF5D5D" font-size="10" text-anchor="middle" font-family="ui-monospace,monospace" data-i18n="svgTarget">Ziel (p0)</text>
       <line x1="260" y1="100" x2="238" y2="68" stroke="#FF5D5D" stroke-width="1.5" stroke-dasharray="2 3"/>
       <path d="M 260,85 A 15,15 0 0,0 248,73" fill="none" stroke="#FF5D5D" stroke-width="1.3"/>
       <text x="218" y="76" fill="#FF5D5D" font-size="11" font-weight="700" font-family="ui-monospace,monospace">δ</text>
@@ -467,69 +478,70 @@
         <text x="0" y="24" fill="#3B8BD4" font-size="9" text-anchor="middle" font-family="ui-monospace,monospace">Wind</text>
       </g>
     </svg>
-    <p class="muted">δ = Vorhaltewinkel (Crab) auf Base, sichtbar wenn Seitenwind vorliegt.</p>
+    <p class="muted" data-i18n="infoPrincipleNote">δ = Vorhaltewinkel (Crab) auf Base, sichtbar wenn Seitenwind vorliegt.</p>
 
-    <h3>Zeit pro Leg</h3>
-    <p>Zuerst wird für jedes Leg die Flugzeit rein aus dem Höhenverlust bestimmt — unabhängig von Wind oder Fahrt. Höhenverlust und Sinkrate werden dafür auf dieselbe Längeneinheit gebracht:</p>
-    <div class="formula">Zeit = Höhenverlust ÷ Sinkrate</div>
-    <p class="muted">Egal ob du in ft/m oder m/s/ft/min eingibst — intern rechnet die App alles einheitlich in Meter und m/s um, bevor gerechnet wird.</p>
+    <h3 data-i18n="infoTimeH">Zeit pro Leg</h3>
+    <p data-i18n="infoTimeP">Zuerst wird für jedes Leg die Flugzeit rein aus dem Höhenverlust bestimmt — unabhängig von Wind oder Fahrt. Höhenverlust und Sinkrate werden dafür auf dieselbe Längeneinheit gebracht:</p>
+    <div class="formula" data-i18n="infoTimeFormula">Zeit = Höhenverlust ÷ Sinkrate</div>
+    <p class="muted" data-i18n="infoTimeNote">Egal ob du in ft/m oder m/s/ft/min eingibst — intern rechnet die App alles einheitlich in Meter und m/s um, bevor gerechnet wird.</p>
 
-    <h3>Wind-Dreieck (für jedes Leg)</h3>
-    <p>Groundspeed ist die tatsächliche Bewegung über Grund — sie entsteht aus <b>Fahrt</b> (was die Kappe selbst durch die Luft macht, steuerbar über die Nase) plus <b>Wind</b> (kommt automatisch oben drauf): Groundspeed = Fahrt + Wind, Spitze an Spitze addiert. Der Wind-Vektor wird dafür in zwei Anteile zur Kursrichtung zerlegt:</p>
+    <h3 data-i18n="infoTriangleH">Wind-Dreieck (für jedes Leg)</h3>
+    <p data-i18n="infoTriangleP">Groundspeed ist die tatsächliche Bewegung über Grund — sie entsteht aus <b>Fahrt</b> (was die Kappe selbst durch die Luft macht, steuerbar über die Nase) plus <b>Wind</b> (kommt automatisch oben drauf): Groundspeed = Fahrt + Wind, Spitze an Spitze addiert. Der Wind-Vektor wird dafür in zwei Anteile zur Kursrichtung zerlegt:</p>
     <svg viewBox="0 0 280 200" width="100%" style="max-width:280px;">
       <line x1="140" y1="180" x2="140" y2="20" stroke="#7C8798" stroke-width="1.5" stroke-dasharray="4 4"/>
-      <text x="140" y="12" fill="#7C8798" font-size="10" text-anchor="middle" font-family="ui-monospace,monospace">Kursrichtung</text>
+      <text x="140" y="12" fill="#7C8798" font-size="10" text-anchor="middle" font-family="ui-monospace,monospace" data-i18n="svgCourse">Kursrichtung</text>
       <line x1="95" y1="50" x2="140" y2="50" stroke="#7C8798" stroke-width="1" stroke-dasharray="2 3"/>
       <line x1="140" y1="50" x2="140" y2="30" stroke="#7C8798" stroke-width="1" stroke-dasharray="2 3"/>
-      <text x="118" y="74" fill="#7C8798" font-size="10" text-anchor="middle" font-family="ui-monospace,monospace">quer</text>
-      <text x="152" y="42" fill="#7C8798" font-size="10" font-family="ui-monospace,monospace">längs</text>
+      <text x="118" y="74" fill="#7C8798" font-size="10" text-anchor="middle" font-family="ui-monospace,monospace" data-i18n="svgCross">quer</text>
+      <text x="152" y="42" fill="#7C8798" font-size="10" font-family="ui-monospace,monospace" data-i18n="svgAlong">längs</text>
       <line x1="140" y1="180" x2="140" y2="30" stroke="#FFB020" stroke-width="3"/>
       <polygon points="134,42 146,42 140,30" fill="#FFB020"/>
       <text x="150" y="110" fill="#FFB020" font-size="10" font-family="ui-monospace,monospace">Groundspeed</text>
       <line x1="140" y1="180" x2="95" y2="50" stroke="#9D8CFF" stroke-width="2.5"/>
       <polygon points="95,50 105,59 93,63" fill="#9D8CFF"/>
-      <text x="46" y="80" fill="#9D8CFF" font-size="10" font-family="ui-monospace,monospace">Fahrt</text>
+      <text x="46" y="80" fill="#9D8CFF" font-size="10" font-family="ui-monospace,monospace" data-i18n="svgAirspeed">Fahrt</text>
       <line x1="95" y1="50" x2="140" y2="30" stroke="#3B8BD4" stroke-width="2.5"/>
       <polygon points="140,30 131,40 127,29" fill="#3B8BD4"/>
       <text x="98" y="24" fill="#3B8BD4" font-size="10" font-family="ui-monospace,monospace">Wind</text>
       <path d="M 140,152 A 28,28 0 0,0 130.8,153.5" fill="none" stroke="#FF5D5D" stroke-width="1.5"/>
       <text x="123" y="148" fill="#FF5D5D" font-size="11" font-weight="700" font-family="ui-monospace,monospace">δ</text>
     </svg>
-    <p class="muted">Gestrichelt: die Zerlegung des Wind-Vektors in <b>quer</b> (senkrecht zur Kursrichtung) und <b>längs</b> (parallel dazu) — genau die zwei Größen aus der Formel unten. Der Wind-Pfeil selbst beginnt bewusst an der Spitze von Fahrt, nicht am Ursprung — das ist die Vektor-Addition, keine eigene Bewegung ab Nullpunkt.</p>
-    <div class="formula">längs = Wind × cos(Windrichtung + 180° − Kurs)<br>quer = Wind × sin(Windrichtung + 180° − Kurs)</div>
+    <p class="muted" data-i18n="infoTriangleNote">Gestrichelt: die Zerlegung des Wind-Vektors in <b>quer</b> (senkrecht zur Kursrichtung) und <b>längs</b> (parallel dazu) — genau die zwei Größen aus der Formel unten. Der Wind-Pfeil selbst beginnt bewusst an der Spitze von Fahrt, nicht am Ursprung — das ist die Vektor-Addition, keine eigene Bewegung ab Nullpunkt.</p>
+    <div class="formula" data-i18n="infoTriangleFormula">längs = Wind × cos(Windrichtung + 180° − Kurs)<br>quer = Wind × sin(Windrichtung + 180° − Kurs)</div>
 
-    <h3>Korrigierte Flugbahn <span style="color:var(--danger);">(rot gestrichelt)</span></h3>
-    <p>Um trotz Seitenwind exakt geradeaus zu fliegen, dreht die Kappe die Nase in den Wind (Crab), im Bild sichtbar am Winkel δ zwischen Fahrt und Kursrichtung. Dadurch liegt Groundspeed exakt auf der Kursrichtung. Geometrisch bilden Fahrt (Hypotenuse), quer (eine Kathete, die der Vorhaltewinkel exakt ausgleicht) und der verbleibende Vortrieb ein rechtwinkliges Dreieck:</p>
-    <div class="formula">Groundspeed = längs + √(Fahrt² − quer²)<br>Vorhaltewinkel δ = −asin(quer ÷ Fahrt)</div>
-    <p class="muted">Ist |quer| ≥ Fahrt, lässt sich die Linie gar nicht mehr halten — daher die Windwarnung (Windgeschwindigkeit ≥ Vorwärtsfahrt).</p>
+    <h3><span data-i18n="infoCorrectedH">Korrigierte Flugbahn</span> <span style="color:var(--danger);" data-i18n="infoCorrectedHSub">(rot gestrichelt)</span></h3>
+    <p data-i18n="infoCorrectedP">Um trotz Seitenwind exakt geradeaus zu fliegen, dreht die Kappe die Nase in den Wind (Crab), im Bild sichtbar am Winkel δ zwischen Fahrt und Kursrichtung. Dadurch liegt Groundspeed exakt auf der Kursrichtung. Geometrisch bilden Fahrt (Hypotenuse), quer (eine Kathete, die der Vorhaltewinkel exakt ausgleicht) und der verbleibende Vortrieb ein rechtwinkliges Dreieck:</p>
+    <div class="formula" data-i18n="infoCorrectedFormula">Groundspeed = längs + √(Fahrt² − quer²)<br>Vorhaltewinkel δ = −asin(quer ÷ Fahrt)</div>
+    <p class="muted" data-i18n="infoCorrectedNote">Ist |quer| ≥ Fahrt, lässt sich die Linie gar nicht mehr halten — daher die Windwarnung (Windgeschwindigkeit ≥ Vorwärtsfahrt).</p>
 
-    <h3>Rechenbeispiel (Base, Standardwerte)</h3>
-    <p>Mit den Standardwerten der App: Wind 4,17 m/s aus 270°, Fahrt 10,56 m/s, Sinkrate 3,6 m/s, Höhenverlust Base 76,2 m, Landerichtung = Wind, Linksplatz:</p>
-    <div class="formula">Zeit = 76,2 m ÷ 3,6 m/s = 21,2 s<br><br>Kurs (Base) = 270° + 90° = 0° (Nord)<br>quer = 4,17 × sin(270° + 180° − 0°) = 4,17 × sin(90°) = 4,17 m/s<br>längs = 4,17 × cos(90°) = 0 m/s<br><br>Groundspeed = 0 + √(10,56² − 4,17²) = √94,1 = 9,70 m/s<br>Vorhaltewinkel δ = −asin(4,17 ÷ 10,56) = −23,3°<br>Strecke = 9,70 m/s × 21,2 s ≈ 205 m</div>
-    <p class="muted">Genau diese Zahlen siehst du, wenn du die App mit den Standardwerten öffnest und "Landerichtung = gegen Wind" angehakt lässt (Base-Zeile: ≈205 m, 21 s, Vorhaltewinkel 23°).</p>
+    <h3 data-i18n="infoExampleH">Rechenbeispiel (Base, Standardwerte)</h3>
+    <p data-i18n="infoExampleP">Mit den Standardwerten der App: Wind 4,17 m/s aus 270°, Fahrt 10,56 m/s, Sinkrate 3,6 m/s, Höhenverlust Base 76,2 m, Landerichtung = Wind, Linksplatz:</p>
+    <div class="formula" data-i18n="infoExampleFormula">Zeit = 76,2 m ÷ 3,6 m/s = 21,2 s<br><br>Kurs (Base) = 270° + 90° = 0° (Nord)<br>quer = 4,17 × sin(270° + 180° − 0°) = 4,17 × sin(90°) = 4,17 m/s<br>längs = 4,17 × cos(90°) = 0 m/s<br><br>Groundspeed = 0 + √(10,56² − 4,17²) = √94,1 = 9,70 m/s<br>Vorhaltewinkel δ = −asin(4,17 ÷ 10,56) = −23,3°<br>Strecke = 9,70 m/s × 21,2 s ≈ 205 m</div>
+    <p class="muted" data-i18n="infoExampleNote">Genau diese Zahlen siehst du, wenn du die App mit den Standardwerten öffnest und "Landerichtung = gegen Wind" angehakt lässt (Base-Zeile: ≈205 m, 21 s, Vorhaltewinkel 23°).</p>
 
-    <h3>Reale Flugbahn <span style="color:#9D8CFF;">(durchgezogen, farbig)</span></h3>
-    <p>Bleibt die Nase starr auf Kursrichtung ohne Gegenlenken, drückt der Wind seitlich ab:</p>
-    <div class="formula">Strecke längs Kurs = (Fahrt + längs) × Zeit<br>Seitlicher Versatz = quer × Zeit</div>
+    <h3><span data-i18n="infoRealH">Reale Flugbahn</span> <span style="color:#9D8CFF;" data-i18n="infoRealHSub">(durchgezogen, farbig)</span></h3>
+    <p data-i18n="infoRealP">Bleibt die Nase starr auf Kursrichtung ohne Gegenlenken, drückt der Wind seitlich ab:</p>
+    <div class="formula" data-i18n="infoRealFormula">Strecke längs Kurs = (Fahrt + längs) × Zeit<br>Seitlicher Versatz = quer × Zeit</div>
 
-    <h3>Referenz-Flugbahn <span style="color:var(--muted);">(gestrichelt, gedämpft)</span></h3>
-    <p>Reine Referenzgröße mit Wind = 0 auf allen drei Legs — zeigt, wie groß das Muster ganz ohne Windeinfluss wäre.</p>
+    <h3><span data-i18n="infoRefH">Referenz-Flugbahn</span> <span style="color:var(--muted);" data-i18n="infoRefHSub">(gestrichelt, gedämpft)</span></h3>
+    <p data-i18n="infoRefP">Reine Referenzgröße mit Wind = 0 auf allen drei Legs — zeigt, wie groß das Muster ganz ohne Windeinfluss wäre.</p>
 
-    <h3>Landerichtung ≠ Windrichtung</h3>
-    <p>Ist die vorgeschriebene Landerichtung nicht identisch mit der Windrichtung, gilt dieselbe Zerlegung für <b>alle drei</b> Legs, nicht nur für Base. Dann zeigen Kappen-Symbol, Korrektur-Winkel und Nasenlinie auf jedem betroffenen Leg.</p>
+    <h3 data-i18n="infoLandingDirH">Landerichtung ≠ Windrichtung</h3>
+    <p data-i18n="infoLandingDirP">Ist die vorgeschriebene Landerichtung nicht identisch mit der Windrichtung, gilt dieselbe Zerlegung für <b>alle drei</b> Legs, nicht nur für Base. Dann zeigen Kappen-Symbol, Korrektur-Winkel und Nasenlinie auf jedem betroffenen Leg.</p>
 
-    <h3>Farblegende</h3>
-    <p><span class="swatch-inline" style="background:#3ED9C7;"></span>Downwind &nbsp;
+    <h3 data-i18n="infoColorH">Farblegende</h3>
+    <p>
+       <span class="swatch-inline" style="background:#3ED9C7;"></span>Downwind &nbsp;
        <span class="swatch-inline" style="background:#9D8CFF;"></span>Base &nbsp;
        <span class="swatch-inline" style="background:#FFB020;"></span>Final &nbsp;
-       <span class="swatch-inline" style="background:#FF5D5D;"></span>Zielpunkt / korrigierte Flugbahn</p>
+       <span class="swatch-inline" style="background:#FF5D5D;"></span><span data-i18n="infoColorTarget">Zielpunkt / korrigierte Flugbahn</span></p>
 
-    <h3>Grenzen des Modells</h3>
+    <h3 data-i18n="infoLimitsH">Grenzen des Modells</h3>
     <ul>
-      <li>Konstante Sinkrate und Fahrt im Vollflug — kein Bremsen</li>
-      <li>Keine "Kurvenkosten": die 90°-Turns zwischen den Legs kosten in Wirklichkeit etwas Höhe/Zeit, hier nicht berücksichtigt</li>
-      <li>Wind gilt als konstant über den gesamten Sinkflug — keine Windscherung mit der Höhe (real oft stärker/anders oben als am Boden)</li>
-      <li>Reale Kappensteuerung ist ungenauer als der berechnete Vorhaltewinkel suggeriert — er ist eine Zielgröße, keine exakt fliegbare Führung</li>
+      <li data-i18n="infoLimit1">Konstante Sinkrate und Fahrt im Vollflug — kein Bremsen</li>
+      <li data-i18n="infoLimit2">Keine "Kurvenkosten": die 90°-Turns zwischen den Legs kosten in Wirklichkeit etwas Höhe/Zeit, hier nicht berücksichtigt</li>
+      <li data-i18n="infoLimit3">Wind gilt als konstant über den gesamten Sinkflug — keine Windscherung mit der Höhe (real oft stärker/anders oben als am Boden)</li>
+      <li data-i18n="infoLimit4">Reale Kappensteuerung ist ungenauer als der berechnete Vorhaltewinkel suggeriert — er ist eine Zielgröße, keine exakt fliegbare Führung</li>
     </ul>
   </div>
 </div>
@@ -537,35 +549,35 @@
 <div class="modal-overlay" id="helpModal">
   <div class="modal-box">
     <button class="modal-close" data-close-modal="helpModal">✕</button>
-    <h2>Bedienanleitung</h2>
+    <h2 data-i18n="helpTitle">Bedienanleitung</h2>
 
-    <h3>1. Windrichtung</h3>
-    <p>Dial ziehen oder Gradzahl eintippen — die Richtung, <b>aus der</b> der Wind kommt (Windsack-Konvention).</p>
+    <h3 data-i18n="help1H">1. Windrichtung</h3>
+    <p data-i18n="help1P">Dial ziehen oder Gradzahl eintippen — die Richtung, <b>aus der</b> der Wind kommt (Windsack-Konvention).</p>
 
-    <h3>2. Landerichtung</h3>
-    <p>Standardmäßig gesperrt und identisch mit der Windrichtung. Bei einer vorgeschriebenen Landerichtung (z.B. feste Bahnrichtung am Flugplatz) das Häkchen "Landerichtung = gegen Wind" entfernen und den eigenen Dial einstellen.</p>
+    <h3 data-i18n="help2H">2. Landerichtung</h3>
+    <p data-i18n="help2P">Standardmäßig gesperrt und identisch mit der Windrichtung. Bei einer vorgeschriebenen Landerichtung (z.B. feste Bahnrichtung am Flugplatz) das Häkchen "Landerichtung = gegen Wind" entfernen und den eigenen Dial einstellen.</p>
 
-    <h3>3. Zielpunkt</h3>
-    <p>Karte antippen, um den Zielpunkt zu setzen — per Ortssuche (auch Dropzone-Namen) lässt sich vorher an den richtigen Ort navigieren.</p>
+    <h3 data-i18n="help3H">3. Zielpunkt</h3>
+    <p data-i18n="help3P">Karte antippen, um den Zielpunkt zu setzen — per Ortssuche (auch Dropzone-Namen) lässt sich vorher an den richtigen Ort navigieren.</p>
 
-    <h3>4. Wind &amp; Fahrt</h3>
-    <p>Windgeschwindigkeit, Vorwärtsfahrt der Kappe (km/h ⟷ kn umschaltbar) und Sinkrate (m/s ⟷ ft/min umschaltbar) eingeben. Die Schätzhilfe (Wingload) liefert aus Gewicht und Kappengröße einen groben Richtwert für Fahrt und Sinkrate.</p>
+    <h3 data-i18n="help4H">4. Wind &amp; Fahrt</h3>
+    <p data-i18n="help4P">Windgeschwindigkeit, Vorwärtsfahrt der Kappe (km/h ⟷ kn umschaltbar) und Sinkrate (m/s ⟷ ft/min umschaltbar) eingeben. Die Schätzhilfe (Wingload) liefert aus Gewicht und Kappengröße einen groben Richtwert für Fahrt und Sinkrate.</p>
 
-    <h3>5. Platzrunde</h3>
-    <p>Links- oder Rechtsplatz wählen — bestimmt die Kurvenrichtung von Downwind über Base nach Final.</p>
+    <h3 data-i18n="help5H">5. Platzrunde</h3>
+    <p data-i18n="help5P">Links- oder Rechtsplatz wählen — bestimmt die Kurvenrichtung von Downwind über Base nach Final.</p>
 
-    <h3>6. Plots auf der Karte</h3>
-    <p>Drei Checkboxen blenden die Referenz-, reale und korrigierte Flugbahn einzeln ein oder aus.</p>
+    <h3 data-i18n="help6H">6. Plots auf der Karte</h3>
+    <p data-i18n="help6P">Drei Checkboxen blenden die Referenz-, reale und korrigierte Flugbahn einzeln ein oder aus.</p>
 
-    <h3>7. Legs</h3>
-    <p>Höhenverlust bis zu den Turnpunkten eingeben (m ⟷ ft umschaltbar, gilt auch für die Streckenlängen) — Streckenlängen und Zeiten werden automatisch berechnet.</p>
+    <h3 data-i18n="help7H">7. Legs</h3>
+    <p data-i18n="help7P">Höhenverlust bis zu den Turnpunkten eingeben (m ⟷ ft umschaltbar, gilt auch für die Streckenlängen) — Streckenlängen und Zeiten werden automatisch berechnet.</p>
 
-    <h3>8. Kartensymbole</h3>
+    <h3 data-i18n="help8H">8. Kartensymbole</h3>
     <ul>
-      <li>Kappen-Symbol: zeigt die tatsächliche Nasenausrichtung</li>
-      <li>"Korrektur X°": nötiger Vorhaltewinkel gegen den Seitenwind</li>
-      <li>Weiße Zahl: Flugzeit des Legs in Sekunden</li>
-      <li>Blauer Pfeil oben rechts: Windrichtung (wohin der Wind weht)</li>
+      <li data-i18n="help8_1">Kappen-Symbol: zeigt die tatsächliche Nasenausrichtung</li>
+      <li data-i18n="help8_2">"Korrektur X°": nötiger Vorhaltewinkel gegen den Seitenwind</li>
+      <li data-i18n="help8_3">Weiße Zahl: Flugzeit des Legs in Sekunden</li>
+      <li data-i18n="help8_4">Blauer Pfeil oben rechts: Windrichtung (wohin der Wind weht)</li>
     </ul>
   </div>
 </div>
@@ -573,6 +585,7 @@
 <script>
 // ---------- State ----------
 let state = {
+  lang: 'de', // 'de' | 'en' — UI language
   target: [-20.587432, 148.649694], // Skydive Airlie Beach default, tap map to change
   windDir: 270,
   landingIntoWind: true, // when false, landingHeadingManual sets the prescribed landing direction
@@ -637,6 +650,14 @@ function destPoint(lat, lon, bearingDeg, distM) {
 }
 function norm(deg) { return ((deg % 360) + 360) % 360; }
 
+// Fixed on-screen pixel offset in the given compass direction (0°=up/north), independent of zoom/meters —
+// used to push labels away from a shared anchor point (e.g. a canopy icon) in different directions per
+// leg/angle, so adjacent legs' labels diverge instead of drifting together when their anchors are close.
+function screenOffsetFromBearing(bearingDeg, pxDist) {
+  const rad = bearingDeg * Math.PI / 180;
+  return [Math.sin(rad) * pxDist, -Math.cos(rad) * pxDist];
+}
+
 function midpoint(a, b) { return [(a[0]+b[0])/2, (a[1]+b[1])/2]; }
 
 function distanceM(a, b) {
@@ -663,17 +684,20 @@ function crabAnnotation(center, heading, offsetDeg, scaleLenM) {
     const ang = norm(heading + offsetDeg * (i / steps));
     arcPts.push(destPoint(center[0], center[1], ang, arcRadius));
   }
-  const labelPt = destPoint(center[0], center[1], norm(heading + offsetDeg / 2), arcRadius + rayLen * 0.35);
+  const labelAngle = norm(heading + offsetDeg / 2); // bisector direction, used for a pixel-based label offset
 
-  return { noseHeading, noseRayEnd, arcPts, labelPt };
+  return { noseHeading, noseRayEnd, arcPts, labelAngle };
 }
 
-function textMarker(latlng, text, colorHex) {
+function textMarker(latlng, text, colorHex, opts = {}) {
+  const { plain = false, offsetPx = [0, 0] } = opts;
   return L.marker(latlng, {
     icon: L.divIcon({
       className: '',
-      html: `<div class="angle-label" style="color:${colorHex}">${text}</div>`,
-      iconSize: [1, 1], iconAnchor: [0, 0]
+      html: `<div class="angle-label${plain ? ' plain' : ''}" style="color:${colorHex}">${text}</div>`,
+      // offsetPx is a fixed on-screen pixel offset (independent of zoom/meters) — used to keep labels
+      // clear of the canopy icon, which itself has a fixed CSS pixel size.
+      iconSize: [1, 1], iconAnchor: [-offsetPx[0], -offsetPx[1]]
     })
   });
 }
@@ -771,15 +795,15 @@ function canopyMarker(latlng, headingDeg, colorHex) {
     icon: L.divIcon({
       className: '',
       html: `<div class="canopy-icon" style="color:${colorHex}; transform:rotate(${headingDeg}deg)">${canopyIconSvg()}</div>`,
-      iconSize: [26, 26], iconAnchor: [13, 13]
+      iconSize: [34, 34], iconAnchor: [17, 17]
     })
   });
 }
 
 const PLOT_STYLE = {
-  nowind:      { dashArray: '10 6', weight: 2.5, opacity: 0.65 },
+  nowind:      { dashArray: '10 6', weight: 2.5, opacity: 0.9 },
   uncorrected: { dashArray: null,   weight: 3.5, opacity: 0.9 },
-  corrected:   { dashArray: '9 5',  weight: 4,   opacity: 0.95, color: '#FF5D5D' }
+  corrected:   { dashArray: '9 5',  weight: 2.5, opacity: 0.95, color: '#FF5D5D' }
 };
 
 function render() {
@@ -812,6 +836,16 @@ function render() {
 
     variant.legs.forEach(leg => {
       const color = style.color || leg.hex;
+
+      // Dark casing behind the line so it stays readable over busy satellite backgrounds — the red
+      // corrected path is already high-contrast on its own and stays as-is.
+      if (mode !== 'corrected') {
+        const casing = L.polyline([leg.from, leg.to], {
+          color: '#0B0E13', weight: style.weight + 3, opacity: 0.55, lineCap: 'round'
+        }).addTo(map);
+        legLayers.push(casing);
+      }
+
       const line = L.polyline([leg.from, leg.to], {
         color, weight: style.weight, opacity: style.opacity, dashArray: style.dashArray
       }).addTo(map);
@@ -833,8 +867,11 @@ function render() {
       // Flight time per leg is purely altitude/sink-rate driven — identical across all 3 modes — so it's
       // shown once, in a neutral color, rather than tied to one mode's own color.
       if (mode === timeLabelMode && leg.timeS != null) {
-        const timePt = destPoint(mid[0], mid[1], norm(leg.heading + 90), 14);
-        const timeLabel = textMarker(timePt, `${Math.round(leg.timeS)}s`, '#E7ECF3').addTo(map);
+        // Fixed pixel offset (not meters), perpendicular to this leg's own heading, so the label (a) clears
+        // the canopy icon at any zoom level and (b) diverges from a neighboring leg's label instead of
+        // drifting the same way, even when the two legs' midpoints sit close together near a shared corner.
+        const timeOffsetPx = screenOffsetFromBearing(norm(leg.heading + 90), 28);
+        const timeLabel = textMarker(mid, `${Math.round(leg.timeS)}s`, '#E7ECF3', { offsetPx: timeOffsetPx }).addTo(map);
         canopyLayers.push(timeLabel);
       }
     });
@@ -860,9 +897,13 @@ function render() {
         legLayers.push(rayLine);
         const arcLine = L.polyline(ann.arcPts, { color: iconColor, weight: 1.5, opacity: 0.9 }).addTo(map);
         legLayers.push(arcLine);
-        const label = textMarker(ann.labelPt, `Korrektur ${Math.round(Math.abs(offset))}°`, iconColor).addTo(map);
+        const corrWord = state.lang === 'en' ? 'Correction' : 'Korrektur';
+        // Same fixed-pixel approach as the time label, offset along the nose/arc bisector direction —
+        // stays clear of the canopy icon and the leg's own time label at any zoom level.
+        const corrOffsetPx = screenOffsetFromBearing(ann.labelAngle, 34);
+        const label = textMarker(iconCenter, `${corrWord} ${Math.round(Math.abs(offset))}°`, iconColor, { plain: true, offsetPx: corrOffsetPx }).addTo(map);
         canopyLayers.push(label);
-        allPts.push(ann.noseRayEnd, ann.labelPt);
+        allPts.push(ann.noseRayEnd);
       }
     });
   }
@@ -888,10 +929,11 @@ const dialCard = document.getElementById('dialCard');
 const windDegLabel = document.getElementById('windDegLabel');
 const windDegInput = document.getElementById('windDegInput');
 
-const cardinals = ['Nord','Nordost','Ost','Südost','Süd','Südwest','West','Nordwest'];
+const CARDINALS_DE = ['Nord','Nordost','Ost','Südost','Süd','Südwest','West','Nordwest'];
+const CARDINALS_EN = ['North','Northeast','East','Southeast','South','Southwest','West','Northwest'];
 function cardinalName(deg) {
   const idx = Math.round(norm(deg) / 45) % 8;
-  return cardinals[idx];
+  return (state.lang === 'en' ? CARDINALS_EN : CARDINALS_DE)[idx];
 }
 
 const mapWindArrowGroup = document.getElementById('mapWindArrowGroup');
@@ -1064,10 +1106,13 @@ const crabHintEl = document.getElementById('crabHint');
 function updateCrabDisplay(deg) {
   if (deg == null) { crabHintEl.style.display = 'none'; return; }
   crabHintEl.style.display = 'block';
-  const extra = state.landingIntoWind
-    ? ''
-    : ' Bei abweichender Landerichtung braucht jedes Leg seinen eigenen Vorhaltewinkel — siehe Kappen-Symbole auf der Karte.';
-  crabHintEl.innerHTML = `Vorhaltewinkel Base: <b>${Math.round(Math.abs(deg))}°</b> in den Wind (Seitenwind-Crab).${extra}`;
+  const en = state.lang === 'en';
+  const extra = state.landingIntoWind ? '' : (en
+    ? ' With a landing direction different from the wind, every leg needs its own correction angle — see the canopy icons on the map.'
+    : ' Bei abweichender Landerichtung braucht jedes Leg seinen eigenen Vorhaltewinkel — siehe Kappen-Symbole auf der Karte.');
+  crabHintEl.innerHTML = en
+    ? `Base wind correction angle: <b>${Math.round(Math.abs(deg))}°</b> into the wind (crosswind crab).${extra}`
+    : `Vorhaltewinkel Base: <b>${Math.round(Math.abs(deg))}°</b> in den Wind (Seitenwind-Crab).${extra}`;
 }
 
 function fmtTime(s) {
@@ -1215,7 +1260,9 @@ function refreshAltInputs() {
   altInputs.final.value = round1(ftToAltDisplay(state.altitudes.final));
   const unitLabel = state.unit === 'm' ? 'm AGL' : 'ft AGL';
   document.querySelectorAll('.alt-unit').forEach(el => el.textContent = unitLabel);
-  altZeroNote.textContent = `Landung bei 0 ${state.unit} angenommen`;
+  altZeroNote.textContent = state.lang === 'en'
+    ? `Landing assumed at 0 ${state.unit}`
+    : `Landung bei 0 ${state.unit} angenommen`;
 }
 
 // ---------- Wingload estimator ----------
@@ -1226,10 +1273,15 @@ const estCanopy = document.getElementById('estCanopy');
 const estResult = document.getElementById('estResult');
 const estApply = document.getElementById('estApply');
 
+function updateEstimatorToggleLabel() {
+  const isOpen = estimatorBox.style.display !== 'none';
+  const label = state.lang === 'en' ? 'Estimator (wingload)' : 'Schätzhilfe (Wingload)';
+  estimatorToggle.textContent = `${label} ${isOpen ? '▴' : '▾'}`;
+}
 estimatorToggle.addEventListener('click', () => {
   const open = estimatorBox.style.display !== 'none';
   estimatorBox.style.display = open ? 'none' : 'block';
-  estimatorToggle.textContent = open ? 'Schätzhilfe (Wingload) ▾' : 'Schätzhilfe (Wingload) ▴';
+  updateEstimatorToggleLabel();
   if (!open) updateEstimate();
 });
 
@@ -1264,7 +1316,9 @@ function updateEstimate() {
   const w = parseFloat(estWeight.value) || 0;
   const c = parseFloat(estCanopy.value) || 1;
   const est = estimateFromWingload(w, c);
-  estResult.innerHTML = `Wingload: <b>${est.wingload.toFixed(2)}</b> lb/sqft · grober Richtwert: ~${Math.round(est.fwdKmh)} km/h vor, ~${est.sinkMs.toFixed(1)} m/s Sinkrate`;
+  estResult.innerHTML = state.lang === 'en'
+    ? `Wingload: <b>${est.wingload.toFixed(2)}</b> lb/sqft · rough estimate: ~${Math.round(est.fwdKmh)} km/h forward, ~${est.sinkMs.toFixed(1)} m/s sink rate`
+    : `Wingload: <b>${est.wingload.toFixed(2)}</b> lb/sqft · grober Richtwert: ~${Math.round(est.fwdKmh)} km/h vor, ~${est.sinkMs.toFixed(1)} m/s Sinkrate`;
 }
 estWeight.addEventListener('input', updateEstimate);
 estCanopy.addEventListener('input', updateEstimate);
@@ -1289,7 +1343,7 @@ function hideResults() { searchResults.style.display = 'none'; searchResults.inn
 
 function renderResults(items) {
   if (!items.length) {
-    searchResults.innerHTML = '<div class="sr-empty">Keine Treffer</div>';
+    searchResults.innerHTML = `<div class="sr-empty">${state.lang === 'en' ? 'No results' : 'Keine Treffer'}</div>`;
     searchResults.style.display = 'block';
     return;
   }
@@ -1324,7 +1378,7 @@ searchInput.addEventListener('input', () => {
       const data = await res.json();
       renderResults(data);
     } catch (err) {
-      if (err.name !== 'AbortError') { searchResults.innerHTML = '<div class="sr-empty">Suche fehlgeschlagen</div>'; searchResults.style.display = 'block'; }
+      if (err.name !== 'AbortError') { searchResults.innerHTML = `<div class="sr-empty">${state.lang === 'en' ? 'Search failed' : 'Suche fehlgeschlagen'}</div>`; searchResults.style.display = 'block'; }
     }
   }, 400);
 });
@@ -1345,8 +1399,178 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(o => closeModal(o.id));
 });
 
+// ---------- DE/EN translation ----------
+// German is captured live from the DOM (the HTML's own default text) so it never drifts out of
+// sync with what's actually written in the markup; only the English side is hand-maintained here.
+const I18N_EN = {
+  headerSub: "Tap the map to set the target point. The pattern rotates automatically with the wind.",
+  infoBtnTitle__title: "How is this calculated?",
+  helpBtnTitle__title: "User guide",
+
+  windDirLabel: "Wind direction (from)",
+  windDegHint: "Degrees · direction the wind is coming from",
+  landingDirLabel: "Landing direction",
+  landingIntoWindLabel: "Landing direction = into the wind (uncheck for a prescribed landing direction)",
+  landingDegHint: "Degrees · prescribed landing direction",
+
+  windFahrtLabel: "Wind &amp; Airspeed",
+  windWarningText: "⚠ Wind speed ≥ canopy forward speed — the corrected path (plot 3) can't be held like this, no calculation possible.",
+  windSpeedLabel: "Wind speed",
+  fwdSpeedLabel: "Forward speed",
+  sinkRateLabel: "Sink rate",
+  estimatorToggleClosed: "Estimator (wingload) ▾",
+  estWeightLabel: "Weight (jumper + gear)",
+  estCanopyLabel: "Canopy size",
+  estApplyBtn: "Apply estimated values",
+
+  handLabel: "Pattern direction",
+  handLeftBtn: "Left-hand",
+  handRightBtn: "Right-hand",
+
+  plotsLabel: "Plots on the map",
+  plotNowindLabel: "Reference path (no wind)",
+  plotUncorrectedLabel: "Real path (with wind drift)",
+  plotCorrectedLabel: "Corrected path (by counter-steering)",
+
+  legsLabel: "Legs",
+  altBlockTitle: "Altitude loss to turn point",
+  altBlockSub: "— vertical",
+  altDownwindLabel: "Downwind start",
+  altBaseLabel: "Turn to base",
+  altFinalLabel: "Turn to final",
+  streckeTitle: "Distance",
+  streckeSub: "— horizontal, over ground",
+  totalLabel: "Total",
+
+  calcHintText: `<b>Time</b> = altitude loss ÷ sink rate &nbsp;·&nbsp; <b>Distance</b> = time × groundspeed<br>
+      Downwind = tailwind &nbsp;·&nbsp; Final = headwind &nbsp;·&nbsp; Base = correction angle against crosswind<br>
+      <span style="color:var(--danger);">Red dashed</span> = corrected path &nbsp;·&nbsp; solid colored = real path with wind drift<br>
+      Simplified model — formulas, diagrams &amp; limits: the "i" button above.`,
+
+  searchPlaceholder__placeholder: "Search dropzone…",
+  windBadgeTitle__title: "Wind direction (arrow shows where the wind is blowing to)",
+
+  infoTitle: "How is this calculated?",
+  infoUnitNote: "Unit conversion, the same everywhere: 1 ft = 0.3048 m · 1 m/s = 3.6 km/h · 1 m/s = 196.85 ft/min. The formulas below therefore only show values already converted to m and m/s.",
+
+  infoPrincipleH: "Basic principle",
+  infoPrincipleP: "The pattern is built <b>backward from the target point</b>: final first, then base, then downwind. That way all three plots end at exactly the same target point — only the entry point into the pattern shifts depending on the wind assumption.",
+  svgTarget: "Target (p0)",
+  infoPrincipleNote: "δ = correction angle (crab) on base, visible whenever there's a crosswind.",
+
+  infoTimeH: "Time per leg",
+  infoTimeP: "First, the flight time for each leg is worked out purely from the altitude loss — independent of wind or airspeed. Altitude loss and sink rate are brought to the same length unit for this:",
+  infoTimeFormula: "Time = altitude loss ÷ sink rate",
+  infoTimeNote: "No matter whether you enter ft/m or m/s/ft/min — internally the app converts everything to metres and m/s before calculating.",
+
+  infoTriangleH: "Wind triangle (for every leg)",
+  infoTriangleP: "Groundspeed is the actual movement over the ground — it results from <b>airspeed</b> (what the canopy itself does through the air, steerable via the nose) plus <b>wind</b> (comes on top automatically): groundspeed = airspeed + wind, added tip to tail. For this, the wind vector is split into two parts relative to the course direction:",
+  svgCourse: "Course",
+  svgCross: "cross",
+  svgAlong: "along",
+  svgAirspeed: "Airspeed",
+  infoTriangleNote: "Dashed: the decomposition of the wind vector into <b>cross</b> (perpendicular to the course) and <b>along</b> (parallel to it) — exactly the two quantities from the formula below. The wind arrow itself deliberately starts at the tip of airspeed, not at the origin — that's the vector addition, not a separate movement from zero.",
+  infoTriangleFormula: "along = wind × cos(wind direction + 180° − course)<br>cross = wind × sin(wind direction + 180° − course)",
+
+  infoCorrectedH: "Corrected path",
+  infoCorrectedHSub: "(red dashed)",
+  infoCorrectedP: "To fly exactly straight despite a crosswind, the canopy turns its nose into the wind (crab), visible in the picture as the angle δ between airspeed and course. This puts groundspeed exactly on the course line. Geometrically, airspeed (hypotenuse), cross (one leg, exactly cancelled by the correction angle) and the remaining forward drive form a right triangle:",
+  infoCorrectedFormula: "Groundspeed = along + √(airspeed² − cross²)<br>Correction angle δ = −asin(cross ÷ airspeed)",
+  infoCorrectedNote: "If |cross| ≥ airspeed, the line can no longer be held at all — hence the wind warning (wind speed ≥ forward speed).",
+
+  infoExampleH: "Worked example (base, default values)",
+  infoExampleP: "With the app's default values: wind 4.17 m/s from 270°, airspeed 10.56 m/s, sink rate 3.6 m/s, base altitude loss 76.2 m, landing direction = wind, left-hand pattern:",
+  infoExampleFormula: "Time = 76.2 m ÷ 3.6 m/s = 21.2 s<br><br>Course (base) = 270° + 90° = 0° (North)<br>cross = 4.17 × sin(270° + 180° − 0°) = 4.17 × sin(90°) = 4.17 m/s<br>along = 4.17 × cos(90°) = 0 m/s<br><br>Groundspeed = 0 + √(10.56² − 4.17²) = √94.1 = 9.70 m/s<br>Correction angle δ = −asin(4.17 ÷ 10.56) = −23.3°<br>Distance = 9.70 m/s × 21.2 s ≈ 205 m",
+  infoExampleNote: `These are exactly the numbers you see when you open the app with default values and leave "Landing direction = into wind" checked (base row: ≈205 m, 21 s, correction angle 23°).`,
+
+  infoRealH: "Real path",
+  infoRealHSub: "(solid, colored)",
+  infoRealP: "If the nose stays fixed on the course heading without any counter-steering, the wind pushes it sideways:",
+  infoRealFormula: "Distance along course = (airspeed + along) × time<br>Sideways drift = cross × time",
+
+  infoRefH: "Reference path",
+  infoRefHSub: "(dashed, muted)",
+  infoRefP: "A pure reference with wind = 0 on all three legs — shows how big the pattern would be with no wind influence at all.",
+
+  infoLandingDirH: "Landing direction ≠ wind direction",
+  infoLandingDirP: "If the prescribed landing direction isn't identical to the wind direction, the same decomposition applies to <b>all three</b> legs, not just base. The canopy icon, correction angle, and nose line then appear on every affected leg.",
+
+  infoColorH: "Color legend",
+  infoColorTarget: "Target point / corrected path",
+
+  infoLimitsH: "Model limitations",
+  infoLimit1: "Constant sink rate and airspeed in full flight — no braking",
+  infoLimit2: `No "turn cost": the 90° turns between legs actually cost some altitude/time in reality, not accounted for here`,
+  infoLimit3: "Wind is treated as constant over the whole descent — no wind shear with altitude (in reality often stronger/different higher up than at ground level)",
+  infoLimit4: "Real canopy steering is less precise than the calculated correction angle suggests — it's a target value, not an exactly flyable guide",
+
+  helpTitle: "User guide",
+  help1H: "1. Wind direction",
+  help1P: "Drag the dial or type a degree value — the direction the wind is coming <b>from</b> (windsock convention).",
+  help2H: "2. Landing direction",
+  help2P: `Locked by default and identical to the wind direction. For a prescribed landing direction (e.g. a fixed runway heading at the airfield), uncheck "Landing direction = into wind" and set its own dial.`,
+  help3H: "3. Target point",
+  help3P: "Tap the map to set the target point — use the location search (dropzone names work too) to navigate to the right spot first.",
+  help4H: "4. Wind &amp; airspeed",
+  help4P: "Enter wind speed, canopy forward speed (km/h ⟷ kn toggle) and sink rate (m/s ⟷ ft/min toggle). The estimator (wingload) gives a rough estimate for forward speed and sink rate from weight and canopy size.",
+  help5H: "5. Pattern direction",
+  help5P: "Choose left-hand or right-hand — determines the turn direction from downwind via base to final.",
+  help6H: "6. Plots on the map",
+  help6P: "Three checkboxes show or hide the reference, real, and corrected path independently.",
+  help7H: "7. Legs",
+  help7P: "Enter altitude loss down to the turn points (m ⟷ ft toggle, also applies to the leg distances) — distances and times are calculated automatically.",
+  help8H: "8. Map symbols",
+  help8_1: "Canopy icon: shows the actual nose orientation",
+  help8_2: `"Correction X°": correction angle needed against the crosswind`,
+  help8_3: "White number: flight time of the leg in seconds",
+  help8_4: "Blue arrow top right: wind direction (where the wind is blowing to)"
+};
+
+const I18N_DE = {}; // captured live from the DOM's own default (German) text
+function captureDefaultTexts() {
+  document.querySelectorAll('[data-i18n]').forEach(el => { I18N_DE[el.dataset.i18n] = el.innerHTML; });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { I18N_DE[el.dataset.i18nPlaceholder + '__placeholder'] = el.placeholder; });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => { I18N_DE[el.dataset.i18nTitle + '__title'] = el.title; });
+}
+
+const langToggleBtn = document.getElementById('langToggleBtn');
+function applyLanguage(lang) {
+  state.lang = lang;
+  document.documentElement.lang = lang;
+  const dict = lang === 'en' ? I18N_EN : I18N_DE;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const val = dict[el.dataset.i18n];
+    if (val != null) el.innerHTML = val;
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.dataset.i18nPlaceholder + '__placeholder';
+    const val = dict[key];
+    if (val != null) el.placeholder = val;
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    const key = el.dataset.i18nTitle + '__title';
+    const val = dict[key];
+    if (val != null) el.title = val;
+  });
+  langToggleBtn.textContent = lang === 'en' ? 'DE' : 'EN';
+  langToggleBtn.title = lang === 'en' ? 'Auf Deutsch umschalten' : 'Switch to English';
+
+  // Re-run everything that generates its own text in JS (cardinal names, hints, dynamic labels).
+  updateLandingReadout();
+  setWind(state.windDir, true);
+  refreshLegInputs();
+  refreshAltInputs();
+  updateEstimatorToggleLabel();
+  updateEstimate();
+  render();
+}
+langToggleBtn.addEventListener('click', () => applyLanguage(state.lang === 'en' ? 'de' : 'en'));
+
 // ---------- Init ----------
+captureDefaultTexts();
 setWind(270, true);
+setUnit('ft');
+setSpeedUnit('kn');
 refreshAltInputs();
 recomputeLegs();
 </script>
