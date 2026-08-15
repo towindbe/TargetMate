@@ -68,20 +68,6 @@
   }
   .leg-row .unit{font-size:11px;color:var(--muted);width:20px;}
 
-  .nudge-wrap{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;}
-  .nudge-pad{display:grid;grid-template-columns:repeat(3,32px);grid-template-rows:repeat(3,32px);gap:3px;}
-  .nudge-pad button{
-    background:var(--panel-2);border:1px solid var(--line);color:var(--muted);border-radius:6px;
-    font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;
-  }
-  .nudge-pad button:hover{color:var(--amber);border-color:var(--amber);}
-  .nudge-pad button:active{background:var(--amber);color:#1a1204;}
-  .nudge-step{display:flex;flex-direction:column;gap:4px;margin-left:10px;}
-  .nudge-step button{
-    background:var(--panel-2);border:1px solid var(--line);color:var(--muted);border-radius:6px;
-    font-family:var(--mono);font-size:11px;padding:4px 8px;cursor:pointer;
-  }
-  .nudge-step button.active{background:var(--amber);color:#1a1204;border-color:var(--amber);}
 
   .hint{font-size:12px;color:var(--muted);line-height:1.5;padding:14px 18px;}
   .hint b{color:var(--text);}
@@ -266,7 +252,7 @@
       </div>
       <div class="num-row">
         <input type="number" id="windDegInput" min="0" max="359" value="270">
-        <span>Grad · Windsack-Richtung, aus der der Wind kommt</span>
+        <span>Grad · Richtung, aus der der Wind kommt</span>
       </div>
 
       <div style="margin-top:16px;padding-top:16px;border-top:1px dashed var(--line);">
@@ -298,22 +284,6 @@
         <div class="num-row">
           <input type="number" id="landingDegInput" min="0" max="359" value="270" disabled>
           <span>Grad · vorgeschriebene Landerichtung</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="section">
-      <div class="label">Zielpunkt</div>
-      <div class="nudge-wrap">
-        <div class="nudge-pad">
-          <span></span><button id="nudgeN">▲</button><span></span>
-          <button id="nudgeW">◀</button><span style="display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:9px;">●</span><button id="nudgeE">▶</button>
-          <span></span><button id="nudgeS">▼</button><span></span>
-        </div>
-        <div class="nudge-step">
-          <button class="step-btn" data-step="1">1 m</button>
-          <button class="step-btn active" data-step="5">5 m</button>
-          <button class="step-btn" data-step="20">20 m</button>
         </div>
       </div>
     </div>
@@ -576,7 +546,7 @@
     <p>Standardmäßig gesperrt und identisch mit der Windrichtung. Bei einer vorgeschriebenen Landerichtung (z.B. feste Bahnrichtung am Flugplatz) das Häkchen "Landerichtung = gegen Wind" entfernen und den eigenen Dial einstellen.</p>
 
     <h3>3. Zielpunkt</h3>
-    <p>Karte antippen, um den Zielpunkt zu setzen — per Ortssuche (auch Dropzone-Namen) erst hinnavigieren, dann antippen, oder mit dem Steuerkreuz in 1/5/20 m Schritten feinjustieren.</p>
+    <p>Karte antippen, um den Zielpunkt zu setzen — per Ortssuche (auch Dropzone-Namen) lässt sich vorher an den richtigen Ort navigieren.</p>
 
     <h3>4. Wind &amp; Fahrt</h3>
     <p>Windgeschwindigkeit, Vorwärtsfahrt der Kappe (km/h ⟷ kn umschaltbar) und Sinkrate (m/s ⟷ ft/min umschaltbar) eingeben. Die Schätzhilfe (Wingload) liefert aus Gewicht und Kappengröße einen groben Richtwert für Fahrt und Sinkrate.</p>
@@ -611,7 +581,6 @@ let state = {
   legs: { downwind: 0, base: 0, final: 0 }, // meters, always derived from altitude + performance
   legTimes: { downwind: null, base: null, final: null }, // seconds
   unit: 'm',
-  nudgeStep: 5,
   perf: { windSpeedKmh: 15, fwdSpeedKmh: 38, sinkRateMs: 3.6 },
   speedUnit: 'kmh', // 'kmh' | 'kn' — display unit for wind + forward speed, state.perf always stores km/h
   sinkUnit: 'ms', // 'ms' | 'ftmin' — display unit only, state.perf.sinkRateMs always stores m/s
@@ -1140,23 +1109,6 @@ function setUnit(u) {
 }
 unitM.addEventListener('click', () => setUnit('m'));
 unitFt.addEventListener('click', () => setUnit('ft'));
-
-// ---------- Nudge pad (fine-tune target position) ----------
-function nudge(bearing) {
-  state.target = destPoint(state.target[0], state.target[1], bearing, state.nudgeStep);
-  render();
-}
-document.getElementById('nudgeN').addEventListener('click', () => nudge(0));
-document.getElementById('nudgeE').addEventListener('click', () => nudge(90));
-document.getElementById('nudgeS').addEventListener('click', () => nudge(180));
-document.getElementById('nudgeW').addEventListener('click', () => nudge(270));
-document.querySelectorAll('.step-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    state.nudgeStep = parseFloat(btn.dataset.step);
-    document.querySelectorAll('.step-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-  });
-});
 
 // ---------- Performance-based auto calculation ----------
 const perfInputs = {
