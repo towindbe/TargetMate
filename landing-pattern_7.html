@@ -117,7 +117,22 @@
     position:absolute;top:12px;right:12px;z-index:1000;
     display:flex;align-items:center;justify-content:center;
     filter:drop-shadow(0 1px 2px rgba(0,0,0,.95)) drop-shadow(0 0 5px rgba(0,0,0,.85)) drop-shadow(0 0 5px rgba(0,0,0,.85));
+    cursor:grab;touch-action:none;
   }
+  .map-wind-badge:active{cursor:grabbing;}
+
+  .map-wind-speed{
+    display:none;position:absolute;top:116px;right:12px;z-index:1000;
+    align-items:center;gap:8px;background:rgba(18,22,29,.92);border:1px solid var(--line);border-radius:8px;
+    padding:6px 10px;backdrop-filter:blur(4px);font-family:var(--mono);font-size:12px;color:var(--text);
+  }
+  .map-wind-speed button{
+    width:24px;height:24px;border-radius:6px;background:var(--panel-2);border:1px solid var(--line);
+    color:var(--text);font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    flex:none;
+  }
+  .map-wind-speed button:hover{color:var(--amber);border-color:var(--amber);}
+  .map-wind-speed span{min-width:58px;text-align:center;}
 
   .info-btn{
     background:var(--panel-2);border:1px solid var(--line);color:var(--muted);
@@ -258,6 +273,8 @@
     #panel.open{transform:translateX(0);}
     .sidebar-toggle{display:flex;}
     .map-search{left:58px;width:calc(100% - 128px);}
+    .map-wind-speed{display:flex;}
+    .onboarding-banner{top:164px;}
   }
 </style>
 </head>
@@ -433,7 +450,7 @@
         </div>
         <div class="alt-row">
           <label data-i18n="turnCostLabel">Höhenverlust pro Turn (90°)</label>
-          <input type="number" id="turnCost" value="0" step="10" min="0"><span class="turn-cost-unit">ft</span>
+          <input type="number" id="turnCost" value="100" step="10" min="0"><span class="turn-cost-unit">ft</span>
         </div>
         <div class="crab-hint" style="margin:-4px 0 10px 0;" data-i18n="turnCostHint">Richtwert: ca. 15–45 m (50–150 ft) pro 90°-Turn, je nach Wingload &amp; Steuerung — typisch ~30 m (100 ft)</div>
         <div class="alt-row"><label style="color:var(--muted);font-style:italic;" id="altZeroNote">Landung bei 0 ft angenommen</label></div>
@@ -496,7 +513,7 @@
       <input type="text" id="searchInput" placeholder="Dropzone suchen…" data-i18n-placeholder="searchPlaceholder" autocomplete="off">
       <div class="search-results" id="searchResults"></div>
     </div>
-    <div class="map-wind-badge" title="Windrichtung (Pfeil zeigt, wohin der Wind weht)" data-i18n-title="windBadgeTitle">
+    <div class="map-wind-badge" id="mapWindBadge" title="Windrichtung (Pfeil zeigt, wohin der Wind weht) — ziehen zum Ändern" data-i18n-title="windBadgeTitle">
       <svg viewBox="0 0 40 62" width="62" height="96">
         <g id="mapWindArrowGroup">
           <line x1="20" y1="34" x2="20" y2="6" stroke="#3B8BD4" stroke-width="4" stroke-linecap="round"/>
@@ -504,6 +521,11 @@
         </g>
         <text x="20" y="54" fill="#3B8BD4" font-size="13" font-weight="700" letter-spacing="1" text-anchor="middle" font-family="ui-monospace,monospace">WIND</text>
       </svg>
+    </div>
+    <div class="map-wind-speed" id="mapWindSpeed">
+      <button id="mapWindSpeedDown" aria-label="-">−</button>
+      <span id="mapWindSpeedVal">15 km/h</span>
+      <button id="mapWindSpeedUp" aria-label="+">+</button>
     </div>
   </div>
 </div>
@@ -513,6 +535,7 @@
   <div class="modal-box">
     <button class="modal-close" data-close-modal="infoModal">✕</button>
     <h2 data-i18n="infoTitle">Wie wird berechnet?</h2>
+    <div class="wind-warning" data-i18n="infoSafetyWarning">⚠ Dieses Tool ist eine Planungshilfe und ersetzt keine Einweisung vor Ort. Sprich deine geplante Flugroute vor dem Sprung unbedingt mit dem Chief Instructor der Dropzone ab.</div>
     <p class="muted" data-i18n="infoUnitNote">Einheiten-Umrechnung, überall gleich: 1 ft = 0,3048 m · 1 m/s = 3,6 km/h · 1 m/s = 196,85 ft/min. In den Formeln unten stehen darum nur noch die fertig umgerechneten Werte in m bzw. m/s.</p>
 
     <h3 data-i18n="infoPrincipleH">Grundprinzip</h3>
@@ -659,7 +682,7 @@ let state = {
   speedUnit: 'kmh', // 'kmh' | 'kn' — display unit for wind + forward speed, state.perf always stores km/h
   sinkUnit: 'ms', // 'ms' | 'ftmin' — display unit only, state.perf.sinkRateMs always stores m/s
   altitudes: { downwind: 1000, base: 500, final: 250 }, // always stored in ft
-  turnCostFt: 0, // altitude spent per 90° turn, deducted from the following leg's budget — 0 = disabled
+  turnCostFt: 100, // altitude spent per 90° turn, deducted from the following leg's budget — 0 = disabled
   plots: { nowind: true, uncorrected: true, corrected: false }
 };
 const M_PER_FT = 0.3048;
@@ -1036,6 +1059,20 @@ function updateMapWindArrow() {
   mapWindArrowGroup.setAttribute('transform', `rotate(${pushDir} 20 20)`);
 }
 
+// The map's wind badge doubles as a compact dial — drag it directly to change wind direction without
+// opening the sidebar (handy on mobile, where the sidebar is a hidden drawer). Mirrors the sidebar
+// dial's own pointer-capture logic; dialAngleFromEvent() works against any element's bounding box.
+const mapWindBadge = document.getElementById('mapWindBadge');
+let mapWindDragging = false;
+mapWindBadge.addEventListener('pointerdown', (e) => {
+  mapWindDragging = true;
+  mapWindBadge.setPointerCapture(e.pointerId);
+  setWind(dialAngleFromEvent(mapWindBadge, e.clientX, e.clientY));
+});
+mapWindBadge.addEventListener('pointermove', (e) => { if (mapWindDragging) setWind(dialAngleFromEvent(mapWindBadge, e.clientX, e.clientY)); });
+mapWindBadge.addEventListener('pointerup', () => mapWindDragging = false);
+mapWindBadge.addEventListener('pointercancel', () => mapWindDragging = false);
+
 // ---------- Wind streak animation ----------
 // Purely decorative, screen-space particle field (not geo-referenced) — small streaks drifting in the
 // direction the wind is blowing to, faint enough to stay in the background behind the pattern overlay.
@@ -1394,7 +1431,24 @@ perfInputs.windSpeed.addEventListener('input', () => {
   if (isNaN(v) || v < 0) { v = 0; perfInputs.windSpeed.value = 0; }
   state.perf.windSpeedKmh = speedDisplayToKmh(v);
   recomputeLegs();
+  updateMapWindSpeedReadout();
 });
+
+// ---------- Mobile quick wind speed control (map overlay, panel-closed only) ----------
+const mapWindSpeedVal = document.getElementById('mapWindSpeedVal');
+function updateMapWindSpeedReadout() {
+  const label = state.speedUnit === 'kn' ? 'kn' : 'km/h';
+  mapWindSpeedVal.textContent = `${round1(kmhToSpeedDisplay(state.perf.windSpeedKmh))} ${label}`;
+}
+function stepWindSpeed(deltaDisplayUnits) {
+  const next = Math.max(0, kmhToSpeedDisplay(state.perf.windSpeedKmh) + deltaDisplayUnits);
+  state.perf.windSpeedKmh = speedDisplayToKmh(next);
+  perfInputs.windSpeed.value = round1(next);
+  updateMapWindSpeedReadout();
+  recomputeLegs();
+}
+document.getElementById('mapWindSpeedDown').addEventListener('click', () => stepWindSpeed(-1));
+document.getElementById('mapWindSpeedUp').addEventListener('click', () => stepWindSpeed(1));
 perfInputs.fwdSpeed.addEventListener('input', () => {
   let v = parseFloat(perfInputs.fwdSpeed.value);
   if (isNaN(v) || v < 0) { v = 0; perfInputs.fwdSpeed.value = 0; }
@@ -1434,6 +1488,7 @@ function setSpeedUnit(u) {
   fwdSpeedUnitLabel.textContent = label;
   perfInputs.windSpeed.value = round1(kmhToSpeedDisplay(state.perf.windSpeedKmh));
   perfInputs.fwdSpeed.value = round1(kmhToSpeedDisplay(state.perf.fwdSpeedKmh));
+  updateMapWindSpeedReadout();
 }
 speedUnitKmhBtn.addEventListener('click', () => setSpeedUnit('kmh'));
 speedUnitKnBtn.addEventListener('click', () => setSpeedUnit('kn'));
@@ -1654,9 +1709,10 @@ const I18N_EN = {
       Simplified model — formulas, diagrams &amp; limits: the "i" button above.`,
 
   searchPlaceholder__placeholder: "Search dropzone…",
-  windBadgeTitle__title: "Wind direction (arrow shows where the wind is blowing to)",
+  windBadgeTitle__title: "Wind direction (arrow shows where the wind is blowing to) — drag to change",
 
   infoTitle: "How is this calculated?",
+  infoSafetyWarning: "⚠ This tool is a planning aid and does not replace an on-site briefing. Always discuss your planned flight route with the dropzone's chief instructor before jumping.",
   infoUnitNote: "Unit conversion, the same everywhere: 1 ft = 0.3048 m · 1 m/s = 3.6 km/h · 1 m/s = 196.85 ft/min. The formulas below therefore only show values already converted to m and m/s.",
 
   infoPrincipleH: "Basic principle",
