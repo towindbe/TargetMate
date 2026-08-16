@@ -38,12 +38,16 @@
   }
   .pulse-hint{animation:pulseHint 1.6s ease-in-out infinite;}
 
-  .sidebar-toggle{
+  .map-menu-cluster{
     display:none;position:absolute;top:12px;left:12px;z-index:1100;
-    width:38px;height:38px;border-radius:8px;background:rgba(18,22,29,.92);border:1px solid var(--line);
-    color:var(--text);align-items:center;justify-content:center;cursor:pointer;font-size:17px;line-height:1;
-    backdrop-filter:blur(4px);
+    flex-direction:column;gap:8px;
   }
+  .map-menu-btn{
+    width:38px;height:38px;border-radius:8px;background:rgba(18,22,29,.92);border:1px solid var(--line);
+    color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;line-height:1;
+    backdrop-filter:blur(4px);flex:none;
+  }
+  .map-menu-btn:hover{color:var(--amber);border-color:var(--amber);}
   .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1900;}
   .sidebar-backdrop.open{display:block;}
 
@@ -281,7 +285,7 @@
       transform:translateX(-100%);transition:transform .22s ease;box-shadow:4px 0 24px rgba(0,0,0,.5);
     }
     #panel.open{transform:translateX(0);}
-    .sidebar-toggle{display:flex;}
+    .map-menu-cluster{display:flex;}
     .map-search{left:58px;width:calc(100% - 128px);}
   }
 </style>
@@ -506,7 +510,11 @@
   <div id="mapWrap" style="position:relative;flex:1;">
     <div id="map"></div>
     <canvas id="windStreaksCanvas"></canvas>
-    <button class="sidebar-toggle pulse-hint" id="sidebarToggle" aria-label="Menu">☰</button>
+    <div class="map-menu-cluster">
+      <button class="map-menu-btn pulse-hint" id="sidebarToggle" aria-label="Menu">☰</button>
+      <button class="map-menu-btn" id="mapInfoBtn" data-i18n-title="infoBtnTitle" title="Wie wird berechnet?">i</button>
+      <button class="map-menu-btn" id="mapHelpBtn" data-i18n-title="helpBtnTitle" title="Bedienanleitung">?</button>
+    </div>
     <div class="onboarding-banner" id="onboardingBanner">
       <div class="onboarding-intro" data-i18n="onboardingIntro">Dieses Tool simuliert deinen Landeanflug an beliebigen Dropzones — abhängig von Wind, Wingload und einstellbaren turn points.</div>
       <div class="wind-warning" style="margin-bottom:12px;" data-i18n="infoSafetyWarning">⚠ Dieses Tool ist eine Planungshilfe und ersetzt keine Einweisung vor Ort. Sprich deine geplante Flugroute vor dem Sprung unbedingt mit dem Chief Instructor der Dropzone ab.</div>
@@ -1686,6 +1694,8 @@ function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 document.getElementById('openInfoBtn').addEventListener('click', () => openModal('infoModal'));
 document.getElementById('openHelpBtn').addEventListener('click', () => openModal('helpModal'));
+document.getElementById('mapInfoBtn').addEventListener('click', () => openModal('infoModal'));
+document.getElementById('mapHelpBtn').addEventListener('click', () => openModal('helpModal'));
 document.querySelectorAll('[data-close-modal]').forEach(btn => {
   btn.addEventListener('click', () => closeModal(btn.dataset.closeModal));
 });
