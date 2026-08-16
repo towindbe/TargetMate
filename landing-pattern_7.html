@@ -160,6 +160,10 @@
     padding:0 8px;height:26px;display:flex;align-items:center;justify-content:center;line-height:1;
   }
   .lang-btn:hover{color:var(--amber);border-color:var(--amber);}
+  .map-lang-btn{
+    position:absolute;top:12px;right:12px;z-index:1000;height:38px;padding:0 12px;font-size:13px;
+    background:rgba(18,22,29,.92);backdrop-filter:blur(4px);border-radius:8px;
+  }
 
   .modal-overlay{
     position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:3000;
@@ -530,6 +534,7 @@
       <input type="text" id="searchInput" placeholder="Dropzone suchen…" data-i18n-placeholder="searchPlaceholder" autocomplete="off">
       <div class="search-results" id="searchResults"></div>
     </div>
+    <button class="lang-btn map-lang-btn" id="mapLangBtn" title="Switch to English">EN</button>
     <div class="map-wind-cluster">
       <div class="map-wind-badge pulse-hint" id="mapWindBadge" title="Windrichtung (Pfeil zeigt, wohin der Wind weht) — ziehen zum Ändern" data-i18n-title="windBadgeTitle">
         <svg viewBox="0 0 40 62" width="62" height="96">
@@ -1853,6 +1858,7 @@ function captureDefaultTexts() {
 }
 
 const langToggleBtn = document.getElementById('langToggleBtn');
+const mapLangBtn = document.getElementById('mapLangBtn');
 function applyLanguage(lang) {
   state.lang = lang;
   document.documentElement.lang = lang;
@@ -1873,6 +1879,8 @@ function applyLanguage(lang) {
   });
   langToggleBtn.textContent = lang === 'en' ? 'DE' : 'EN';
   langToggleBtn.title = lang === 'en' ? 'Auf Deutsch umschalten' : 'Switch to English';
+  mapLangBtn.textContent = langToggleBtn.textContent;
+  mapLangBtn.title = langToggleBtn.title;
 
   // Re-run everything that generates its own text in JS (cardinal names, hints, dynamic labels).
   updateLandingReadout();
@@ -1884,6 +1892,7 @@ function applyLanguage(lang) {
   render();
 }
 langToggleBtn.addEventListener('click', () => applyLanguage(state.lang === 'en' ? 'de' : 'en'));
+mapLangBtn.addEventListener('click', () => applyLanguage(state.lang === 'en' ? 'de' : 'en'));
 
 // Reflects a restored (or default) state in the few controls whose visual state isn't already
 // driven by setUnit()/setSpeedUnit()/setSinkUnit()/setWind() themselves.
