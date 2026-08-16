@@ -40,7 +40,7 @@
     backdrop-filter:blur(4px);
   }
   .map-export-btn{
-    position:absolute;bottom:12px;right:12px;z-index:1000;
+    position:absolute;top:12px;right:12px;z-index:1000;
     width:42px;height:42px;border-radius:10px;background:rgba(18,22,29,.92);border:1px solid var(--line);
     color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:19px;line-height:1;
     backdrop-filter:blur(4px);box-shadow:0 2px 10px rgba(0,0,0,.35);
@@ -125,7 +125,7 @@
   #windStreaksCanvas{position:absolute;inset:0;pointer-events:none;z-index:900;}
 
   .map-wind-badge{
-    position:absolute;top:12px;right:12px;z-index:1000;
+    position:absolute;bottom:57px;right:12px;z-index:1000;
     display:flex;align-items:center;justify-content:center;
     filter:drop-shadow(0 1px 2px rgba(0,0,0,.95)) drop-shadow(0 0 5px rgba(0,0,0,.85)) drop-shadow(0 0 5px rgba(0,0,0,.85));
     cursor:grab;touch-action:none;
@@ -133,7 +133,7 @@
   .map-wind-badge:active{cursor:grabbing;}
 
   .map-wind-speed{
-    display:none;position:absolute;top:116px;right:12px;z-index:1000;
+    display:none;position:absolute;bottom:12px;right:12px;z-index:1000;
     align-items:center;gap:8px;background:rgba(18,22,29,.92);border:1px solid var(--line);border-radius:8px;
     padding:6px 10px;backdrop-filter:blur(4px);font-family:var(--mono);font-size:12px;color:var(--text);
   }
@@ -285,7 +285,6 @@
     .sidebar-toggle{display:flex;}
     .map-search{left:58px;width:calc(100% - 128px);}
     .map-wind-speed{display:flex;}
-    .onboarding-banner{top:164px;}
   }
 </style>
 </head>
@@ -756,7 +755,11 @@ if (hasUserTarget) hideOnboarding();
 
 // ---------- Map ----------
 const mapWrapEl = document.getElementById('mapWrap');
-const map = L.map('map', { zoomControl: false, attributionControl: true }).setView(state.target, 15);
+// Canvas renderer (rather than Leaflet's default SVG) for all polylines — html2canvas (route export)
+// handles a <canvas> layer as a simple bitmap copy, but has historically misaligned SVG content
+// sitting inside Leaflet's transform-positioned panes, which showed up as the pattern lines being
+// offset from the markers in exported images.
+const map = L.map('map', { zoomControl: false, attributionControl: true, renderer: L.canvas() }).setView(state.target, 15);
 L.control.zoom({ position: 'bottomleft' }).addTo(map); // top-left is taken by the search bar
 map.createPane('labelsPane');
 map.getPane('labelsPane').style.zIndex = 350;
@@ -1875,8 +1878,8 @@ function applyLanguage(lang) {
 langToggleBtn.addEventListener('click', () => applyLanguage(state.lang === 'en' ? 'de' : 'en'));
 
 // ---------- Route export (screenshot) ----------
-// Rasterizes the current map (tiles + pattern lines/markers) to a PNG the user can save, e.g. to
-// review with the DZ's chief instructor before jumping.
+// Rasterizes the current map (tiles + pattern lines/markers/wind arrow) to a PNG the user can save,
+// e.g. to review with the DZ's chief instructor before jumping.
 const mapExportBtn = document.getElementById('mapExportBtn');
 mapExportBtn.addEventListener('click', () => {
   if (typeof html2canvas !== 'function') {
@@ -1886,8 +1889,19 @@ mapExportBtn.addEventListener('click', () => {
     return;
   }
   mapExportBtn.classList.add('busy');
-  html2canvas(document.getElementById('map'), { useCORS: true, backgroundColor: '#0B0E13' })
+  // Capture the whole map area (so the wind badge is included) but hide the interactive chrome
+  // around it first — search bar, drawer toggle, onboarding banner, speed stepper, the button itself
+  // — so the export reads as a clean route image rather than a screenshot of the UI.
+  const hiddenEls = [
+    document.querySelector('.map-search'), sidebarToggle, onboardingBanner,
+    document.getElementById('mapWindSpeed'), mapExportBtn
+  ].filter(el => el && getComputedStyle(el).display !== 'none');
+  // display:none (not visibility:hidden) — html2canvas doesn't reliably honor visibility on some
+  // elements, but a display:none element is removed from the render tree entirely, so it's always skipped.
+  hiddenEls.forEach(el => { el.style.display = 'none'; });
+  html2canvas(mapWrapEl, { useCORS: true, backgroundColor: '#0B0E13' })
     .then(canvas => {
+      hiddenEls.forEach(el => { el.style.display = ''; });
       mapExportBtn.classList.remove('busy');
       canvas.toBlob(blob => {
         if (!blob) {
@@ -1905,6 +1919,7 @@ mapExportBtn.addEventListener('click', () => {
       });
     })
     .catch(err => {
+      hiddenEls.forEach(el => { el.style.display = ''; });
       mapExportBtn.classList.remove('busy');
       alert((state.lang === 'en' ? 'Export failed: ' : 'Export fehlgeschlagen: ') + err.message);
     });
