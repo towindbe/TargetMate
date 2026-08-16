@@ -93,6 +93,8 @@
     background:radial-gradient(circle,var(--danger) 0 3px,transparent 3px);
     box-shadow:0 0 0 4px rgba(255,93,93,.15);
   }
+  .target-icon.blink{animation:targetBlink 1.1s ease-in-out infinite;}
+  @keyframes targetBlink{0%,100%{opacity:1;box-shadow:0 0 0 4px rgba(255,93,93,.15);} 50%{opacity:.3;box-shadow:0 0 0 9px rgba(255,93,93,.3);}}
   .canopy-icon{
     width:34px;height:34px;transform-origin:center;
     filter:drop-shadow(0 1px 2px rgba(0,0,0,.95)) drop-shadow(0 0 5px rgba(0,0,0,.85)) drop-shadow(0 0 5px rgba(0,0,0,.85));
@@ -707,15 +709,25 @@ labelsLayer.addTo(map);
 
 let targetMarker = L.marker(state.target, {
   draggable: true,
-  icon: L.divIcon({ className: '', html: '<div class="target-icon"></div>', iconSize: [20,20], iconAnchor: [10,10] })
+  icon: L.divIcon({ className: '', html: '<div class="target-icon blink"></div>', iconSize: [20,20], iconAnchor: [10,10] })
 }).addTo(map);
+
+// The default target point (Skydive Airlie Beach) is just a placeholder — blink it and withhold the
+// pattern plot until the user picks their own point, so the map doesn't look already-configured.
+let hasUserTarget = false;
+function markUserTarget() {
+  hasUserTarget = true;
+  const el = targetMarker.getElement();
+  const icon = el && el.querySelector('.target-icon');
+  if (icon) icon.classList.remove('blink');
+}
 
 let legLayers = [];
 let arrowLayers = [];
 let canopyLayers = [];
 
-targetMarker.on('drag', (e) => { state.target = [e.latlng.lat, e.latlng.lng]; hideOnboarding(); render(); });
-map.on('click', (e) => { state.target = [e.latlng.lat, e.latlng.lng]; targetMarker.setLatLng(e.latlng); hideOnboarding(); render(); });
+targetMarker.on('drag', (e) => { state.target = [e.latlng.lat, e.latlng.lng]; hideOnboarding(); markUserTarget(); render(); });
+map.on('click', (e) => { state.target = [e.latlng.lat, e.latlng.lng]; targetMarker.setLatLng(e.latlng); hideOnboarding(); markUserTarget(); render(); });
 
 // ---------- Geometry ----------
 function destPoint(lat, lon, bearingDeg, distM) {
@@ -892,9 +904,12 @@ function render() {
   legLayers = []; arrowLayers = []; canopyLayers = [];
 
   targetMarker.setLatLng(state.target);
+  updateCrabDisplay(baseCrabAngleDeg());
+  // The default target is just a placeholder — withhold the pattern plot itself until the user picks
+  // their own point, so the map doesn't look pre-configured before they've done anything.
+  if (!hasUserTarget) return;
 
   const allPts = [state.target];
-  const crabDeg = baseCrabAngleDeg();
   const windBlocked = windExceedsForward();
   const fwdMs = state.perf.fwdSpeedKmh / 3.6;
   const windMs = state.perf.windSpeedKmh / 3.6;
@@ -990,8 +1005,6 @@ function render() {
   if (state.plots.nowind) drawVariant('nowind');
   if (state.plots.uncorrected) drawVariant('uncorrected');
   if (state.plots.corrected) drawVariant('corrected');
-
-  updateCrabDisplay(crabDeg);
 
   // fit bounds on first render / when pattern moves far off screen
   const bounds = L.latLngBounds(allPts);
@@ -1535,6 +1548,7 @@ function renderResults(items) {
       map.setView(state.target, 15);
       targetMarker.setLatLng(state.target);
       hideOnboarding();
+      markUserTarget();
       setSidebarOpen(false); // reveal the map result on mobile, where the drawer covers most of the screen
       render();
       searchInput.value = item.display_name;
