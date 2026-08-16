@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">TargetMate</string>
+    <string name="title_activity_main">TargetMate</string>
+    <string name="package_name">com.tobiaswindberg.landingpattern</string>
+    <string name="custom_url_scheme">com.tobiaswindberg.landingpattern</string>
+</resources>

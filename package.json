@@ -1,0 +1,19 @@
+{
+  "name": "landing-pattern",
+  "version": "1.0.0",
+  "description": "Landing Pattern Simulator - skydiving canopy approach planner",
+  "scripts": {
+    "sync": "cap sync android",
+    "open:android": "cap open android"
+  },
+  "author": "Tobias Windberg",
+  "license": "ISC",
+  "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/core": "^8.5.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.5.0"
+  }
+}
