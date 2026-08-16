@@ -122,7 +122,7 @@
   #windStreaksCanvas{position:absolute;inset:0;pointer-events:none;z-index:900;}
 
   .map-wind-badge{
-    position:absolute;bottom:57px;right:32px;z-index:1000;
+    position:absolute;bottom:12px;right:32px;z-index:1000;
     display:flex;align-items:center;justify-content:center;
     filter:drop-shadow(0 1px 2px rgba(0,0,0,.95)) drop-shadow(0 0 5px rgba(0,0,0,.85)) drop-shadow(0 0 5px rgba(0,0,0,.85));
     cursor:grab;touch-action:none;
@@ -130,7 +130,7 @@
   .map-wind-badge:active{cursor:grabbing;}
 
   .map-wind-speed{
-    display:none;position:absolute;bottom:12px;right:32px;z-index:1000;
+    display:flex;position:absolute;bottom:12px;right:104px;z-index:1000;
     align-items:center;gap:8px;background:rgba(18,22,29,.92);border:1px solid var(--line);border-radius:8px;
     padding:6px 10px;backdrop-filter:blur(4px);font-family:var(--mono);font-size:12px;color:var(--text);
   }
@@ -281,7 +281,6 @@
     #panel.open{transform:translateX(0);}
     .sidebar-toggle{display:flex;}
     .map-search{left:58px;width:calc(100% - 128px);}
-    .map-wind-speed{display:flex;}
   }
 </style>
 </head>
