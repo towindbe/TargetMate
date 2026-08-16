@@ -30,6 +30,15 @@
   }
   #map{position:absolute;inset:0;background:#000;}
 
+  .sidebar-toggle{
+    display:none;position:absolute;top:12px;left:12px;z-index:1100;
+    width:38px;height:38px;border-radius:8px;background:rgba(18,22,29,.92);border:1px solid var(--line);
+    color:var(--text);align-items:center;justify-content:center;cursor:pointer;font-size:17px;line-height:1;
+    backdrop-filter:blur(4px);
+  }
+  .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1900;}
+  .sidebar-backdrop.open{display:block;}
+
   .header{padding:18px 18px 14px;border-bottom:1px solid var(--line);}
   .eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--amber);text-transform:uppercase;}
   h1{font-size:17px;margin:4px 0 2px;font-weight:600;letter-spacing:-.01em;}
@@ -99,6 +108,8 @@
     text-shadow:0 1px 3px rgba(0,0,0,.95),0 0 5px rgba(0,0,0,.8);
   }
   .leaflet-container{background:#0B0E13;}
+
+  #windStreaksCanvas{position:absolute;inset:0;pointer-events:none;z-index:900;}
 
   .map-wind-badge{
     position:absolute;top:12px;right:12px;z-index:1000;
@@ -221,6 +232,30 @@
   .plot-swatch.dashed{border-top-style:dashed;border-top-width:3px;opacity:.75;}
   .plot-swatch.solid{border-top-style:solid;border-top-width:3px;opacity:1;}
   .plot-swatch.red-dashed{border-top-style:dashed;border-top-width:3px;border-color:var(--danger);opacity:1;}
+  .plot-swatch.wind-streak{border-top-style:dotted;border-top-width:3px;border-color:#3B8BD4;opacity:.85;}
+
+  .onboarding-banner{
+    position:absolute;top:64px;left:50%;transform:translateX(-50%);z-index:1050;
+    background:rgba(18,22,29,.96);border:1px solid var(--line);border-radius:10px;
+    padding:14px 16px;width:min(300px,calc(100% - 24px));backdrop-filter:blur(4px);
+    box-shadow:0 4px 16px rgba(0,0,0,.4);
+  }
+  .onboarding-title{font-size:13px;font-weight:700;color:var(--amber);margin-bottom:8px;}
+  .onboarding-steps{margin:0 0 12px;padding-left:18px;font-size:12px;line-height:1.6;color:var(--text);}
+  .onboarding-dismiss{
+    width:100%;background:var(--amber);color:#1a1204;border:none;border-radius:6px;
+    font-family:var(--sans);font-size:12px;font-weight:600;padding:8px 0;cursor:pointer;
+  }
+
+  @media (max-width:760px){
+    #panel{
+      position:fixed;top:0;left:0;height:100%;z-index:2000;
+      transform:translateX(-100%);transition:transform .22s ease;box-shadow:4px 0 24px rgba(0,0,0,.5);
+    }
+    #panel.open{transform:translateX(0);}
+    .sidebar-toggle{display:flex;}
+    .map-search{left:58px;width:calc(100% - 128px);}
+  }
 </style>
 </head>
 <body>
@@ -361,9 +396,14 @@
         <label for="plotUncorrected" data-i18n="plotUncorrectedLabel">Reale Flugbahn (mit Winddrift)</label>
       </div>
       <div class="plot-row">
-        <input type="checkbox" id="plotCorrected" checked>
+        <input type="checkbox" id="plotCorrected">
         <span class="plot-swatch red-dashed"></span>
         <label for="plotCorrected" data-i18n="plotCorrectedLabel">Korrigierte Flugbahn (durch Gegensteuern)</label>
+      </div>
+      <div class="plot-row">
+        <input type="checkbox" id="plotWindAnim" checked>
+        <span class="plot-swatch wind-streak"></span>
+        <label for="plotWindAnim" data-i18n="plotWindAnimLabel">Windanimation</label>
       </div>
     </div>
 
@@ -432,11 +472,22 @@
       Vereinfachtes Modell — Formeln, Skizzen &amp; Grenzen: „i"-Button oben.
     </div>
 
-    <div class="footer">developped by Tobias Windberg</div>
+    <div class="footer">developped by Tobias Windberg<br><span data-i18n="footerContact">Fragen oder Ideen? <a href="mailto:tobi.windberg@gmail.com" style="color:var(--cyan);">tobi.windberg@gmail.com</a></span></div>
   </div>
 
   <div id="mapWrap" style="position:relative;flex:1;">
     <div id="map"></div>
+    <canvas id="windStreaksCanvas"></canvas>
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Menu">☰</button>
+    <div class="onboarding-banner" id="onboardingBanner">
+      <div class="onboarding-title" data-i18n="onboardingTitle">Los geht's</div>
+      <ol class="onboarding-steps">
+        <li data-i18n="onboardingStep1">Windrichtung einstellen</li>
+        <li data-i18n="onboardingStep2">Zielpunkt auf der Karte antippen</li>
+        <li data-i18n="onboardingStep3">Fertig — Pattern wird automatisch berechnet</li>
+      </ol>
+      <button class="onboarding-dismiss" id="onboardingDismiss" data-i18n="onboardingDismiss">Verstanden</button>
+    </div>
     <div class="map-search">
       <input type="text" id="searchInput" placeholder="Dropzone suchen…" data-i18n-placeholder="searchPlaceholder" autocomplete="off">
       <div class="search-results" id="searchResults"></div>
@@ -452,6 +503,7 @@
     </div>
   </div>
 </div>
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
 <div class="modal-overlay" id="infoModal">
   <div class="modal-box">
@@ -604,7 +656,7 @@ let state = {
   sinkUnit: 'ms', // 'ms' | 'ftmin' — display unit only, state.perf.sinkRateMs always stores m/s
   altitudes: { downwind: 1000, base: 500, final: 250 }, // always stored in ft
   turnCostFt: 0, // altitude spent per 90° turn, deducted from the following leg's budget — 0 = disabled
-  plots: { nowind: true, uncorrected: true, corrected: true }
+  plots: { nowind: true, uncorrected: true, corrected: false }
 };
 const M_PER_FT = 0.3048;
 const KMH_PER_KN = 1.852;
@@ -618,7 +670,26 @@ function speedDisplayToKmh(v) { return state.speedUnit === 'kn' ? v * KMH_PER_KN
 function sinkToDisplay(ms) { return state.sinkUnit === 'ftmin' ? ms * FTMIN_PER_MS : ms; }
 function sinkDisplayToMs(v) { return state.sinkUnit === 'ftmin' ? v / FTMIN_PER_MS : v; }
 
+// ---------- Sidebar drawer (mobile) ----------
+const panelEl = document.getElementById('panel');
+const sidebarToggle = document.getElementById('sidebarToggle');
+const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+function setSidebarOpen(open) {
+  panelEl.classList.toggle('open', open);
+  sidebarBackdrop.classList.toggle('open', open);
+}
+sidebarToggle.addEventListener('click', () => setSidebarOpen(!panelEl.classList.contains('open')));
+sidebarBackdrop.addEventListener('click', () => setSidebarOpen(false));
+
+// ---------- Onboarding banner ----------
+// Shown until the user either dismisses it or sets a target point themselves (map tap, marker drag,
+// or search) — whichever comes first. Not persisted, so it reappears on a fresh page load.
+const onboardingBanner = document.getElementById('onboardingBanner');
+function hideOnboarding() { onboardingBanner.style.display = 'none'; }
+document.getElementById('onboardingDismiss').addEventListener('click', hideOnboarding);
+
 // ---------- Map ----------
+const mapWrapEl = document.getElementById('mapWrap');
 const map = L.map('map', { zoomControl: false, attributionControl: true }).setView(state.target, 15);
 L.control.zoom({ position: 'bottomleft' }).addTo(map); // top-left is taken by the search bar
 map.createPane('labelsPane');
@@ -643,8 +714,8 @@ let legLayers = [];
 let arrowLayers = [];
 let canopyLayers = [];
 
-targetMarker.on('drag', (e) => { state.target = [e.latlng.lat, e.latlng.lng]; render(); });
-map.on('click', (e) => { state.target = [e.latlng.lat, e.latlng.lng]; targetMarker.setLatLng(e.latlng); render(); });
+targetMarker.on('drag', (e) => { state.target = [e.latlng.lat, e.latlng.lng]; hideOnboarding(); render(); });
+map.on('click', (e) => { state.target = [e.latlng.lat, e.latlng.lng]; targetMarker.setLatLng(e.latlng); hideOnboarding(); render(); });
 
 // ---------- Geometry ----------
 function destPoint(lat, lon, bearingDeg, distM) {
@@ -949,6 +1020,94 @@ function updateMapWindArrow() {
   const pushDir = norm(state.windDir + 180); // arrow shows where the wind is blowing TO
   mapWindArrowGroup.setAttribute('transform', `rotate(${pushDir} 20 20)`);
 }
+
+// ---------- Wind streak animation ----------
+// Purely decorative, screen-space particle field (not geo-referenced) — small streaks drifting in the
+// direction the wind is blowing to, faint enough to stay in the background behind the pattern overlay.
+const windCanvas = document.getElementById('windStreaksCanvas');
+const windCtx = windCanvas.getContext('2d');
+const plotWindAnimCheckbox = document.getElementById('plotWindAnim');
+const WIND_PARTICLE_COUNT = 36;
+let windParticles = [];
+let windAnimEnabled = true;
+let windAnimRAF = null;
+let windAnimLastT = null;
+
+function resizeWindCanvas() {
+  const rect = mapWrapEl.getBoundingClientRect();
+  windCanvas.width = rect.width;
+  windCanvas.height = rect.height;
+}
+
+function spawnWindParticle(p) {
+  const margin = 40;
+  p.x = -margin + Math.random() * (windCanvas.width + margin * 2);
+  p.y = -margin + Math.random() * (windCanvas.height + margin * 2);
+  p.age = 0;
+  p.life = 2600 + Math.random() * 3200; // ms
+  p.len = 20 + Math.random() * 16; // px
+  return p;
+}
+
+function windAnimFrame(t) {
+  windAnimRAF = requestAnimationFrame(windAnimFrame);
+  if (windAnimLastT == null) windAnimLastT = t;
+  const dt = Math.min(64, t - windAnimLastT); // clamp so a stalled tab doesn't jump particles far
+  windAnimLastT = t;
+
+  windCtx.clearRect(0, 0, windCanvas.width, windCanvas.height);
+  // At (near-)zero wind there's nothing to visualize — stay hidden instead of drifting at the floor
+  // speed below, which would misleadingly suggest wind that isn't there. Particles stay put (not
+  // advanced) so they resume smoothly from where they are once wind picks up again.
+  if (!windAnimEnabled || state.perf.windSpeedKmh <= 0) return;
+
+  const pushDir = norm(state.windDir + 180);
+  const speedPxPerMs = Math.max(15, state.perf.windSpeedKmh * 2.2) / 1000;
+  const [ux, uy] = screenOffsetFromBearing(pushDir, 1); // unit vector, screen px
+
+  windCtx.lineWidth = 2.5;
+  windCtx.lineCap = 'round';
+  // Dark halo behind each streak (same contrast trick as the flight-path casing lines) so it stays
+  // readable over bright/busy satellite terrain, not just the darker background.
+  windCtx.shadowColor = 'rgba(0,0,0,0.85)';
+  windCtx.shadowBlur = 3;
+
+  windParticles.forEach(p => {
+    p.x += ux * speedPxPerMs * dt;
+    p.y += uy * speedPxPerMs * dt;
+    p.age += dt;
+
+    const margin = 40;
+    const outOfBounds = p.x < -margin || p.x > windCanvas.width + margin || p.y < -margin || p.y > windCanvas.height + margin;
+    if (p.age >= p.life || outOfBounds) { spawnWindParticle(p); return; }
+
+    const lifeFrac = p.age / p.life;
+    const fade = Math.sin(Math.min(1, lifeFrac) * Math.PI); // fade in, hold, fade out
+    windCtx.globalAlpha = fade;
+    windCtx.strokeStyle = 'rgba(120,190,255,0.95)';
+    windCtx.beginPath();
+    windCtx.moveTo(p.x, p.y);
+    windCtx.lineTo(p.x - ux * p.len, p.y - uy * p.len);
+    windCtx.stroke();
+  });
+  windCtx.globalAlpha = 1;
+}
+
+function setWindAnim(enabled) {
+  windAnimEnabled = enabled;
+  if (!enabled) windCtx.clearRect(0, 0, windCanvas.width, windCanvas.height);
+}
+plotWindAnimCheckbox.addEventListener('change', () => setWindAnim(plotWindAnimCheckbox.checked));
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (windAnimRAF) cancelAnimationFrame(windAnimRAF);
+    windAnimRAF = null;
+    windAnimLastT = null;
+  } else if (!windAnimRAF) {
+    windAnimRAF = requestAnimationFrame(windAnimFrame);
+  }
+});
 
 function setWind(deg, skipInput) {
   state.windDir = norm(Math.round(deg));
@@ -1375,6 +1534,8 @@ function renderResults(items) {
       state.target = [lat, lon];
       map.setView(state.target, 15);
       targetMarker.setLatLng(state.target);
+      hideOnboarding();
+      setSidebarOpen(false); // reveal the map result on mobile, where the drawer covers most of the screen
       render();
       searchInput.value = item.display_name;
       hideResults();
@@ -1450,6 +1611,13 @@ const I18N_EN = {
   plotNowindLabel: "Reference path (no wind)",
   plotUncorrectedLabel: "Real path (with wind drift)",
   plotCorrectedLabel: "Corrected path (by counter-steering)",
+  plotWindAnimLabel: "Wind animation",
+  footerContact: `Questions or ideas? <a href="mailto:tobi.windberg@gmail.com" style="color:var(--cyan);">tobi.windberg@gmail.com</a>`,
+  onboardingTitle: "Let's go",
+  onboardingStep1: "Set the wind direction",
+  onboardingStep2: "Tap the map to set the target point",
+  onboardingStep3: "Done — the pattern calculates automatically",
+  onboardingDismiss: "Got it",
 
   legsLabel: "Legs",
   altBlockTitle: "Altitude loss to turn point",
@@ -1594,6 +1762,12 @@ setUnit('ft');
 setSpeedUnit('kn');
 refreshAltInputs();
 recomputeLegs();
+
+resizeWindCanvas();
+windParticles = Array.from({ length: WIND_PARTICLE_COUNT }, () => spawnWindParticle({}));
+windAnimRAF = requestAnimationFrame(windAnimFrame);
+window.addEventListener('resize', resizeWindCanvas);
+map.on('resize', resizeWindCanvas);
 </script>
 </body>
 </html>
