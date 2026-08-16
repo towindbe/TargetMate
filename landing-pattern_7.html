@@ -8,7 +8,6 @@
 <title>Landing Pattern</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   :root{
     --bg:#0B0E13;
@@ -33,20 +32,18 @@
   }
   #map{position:absolute;inset:0;background:#000;}
 
+  @keyframes pulseHint{
+    0%,100%{box-shadow:0 0 0 0 rgba(255,176,32,.55);}
+    50%{box-shadow:0 0 0 9px rgba(255,176,32,0);}
+  }
+  .pulse-hint{animation:pulseHint 1.6s ease-in-out infinite;}
+
   .sidebar-toggle{
     display:none;position:absolute;top:12px;left:12px;z-index:1100;
     width:38px;height:38px;border-radius:8px;background:rgba(18,22,29,.92);border:1px solid var(--line);
     color:var(--text);align-items:center;justify-content:center;cursor:pointer;font-size:17px;line-height:1;
     backdrop-filter:blur(4px);
   }
-  .map-export-btn{
-    position:absolute;top:12px;right:12px;z-index:1000;
-    width:42px;height:42px;border-radius:10px;background:rgba(18,22,29,.92);border:1px solid var(--line);
-    color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:19px;line-height:1;
-    backdrop-filter:blur(4px);box-shadow:0 2px 10px rgba(0,0,0,.35);
-  }
-  .map-export-btn:hover{border-color:var(--amber);}
-  .map-export-btn.busy{opacity:.6;pointer-events:none;}
   .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1900;}
   .sidebar-backdrop.open{display:block;}
 
@@ -125,7 +122,7 @@
   #windStreaksCanvas{position:absolute;inset:0;pointer-events:none;z-index:900;}
 
   .map-wind-badge{
-    position:absolute;bottom:57px;right:12px;z-index:1000;
+    position:absolute;bottom:57px;right:32px;z-index:1000;
     display:flex;align-items:center;justify-content:center;
     filter:drop-shadow(0 1px 2px rgba(0,0,0,.95)) drop-shadow(0 0 5px rgba(0,0,0,.85)) drop-shadow(0 0 5px rgba(0,0,0,.85));
     cursor:grab;touch-action:none;
@@ -133,7 +130,7 @@
   .map-wind-badge:active{cursor:grabbing;}
 
   .map-wind-speed{
-    display:none;position:absolute;bottom:12px;right:12px;z-index:1000;
+    display:none;position:absolute;bottom:12px;right:32px;z-index:1000;
     align-items:center;gap:8px;background:rgba(18,22,29,.92);border:1px solid var(--line);border-radius:8px;
     padding:6px 10px;backdrop-filter:blur(4px);font-family:var(--mono);font-size:12px;color:var(--text);
   }
@@ -508,7 +505,7 @@
   <div id="mapWrap" style="position:relative;flex:1;">
     <div id="map"></div>
     <canvas id="windStreaksCanvas"></canvas>
-    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Menu">☰</button>
+    <button class="sidebar-toggle pulse-hint" id="sidebarToggle" aria-label="Menu">☰</button>
     <div class="onboarding-banner" id="onboardingBanner">
       <div class="onboarding-intro" data-i18n="onboardingIntro">Dieses Tool simuliert deinen Landeanflug an beliebigen Dropzones — abhängig von Wind, Wingload und einstellbaren turn points.</div>
       <div class="wind-warning" style="margin-bottom:12px;" data-i18n="infoSafetyWarning">⚠ Dieses Tool ist eine Planungshilfe und ersetzt keine Einweisung vor Ort. Sprich deine geplante Flugroute vor dem Sprung unbedingt mit dem Chief Instructor der Dropzone ab.</div>
@@ -524,7 +521,7 @@
       <input type="text" id="searchInput" placeholder="Dropzone suchen…" data-i18n-placeholder="searchPlaceholder" autocomplete="off">
       <div class="search-results" id="searchResults"></div>
     </div>
-    <div class="map-wind-badge" id="mapWindBadge" title="Windrichtung (Pfeil zeigt, wohin der Wind weht) — ziehen zum Ändern" data-i18n-title="windBadgeTitle">
+    <div class="map-wind-badge pulse-hint" id="mapWindBadge" title="Windrichtung (Pfeil zeigt, wohin der Wind weht) — ziehen zum Ändern" data-i18n-title="windBadgeTitle">
       <svg viewBox="0 0 40 62" width="62" height="96">
         <g id="mapWindArrowGroup">
           <line x1="20" y1="34" x2="20" y2="6" stroke="#3B8BD4" stroke-width="4" stroke-linecap="round"/>
@@ -538,7 +535,6 @@
       <span id="mapWindSpeedVal">15 km/h</span>
       <button id="mapWindSpeedUp" aria-label="+">+</button>
     </div>
-    <button class="map-export-btn" id="mapExportBtn" title="Route als Bild speichern" data-i18n-title="exportBtnTitle">📷</button>
   </div>
 </div>
 <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
@@ -697,7 +693,9 @@ let state = {
   altitudes: { downwind: 1000, base: 500, final: 250 }, // always stored in ft
   turnCostFt: 100, // altitude spent per 90° turn, deducted from the following leg's budget — 0 = disabled
   plots: { nowind: true, uncorrected: true, corrected: false },
-  windAnimEnabled: true
+  windAnimEnabled: true,
+  hasUsedWindDrag: false, // pulses the map wind arrow as a "this is draggable" hint until first used
+  hasOpenedSidebar: false // pulses the mobile drawer toggle until first opened
 };
 
 // ---------- Local persistence ----------
@@ -740,6 +738,7 @@ const sidebarBackdrop = document.getElementById('sidebarBackdrop');
 function setSidebarOpen(open) {
   panelEl.classList.toggle('open', open);
   sidebarBackdrop.classList.toggle('open', open);
+  if (open && !state.hasOpenedSidebar) { state.hasOpenedSidebar = true; sidebarToggle.classList.remove('pulse-hint'); saveState(); }
 }
 sidebarToggle.addEventListener('click', () => setSidebarOpen(!panelEl.classList.contains('open')));
 sidebarBackdrop.addEventListener('click', () => setSidebarOpen(false));
@@ -755,21 +754,17 @@ if (hasUserTarget) hideOnboarding();
 
 // ---------- Map ----------
 const mapWrapEl = document.getElementById('mapWrap');
-// Canvas renderer (rather than Leaflet's default SVG) for all polylines — html2canvas (route export)
-// handles a <canvas> layer as a simple bitmap copy, but has historically misaligned SVG content
-// sitting inside Leaflet's transform-positioned panes, which showed up as the pattern lines being
-// offset from the markers in exported images.
-const map = L.map('map', { zoomControl: false, attributionControl: true, renderer: L.canvas() }).setView(state.target, 15);
+const map = L.map('map', { zoomControl: false, attributionControl: true }).setView(state.target, 15);
 L.control.zoom({ position: 'bottomleft' }).addTo(map); // top-left is taken by the search bar
 map.createPane('labelsPane');
 map.getPane('labelsPane').style.zIndex = 350;
 map.getPane('labelsPane').style.pointerEvents = 'none';
 
 const satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-  attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics', maxZoom: 19, crossOrigin: true
+  attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics', maxZoom: 19
 });
 const labelsLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-  attribution: 'Labels &copy; Esri', maxZoom: 19, pane: 'labelsPane', crossOrigin: true
+  attribution: 'Labels &copy; Esri', maxZoom: 19, pane: 'labelsPane'
 });
 satLayer.addTo(map);
 labelsLayer.addTo(map);
@@ -1111,7 +1106,8 @@ let mapWindDragging = false;
 mapWindBadge.addEventListener('pointerdown', (e) => {
   mapWindDragging = true;
   mapWindBadge.setPointerCapture(e.pointerId);
-  setWind(dialAngleFromEvent(mapWindBadge, e.clientX, e.clientY));
+  if (!state.hasUsedWindDrag) { state.hasUsedWindDrag = true; mapWindBadge.classList.remove('pulse-hint'); }
+  setWind(dialAngleFromEvent(mapWindBadge, e.clientX, e.clientY)); // saves state (via render()) with the flag already set
 });
 mapWindBadge.addEventListener('pointermove', (e) => { if (mapWindDragging) setWind(dialAngleFromEvent(mapWindBadge, e.clientX, e.clientY)); });
 mapWindBadge.addEventListener('pointerup', () => mapWindDragging = false);
@@ -1757,7 +1753,6 @@ const I18N_EN = {
 
   searchPlaceholder__placeholder: "Search dropzone…",
   windBadgeTitle__title: "Wind direction (arrow shows where the wind is blowing to) — drag to change",
-  exportBtnTitle__title: "Save route as image",
 
   infoTitle: "How is this calculated?",
   infoSafetyWarning: "⚠ This tool is a planning aid and does not replace an on-site briefing. Always discuss your planned flight route with the dropzone's chief instructor before jumping.",
@@ -1877,54 +1872,6 @@ function applyLanguage(lang) {
 }
 langToggleBtn.addEventListener('click', () => applyLanguage(state.lang === 'en' ? 'de' : 'en'));
 
-// ---------- Route export (screenshot) ----------
-// Rasterizes the current map (tiles + pattern lines/markers/wind arrow) to a PNG the user can save,
-// e.g. to review with the DZ's chief instructor before jumping.
-const mapExportBtn = document.getElementById('mapExportBtn');
-mapExportBtn.addEventListener('click', () => {
-  if (typeof html2canvas !== 'function') {
-    alert(state.lang === 'en'
-      ? 'Export is unavailable right now (library failed to load).'
-      : 'Export ist gerade nicht verfügbar (Bibliothek konnte nicht geladen werden).');
-    return;
-  }
-  mapExportBtn.classList.add('busy');
-  // Capture the whole map area (so the wind badge is included) but hide the interactive chrome
-  // around it first — search bar, drawer toggle, onboarding banner, speed stepper, the button itself
-  // — so the export reads as a clean route image rather than a screenshot of the UI.
-  const hiddenEls = [
-    document.querySelector('.map-search'), sidebarToggle, onboardingBanner,
-    document.getElementById('mapWindSpeed'), mapExportBtn
-  ].filter(el => el && getComputedStyle(el).display !== 'none');
-  // display:none (not visibility:hidden) — html2canvas doesn't reliably honor visibility on some
-  // elements, but a display:none element is removed from the render tree entirely, so it's always skipped.
-  hiddenEls.forEach(el => { el.style.display = 'none'; });
-  html2canvas(mapWrapEl, { useCORS: true, backgroundColor: '#0B0E13' })
-    .then(canvas => {
-      hiddenEls.forEach(el => { el.style.display = ''; });
-      mapExportBtn.classList.remove('busy');
-      canvas.toBlob(blob => {
-        if (!blob) {
-          alert(state.lang === 'en' ? 'Export failed.' : 'Export fehlgeschlagen.');
-          return;
-        }
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `landing-pattern_${new Date().toISOString().slice(0, 10)}.png`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-      });
-    })
-    .catch(err => {
-      hiddenEls.forEach(el => { el.style.display = ''; });
-      mapExportBtn.classList.remove('busy');
-      alert((state.lang === 'en' ? 'Export failed: ' : 'Export fehlgeschlagen: ') + err.message);
-    });
-});
-
 // Reflects a restored (or default) state in the few controls whose visual state isn't already
 // driven by setUnit()/setSpeedUnit()/setSinkUnit()/setWind() themselves.
 function syncUIFromState() {
@@ -1935,6 +1882,8 @@ function syncUIFromState() {
   Object.entries(plotCheckboxes).forEach(([key, el]) => { el.checked = state.plots[key]; });
   plotWindAnimCheckbox.checked = state.windAnimEnabled;
   if (!state.windAnimEnabled) windCtx.clearRect(0, 0, windCanvas.width, windCanvas.height);
+  if (state.hasUsedWindDrag) mapWindBadge.classList.remove('pulse-hint');
+  if (state.hasOpenedSidebar) sidebarToggle.classList.remove('pulse-hint');
 }
 
 // ---------- Init ----------
