@@ -121,8 +121,11 @@
 
   #windStreaksCanvas{position:absolute;inset:0;pointer-events:none;z-index:900;}
 
+  .map-wind-cluster{
+    position:absolute;bottom:24px;right:32px;z-index:1000;
+    display:flex;flex-direction:column;align-items:center;gap:8px;
+  }
   .map-wind-badge{
-    position:absolute;bottom:12px;right:32px;z-index:1000;
     display:flex;align-items:center;justify-content:center;
     filter:drop-shadow(0 1px 2px rgba(0,0,0,.95)) drop-shadow(0 0 5px rgba(0,0,0,.85)) drop-shadow(0 0 5px rgba(0,0,0,.85));
     cursor:grab;touch-action:none;
@@ -130,8 +133,7 @@
   .map-wind-badge:active{cursor:grabbing;}
 
   .map-wind-speed{
-    display:flex;position:absolute;bottom:12px;right:104px;z-index:1000;
-    align-items:center;gap:8px;background:rgba(18,22,29,.92);border:1px solid var(--line);border-radius:8px;
+    display:flex;align-items:center;gap:8px;background:rgba(18,22,29,.92);border:1px solid var(--line);border-radius:8px;
     padding:6px 10px;backdrop-filter:blur(4px);font-family:var(--mono);font-size:12px;color:var(--text);
   }
   .map-wind-speed button{
@@ -520,19 +522,21 @@
       <input type="text" id="searchInput" placeholder="Dropzone suchen…" data-i18n-placeholder="searchPlaceholder" autocomplete="off">
       <div class="search-results" id="searchResults"></div>
     </div>
-    <div class="map-wind-badge pulse-hint" id="mapWindBadge" title="Windrichtung (Pfeil zeigt, wohin der Wind weht) — ziehen zum Ändern" data-i18n-title="windBadgeTitle">
-      <svg viewBox="0 0 40 62" width="62" height="96">
-        <g id="mapWindArrowGroup">
-          <line x1="20" y1="34" x2="20" y2="6" stroke="#3B8BD4" stroke-width="4" stroke-linecap="round"/>
-          <polygon points="20,0 11,17 29,17" fill="#3B8BD4"/>
-        </g>
-        <text x="20" y="54" fill="#3B8BD4" font-size="13" font-weight="700" letter-spacing="1" text-anchor="middle" font-family="ui-monospace,monospace">WIND</text>
-      </svg>
-    </div>
-    <div class="map-wind-speed" id="mapWindSpeed">
-      <button id="mapWindSpeedDown" aria-label="-">−</button>
-      <span id="mapWindSpeedVal">15 km/h</span>
-      <button id="mapWindSpeedUp" aria-label="+">+</button>
+    <div class="map-wind-cluster">
+      <div class="map-wind-badge pulse-hint" id="mapWindBadge" title="Windrichtung (Pfeil zeigt, wohin der Wind weht) — ziehen zum Ändern" data-i18n-title="windBadgeTitle">
+        <svg viewBox="0 0 40 62" width="62" height="96">
+          <g id="mapWindArrowGroup">
+            <line x1="20" y1="34" x2="20" y2="6" stroke="#3B8BD4" stroke-width="4" stroke-linecap="round"/>
+            <polygon points="20,0 11,17 29,17" fill="#3B8BD4"/>
+          </g>
+          <text x="20" y="54" fill="#3B8BD4" font-size="13" font-weight="700" letter-spacing="1" text-anchor="middle" font-family="ui-monospace,monospace">WIND</text>
+        </svg>
+      </div>
+      <div class="map-wind-speed" id="mapWindSpeed">
+        <button id="mapWindSpeedDown" aria-label="-">−</button>
+        <span id="mapWindSpeedVal">15 km/h</span>
+        <button id="mapWindSpeedUp" aria-label="+">+</button>
+      </div>
     </div>
   </div>
 </div>
