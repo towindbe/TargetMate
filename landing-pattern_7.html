@@ -242,6 +242,7 @@
     padding:14px 16px;width:min(300px,calc(100% - 24px));backdrop-filter:blur(4px);
     box-shadow:0 4px 16px rgba(0,0,0,.4);
   }
+  .onboarding-intro{font-size:12px;color:var(--text);line-height:1.5;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line);}
   .onboarding-title{font-size:13px;font-weight:700;color:var(--amber);margin-bottom:8px;}
   .onboarding-steps{margin:0 0 12px;padding-left:18px;font-size:12px;line-height:1.6;color:var(--text);}
   .onboarding-dismiss{
@@ -482,6 +483,7 @@
     <canvas id="windStreaksCanvas"></canvas>
     <button class="sidebar-toggle" id="sidebarToggle" aria-label="Menu">☰</button>
     <div class="onboarding-banner" id="onboardingBanner">
+      <div class="onboarding-intro" data-i18n="onboardingIntro">Dieses Tool simuliert deinen Landeanflug an beliebigen Dropzones — abhängig von Wind, Wingload und einstellbaren turn points.</div>
       <div class="onboarding-title" data-i18n="onboardingTitle">Los geht's</div>
       <ol class="onboarding-steps">
         <li data-i18n="onboardingStep1">Windrichtung einstellen</li>
@@ -1627,6 +1629,7 @@ const I18N_EN = {
   plotCorrectedLabel: "Corrected path (by counter-steering)",
   plotWindAnimLabel: "Wind animation",
   footerContact: `Questions or ideas? <a href="mailto:tobi.windberg@gmail.com" style="color:var(--cyan);">tobi.windberg@gmail.com</a>`,
+  onboardingIntro: "This tool simulates your landing approach at any dropzone — depending on wind, wing loading, and adjustable turn points.",
   onboardingTitle: "Let's go",
   onboardingStep1: "Set the wind direction",
   onboardingStep2: "Tap the map to set the target point",
