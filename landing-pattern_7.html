@@ -388,6 +388,11 @@
           <label data-i18n="altFinalLabel">Turn zu Final</label>
           <input type="number" id="altFinal" value="250" step="50"><span class="alt-unit">ft AGL</span>
         </div>
+        <div class="alt-row">
+          <label data-i18n="turnCostLabel">Höhenverlust pro Turn (90°)</label>
+          <input type="number" id="turnCost" value="0" step="10" min="0"><span class="turn-cost-unit">ft</span>
+        </div>
+        <div class="crab-hint" style="margin:-4px 0 10px 0;" data-i18n="turnCostHint">Richtwert: ca. 15–45 m (50–150 ft) pro 90°-Turn, je nach Wingload &amp; Steuerung — typisch ~30 m (100 ft)</div>
         <div class="alt-row"><label style="color:var(--muted);font-style:italic;" id="altZeroNote">Landung bei 0 ft angenommen</label></div>
       </div>
 
@@ -539,7 +544,7 @@
     <h3 data-i18n="infoLimitsH">Grenzen des Modells</h3>
     <ul>
       <li data-i18n="infoLimit1">Konstante Sinkrate und Fahrt im Vollflug — kein Bremsen</li>
-      <li data-i18n="infoLimit2">Keine "Kurvenkosten": die 90°-Turns zwischen den Legs kosten in Wirklichkeit etwas Höhe/Zeit, hier nicht berücksichtigt</li>
+      <li data-i18n="infoLimit2">"Höhenverlust pro Turn" ist ein grober, einstellbarer Schätzwert (Standard 0 = deaktiviert) — kein exakter Wert, da stark von Wingload und Steuerungsart abhängig</li>
       <li data-i18n="infoLimit3">Wind gilt als konstant über den gesamten Sinkflug — keine Windscherung mit der Höhe (real oft stärker/anders oben als am Boden)</li>
       <li data-i18n="infoLimit4">Reale Kappensteuerung ist ungenauer als der berechnete Vorhaltewinkel suggeriert — er ist eine Zielgröße, keine exakt fliegbare Führung</li>
     </ul>
@@ -598,6 +603,7 @@ let state = {
   speedUnit: 'kmh', // 'kmh' | 'kn' — display unit for wind + forward speed, state.perf always stores km/h
   sinkUnit: 'ms', // 'ms' | 'ftmin' — display unit only, state.perf.sinkRateMs always stores m/s
   altitudes: { downwind: 1000, base: 500, final: 250 }, // always stored in ft
+  turnCostFt: 0, // altitude spent per 90° turn, deducted from the following leg's budget — 0 = disabled
   plots: { nowind: true, uncorrected: true, corrected: true }
 };
 const M_PER_FT = 0.3048;
@@ -762,9 +768,11 @@ function computeVariant(mode) {
   const baseHeading = norm(hand === 'left' ? finalHeading + 90 : finalHeading - 90);
   const downwindHeading = norm(finalHeading + 180);
 
+  // Base and final each follow a 90° turn, which spends state.turnCostFt of altitude on the maneuver
+  // itself — mirrors the same deduction recomputeLegs() applies to the sidebar's leg distances/times.
   const tDownwind = legTimeFromAlt(altitudes.downwind - altitudes.base);
-  const tBase = legTimeFromAlt(altitudes.base - altitudes.final);
-  const tFinal = legTimeFromAlt(altitudes.final - 0);
+  const tBase = legTimeFromAlt(altitudes.base - altitudes.final - state.turnCostFt);
+  const tFinal = legTimeFromAlt(altitudes.final - 0 - state.turnCostFt);
 
   const p0 = target;
   const p1 = backwardLeg(p0, finalHeading, fwdMs, windMs, windDir, tFinal, corrected);
@@ -1166,6 +1174,13 @@ const altInputs = {
   base: document.getElementById('altBase'),
   final: document.getElementById('altFinal')
 };
+const turnCostInput = document.getElementById('turnCost');
+turnCostInput.addEventListener('input', () => {
+  let v = parseFloat(turnCostInput.value);
+  if (isNaN(v) || v < 0) { v = 0; turnCostInput.value = 0; }
+  state.turnCostFt = altDisplayToFt(v);
+  recomputeLegs();
+});
 
 function recomputeLegs() {
   if (updateWindWarning()) {
@@ -1187,9 +1202,11 @@ function recomputeLegs() {
     return { distM, timeS };
   }
 
-  const dw = legCalc(altDown - altBase, gs.downwind); // tailwind on downwind
-  const ba = legCalc(altBase - altFinal, gs.base);     // crabbed groundspeed on crosswind base
-  const fi = legCalc(altFinal - 0, gs.final);          // headwind on final
+  // Each turn (downwind→base, base→final) spends state.turnCostFt of altitude on the maneuver itself —
+  // that portion no longer contributes ground track distance/time on the following leg (legCalc clamps at 0).
+  const dw = legCalc(altDown - altBase, gs.downwind); // tailwind on downwind — no preceding turn
+  const ba = legCalc(altBase - altFinal - state.turnCostFt, gs.base);
+  const fi = legCalc(altFinal - 0 - state.turnCostFt, gs.final);
 
   state.legs = { downwind: dw.distM, base: ba.distM, final: fi.distM };
   state.legTimes = { downwind: dw.timeS, base: ba.timeS, final: fi.timeS };
@@ -1260,6 +1277,8 @@ function refreshAltInputs() {
   altInputs.final.value = round1(ftToAltDisplay(state.altitudes.final));
   const unitLabel = state.unit === 'm' ? 'm AGL' : 'ft AGL';
   document.querySelectorAll('.alt-unit').forEach(el => el.textContent = unitLabel);
+  turnCostInput.value = round1(ftToAltDisplay(state.turnCostFt));
+  document.querySelectorAll('.turn-cost-unit').forEach(el => el.textContent = state.unit);
   altZeroNote.textContent = state.lang === 'en'
     ? `Landing assumed at 0 ${state.unit}`
     : `Landung bei 0 ${state.unit} angenommen`;
@@ -1438,6 +1457,8 @@ const I18N_EN = {
   altDownwindLabel: "Downwind start",
   altBaseLabel: "Turn to base",
   altFinalLabel: "Turn to final",
+  turnCostLabel: "Altitude loss per turn (90°)",
+  turnCostHint: "Rough guide: approx. 15–45 m (50–150 ft) per 90° turn, depending on wing loading &amp; control input — typically ~30 m (100 ft)",
   streckeTitle: "Distance",
   streckeSub: "— horizontal, over ground",
   totalLabel: "Total",
@@ -1500,7 +1521,7 @@ const I18N_EN = {
 
   infoLimitsH: "Model limitations",
   infoLimit1: "Constant sink rate and airspeed in full flight — no braking",
-  infoLimit2: `No "turn cost": the 90° turns between legs actually cost some altitude/time in reality, not accounted for here`,
+  infoLimit2: `"Altitude loss per turn" is a rough, adjustable estimate (default 0 = disabled) — not an exact value, since it depends heavily on wing loading and control input`,
   infoLimit3: "Wind is treated as constant over the whole descent — no wind shear with altitude (in reality often stronger/different higher up than at ground level)",
   infoLimit4: "Real canopy steering is less precise than the calculated correction angle suggests — it's a target value, not an exactly flyable guide",
 
