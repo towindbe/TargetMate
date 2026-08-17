@@ -141,13 +141,18 @@
   .target-icon.blink{animation:targetBlink 1.1s ease-in-out infinite;}
   @keyframes targetBlink{0%,100%{opacity:1;box-shadow:0 0 0 4px rgba(255,93,93,.15);} 50%{opacity:.3;box-shadow:0 0 0 9px rgba(255,93,93,.3);}}
   .canopy-icon{
-    width:34px;height:34px;transform-origin:center;
+    width:40px;height:40px;transform-origin:center;
     filter:drop-shadow(0 1px 2px rgba(0,0,0,.95)) drop-shadow(0 0 5px rgba(0,0,0,.85)) drop-shadow(0 0 5px rgba(0,0,0,.85));
   }
   .canopy-icon svg{display:block;width:100%;height:100%;overflow:visible;}
   .angle-label{
     font-family:var(--mono);font-size:11px;font-weight:700;white-space:nowrap;line-height:1.4;
     background:rgba(18,22,29,.85);padding:2px 6px;border-radius:4px;
+    /* Leaflet's marker wrapper around this is a fixed 1px box - without an explicit width here, this
+       block element resolves its own width against that 1px container instead of its text content, so
+       the centering transform below has nothing meaningful to center and the text just overflows to
+       the right instead. width:max-content makes it size to its actual content first. */
+    width:max-content;
     transform:translate(-50%,-50%);
   }
   .angle-label.plain{
@@ -433,6 +438,14 @@
     </div>
 
     <div class="section">
+      <div class="label" data-i18n="handLabel">Platzrunde</div>
+      <div class="toggle">
+        <button id="handLeft" class="active" data-i18n="handLeftBtn">Linksplatz</button>
+        <button id="handRight" data-i18n="handRightBtn">Rechtsplatz</button>
+      </div>
+    </div>
+
+    <div class="section">
       <div class="label"><span data-i18n="windDirLabel">Windrichtung (woher)</span> <b id="windDegLabel">270°</b></div>
       <div class="dial-wrap">
         <div id="dial">
@@ -531,14 +544,6 @@
         <div class="estimator-result" id="estResult">Wingload: <b>–</b> lb/sqft</div>
         <div class="estimator-warning" id="estWarning" style="display:none;" data-i18n="estWarningText">⚠ Außerhalb des Tabellenbereichs (0,5–1,8 lb/sqft) - keine realitätsnahe Schätzung mehr.</div>
         <button class="estimator-apply" id="estApply" data-i18n="estApplyBtn">Geschätzte Werte übernehmen</button>
-      </div>
-    </div>
-
-    <div class="section">
-      <div class="label" data-i18n="handLabel">Platzrunde</div>
-      <div class="toggle">
-        <button id="handLeft" class="active" data-i18n="handLeftBtn">Linksplatz</button>
-        <button id="handRight" data-i18n="handRightBtn">Rechtsplatz</button>
       </div>
     </div>
 
@@ -964,7 +969,6 @@ let canopyLayers = [];
 
 targetMarker.on('drag', (e) => { state.target = [e.latlng.lat, e.latlng.lng]; hideOnboarding(); markUserTarget(); render(); });
 map.on('click', (e) => { state.target = [e.latlng.lat, e.latlng.lng]; targetMarker.setLatLng(e.latlng); hideOnboarding(); markUserTarget(); render(); });
-
 // ---------- Geometry ----------
 function destPoint(lat, lon, bearingDeg, distM) {
   const R = 6378137;
@@ -984,6 +988,23 @@ function screenOffsetFromBearing(bearingDeg, pxDist) {
 }
 
 function midpoint(a, b) { return [(a[0]+b[0])/2, (a[1]+b[1])/2]; }
+
+// Bearing exactly between two other bearings (the short way around) - a circular mean via vector sum,
+// safe across the 0/360 wrap unlike a plain numeric average.
+function bisectorBearing(b1, b2) {
+  const r1 = b1 * Math.PI / 180, r2 = b2 * Math.PI / 180;
+  const x = Math.cos(r1) + Math.cos(r2);
+  const y = Math.sin(r1) + Math.sin(r2);
+  return norm(Math.atan2(y, x) * 180 / Math.PI);
+}
+
+// At a turn point, the direction pointing away from the pattern's interior, regardless of how the
+// pattern itself is rotated on the map - the bisector of the two legs meeting there (each leg's
+// direction back toward its own far endpoint), then flipped 180 deg to point outward instead of in.
+function cornerOutwardBearing(incomingHeading, outgoingHeading) {
+  const inward = bisectorBearing(norm(incomingHeading + 180), outgoingHeading);
+  return norm(inward + 180);
+}
 
 function distanceM(a, b) {
   const R = 6378137;
@@ -1111,10 +1132,12 @@ function computeVariant(mode) {
 // Top-down canopy glyph: wing pill + nose tip + jumper, in currentColor so it inherits the marker's color.
 function canopyIconSvg() {
   return '<svg viewBox="0 0 100 90">'
-    + '<rect x="20" y="30" width="60" height="16" rx="8" fill="none" stroke="currentColor" stroke-width="6"/>'
-    + '<polygon points="50,8 41,30 59,30" fill="currentColor"/>'
-    + '<line x1="50" y1="46" x2="50" y2="64" stroke="currentColor" stroke-width="4"/>'
-    + '<circle cx="50" cy="70" r="6" fill="currentColor"/>'
+    + '<path d="M20 30 Q35 14 50 14 Q65 14 80 30" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>'
+    + '<line x1="20" y1="30" x2="50" y2="50" stroke="currentColor" stroke-width="2.5" opacity="0.85"/>'
+    + '<line x1="37" y1="16" x2="50" y2="50" stroke="currentColor" stroke-width="2.5" opacity="0.85"/>'
+    + '<line x1="63" y1="16" x2="50" y2="50" stroke="currentColor" stroke-width="2.5" opacity="0.85"/>'
+    + '<line x1="80" y1="30" x2="50" y2="50" stroke="currentColor" stroke-width="2.5" opacity="0.85"/>'
+    + '<ellipse cx="50" cy="60" rx="5.5" ry="10" fill="currentColor"/>'
     + '</svg>';
 }
 function canopyMarker(latlng, headingDeg, colorHex) {
@@ -1122,7 +1145,7 @@ function canopyMarker(latlng, headingDeg, colorHex) {
     icon: L.divIcon({
       className: '',
       html: `<div class="canopy-icon" style="color:${colorHex}; transform:rotate(${headingDeg}deg)">${canopyIconSvg()}</div>`,
-      iconSize: [34, 34], iconAnchor: [17, 17]
+      iconSize: [40, 40], iconAnchor: [20, 20]
     })
   });
 }
@@ -1209,6 +1232,39 @@ function render() {
         canopyLayers.push(timeLabel);
       }
     });
+
+    // Entry/turn-point altitudes, in the currently active unit - same reasoning as the time label:
+    // identical across all 3 modes, so shown once rather than tied to one mode's own color.
+    if (mode === timeLabelMode) {
+      const unitLabel = state.unit === 'm' ? 'm' : 'ft';
+      // Anchored to the real (uncorrected) path's own corners - computed regardless of whether that
+      // path is itself shown, purely as a stable layout basis - rather than the corrected path, whose
+      // crabbed legs would shift these points around unpredictably as the wind correction changes.
+      // The outward bearing is still clean either way: leg.heading is the plain track heading and
+      // doesn't vary between variants, only the corner positions themselves do.
+      const refVariant = computeVariant('uncorrected');
+      const downwindLeg = refVariant.legs.find(l => l.name === 'downwind');
+      const baseLeg = refVariant.legs.find(l => l.name === 'base');
+      const finalLeg = refVariant.legs.find(l => l.name === 'final');
+      // Colored to match the leg that starts at that point (same convention as the sidebar's
+      // "Downwind-Start"/"Turn zu Base"/"Turn zu Final" altitude inputs). The pattern only draws 3
+      // sides, but treating it as the closed 4-gon it geometrically is - with an implied 4th side
+      // running from the target back to the entry point, parallel to base - gives p3 a proper corner
+      // too, so all three points use the same outward-corner logic instead of p3 being a special case.
+      const impliedHeading = norm(baseLeg.heading + 180);
+      const altPts = [
+        { latlng: refVariant.p3, ft: state.altitudes.downwind, bearing: cornerOutwardBearing(impliedHeading, downwindLeg.heading), color: downwindLeg.hex },
+        { latlng: refVariant.p2, ft: state.altitudes.base, bearing: cornerOutwardBearing(downwindLeg.heading, baseLeg.heading), color: baseLeg.hex },
+        { latlng: refVariant.p1, ft: state.altitudes.final, bearing: cornerOutwardBearing(baseLeg.heading, finalLeg.heading), color: finalLeg.hex }
+      ];
+      altPts.forEach(pt => {
+        const offsetPx = screenOffsetFromBearing(pt.bearing, 46);
+        const altLabel = textMarker(pt.latlng, `${round1(ftToAltDisplay(pt.ft))} ${unitLabel}`, pt.color, {
+          plain: true, offsetPx
+        }).addTo(map);
+        canopyLayers.push(altLabel);
+      });
+    }
 
     if (mode !== 'corrected' && mode !== 'uncorrected') return;
 
@@ -1650,6 +1706,7 @@ function setUnit(u) {
   refreshLegInputs();
   refreshAltInputs(); // same toggle drives the altitude (vertical) inputs too
   saveState();
+  if (hasUserTarget) render(); // on-map labels (altitudes, lengths) are drawn in the active unit too
 }
 unitM.addEventListener('click', () => setUnit('m'));
 unitFt.addEventListener('click', () => setUnit('ft'));
