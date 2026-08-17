@@ -38,14 +38,14 @@
   .splash-tagline{font-size:14.5px;color:var(--muted);margin-top:-10px;}
   .splash-warning{
     max-width:340px;background:rgba(255,93,93,.12);border:1px solid var(--danger);color:var(--danger);
-    font-size:12px;line-height:1.55;padding:10px 14px;border-radius:8px;font-weight:600;margin-top:4px;
+    font-size:12px;line-height:1.55;padding:10px 14px;border-radius:8px;font-weight:600;margin-top:22px;
   }
   .splash-offline{
     max-width:340px;background:rgba(255,176,32,.12);border:1px solid var(--amber);color:var(--amber);
     font-size:12px;line-height:1.5;padding:9px 14px;border-radius:8px;font-weight:600;
   }
   .splash-continue{
-    margin-top:6px;background:var(--amber);color:#1a1204;border:none;border-radius:8px;
+    margin-top:26px;background:var(--amber);color:#1a1204;border:none;border-radius:8px;
     font-family:var(--sans);font-size:14px;font-weight:700;padding:11px 28px;cursor:pointer;
   }
   .splash-footer{
@@ -189,12 +189,6 @@
     backdrop-filter:blur(4px);white-space:nowrap;text-align:center;
   }
 
-  .info-btn{
-    background:var(--panel-2);border:1px solid var(--line);color:var(--muted);
-    width:26px;height:26px;border-radius:50%;cursor:pointer;font-family:var(--mono);font-size:13px;font-weight:700;
-    display:flex;align-items:center;justify-content:center;line-height:1;
-  }
-  .info-btn:hover{color:var(--amber);border-color:var(--amber);}
   .lang-btn{
     background:var(--panel-2);border:1px solid var(--line);color:var(--muted);
     border-radius:6px;cursor:pointer;font-family:var(--mono);font-size:11px;font-weight:700;
@@ -360,6 +354,8 @@
   .onboarding-intro{font-size:12px;color:var(--text);line-height:1.5;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line);}
   .onboarding-title{font-size:13px;font-weight:700;color:var(--amber);margin-bottom:8px;}
   .onboarding-steps{margin:0 0 12px;padding-left:18px;font-size:12px;line-height:1.6;color:var(--text);}
+  .onboarding-hint{font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:12px;}
+  .onboarding-hint b{color:var(--amber);}
   .onboarding-dismiss{
     width:100%;background:var(--amber);color:#1a1204;border:none;border-radius:6px;
     font-family:var(--sans);font-size:12px;font-weight:600;padding:8px 0;cursor:pointer;
@@ -425,14 +421,7 @@
   <div id="panel">
     <div class="header">
       <div class="eyebrow">Landing Pattern Simulator</div>
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-        <h1>TargetMate</h1>
-        <div style="display:flex;gap:6px;flex:none;margin-top:2px;">
-          <button class="lang-btn" id="langToggleBtn" title="Switch to English">EN</button>
-          <button class="info-btn" id="openInfoBtn" data-i18n-title="infoBtnTitle" title="Wie wird berechnet?">i</button>
-          <button class="info-btn" id="openHelpBtn" data-i18n-title="helpBtnTitle" title="Bedienanleitung">?</button>
-        </div>
-      </div>
+      <h1>TargetMate</h1>
       <div class="sub" data-i18n="headerSub">Karte antippen, um den Zielpunkt zu setzen. Pattern rotiert automatisch mit dem Wind.</div>
     </div>
 
@@ -657,6 +646,7 @@
         <li data-i18n="onboardingStep2">Zielpunkt auf der Karte antippen</li>
         <li data-i18n="onboardingStep3">Fertig - Pattern wird automatisch berechnet</li>
       </ol>
+      <div class="onboarding-hint" data-i18n="onboardingInfoHint">Neugierig, wie gerechnet wird? Tippe auf <b>i</b> auf der Karte.</div>
       <button class="onboarding-dismiss" id="onboardingDismiss" data-i18n="onboardingDismiss">Verstanden</button>
     </div>
     <div class="map-search">
@@ -2014,8 +2004,6 @@ document.addEventListener('click', (e) => {
 // ---------- Info / Help modals ----------
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-document.getElementById('openInfoBtn').addEventListener('click', () => openModal('infoModal'));
-document.getElementById('openHelpBtn').addEventListener('click', () => openModal('helpModal'));
 document.getElementById('mapInfoBtn').addEventListener('click', () => openModal('infoModal'));
 document.getElementById('mapHelpBtn').addEventListener('click', () => openModal('helpModal'));
 document.querySelectorAll('[data-close-modal]').forEach(btn => {
@@ -2075,6 +2063,7 @@ const I18N_EN = {
   onboardingStep1: "Set the wind direction",
   onboardingStep2: "Tap the map to set the target point",
   onboardingStep3: "Done - the pattern calculates automatically",
+  onboardingInfoHint: `Curious how it's calculated? Tap <b>i</b> on the map.`,
   onboardingDismiss: "Got it",
 
   legsLabel: "Legs",
@@ -2196,7 +2185,6 @@ function captureDefaultTexts() {
   document.querySelectorAll('[data-i18n-title]').forEach(el => { I18N_DE[el.dataset.i18nTitle + '__title'] = el.title; });
 }
 
-const langToggleBtn = document.getElementById('langToggleBtn');
 const mapLangBtn = document.getElementById('mapLangBtn');
 function applyLanguage(lang) {
   state.lang = lang;
@@ -2216,10 +2204,8 @@ function applyLanguage(lang) {
     const val = dict[key];
     if (val != null) el.title = val;
   });
-  langToggleBtn.textContent = lang === 'en' ? 'DE' : 'EN';
-  langToggleBtn.title = lang === 'en' ? 'Auf Deutsch umschalten' : 'Switch to English';
-  mapLangBtn.textContent = langToggleBtn.textContent;
-  mapLangBtn.title = langToggleBtn.title;
+  mapLangBtn.textContent = lang === 'en' ? 'DE' : 'EN';
+  mapLangBtn.title = lang === 'en' ? 'Auf Deutsch umschalten' : 'Switch to English';
 
   // Re-run everything that generates its own text in JS (cardinal names, hints, dynamic labels).
   updateLandingReadout();
@@ -2231,7 +2217,6 @@ function applyLanguage(lang) {
   updateEstimate();
   render();
 }
-langToggleBtn.addEventListener('click', () => applyLanguage(state.lang === 'en' ? 'de' : 'en'));
 mapLangBtn.addEventListener('click', () => applyLanguage(state.lang === 'en' ? 'de' : 'en'));
 
 // Reflects a restored (or default) state in the few controls whose visual state isn't already
