@@ -81,6 +81,14 @@
     backdrop-filter:blur(4px);flex:none;
   }
   .map-menu-btn:hover{color:var(--amber);border-color:var(--amber);}
+  .map-menu-btn:disabled{opacity:.5;cursor:default;}
+  .map-toast{
+    position:absolute;bottom:16px;left:50%;transform:translateX(-50%);z-index:1500;
+    background:rgba(18,22,29,.95);border:1px solid var(--danger);color:var(--text);
+    font-family:var(--sans);font-size:12px;padding:8px 14px;border-radius:8px;
+    max-width:80%;text-align:center;opacity:0;pointer-events:none;transition:opacity .2s;
+  }
+  .map-toast.show{opacity:1;}
   .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1900;}
   .sidebar-backdrop.open{display:block;}
 
@@ -211,9 +219,10 @@
     position:absolute;top:12px;right:12px;z-index:1000;height:38px;padding:0 12px;font-size:13px;
     background:rgba(18,22,29,.92);backdrop-filter:blur(4px);border-radius:8px;
   }
-  .map-fav-cluster{position:absolute;top:58px;right:12px;z-index:1000;}
+  .map-fav-cluster{display:flex;position:absolute;top:58px;right:12px;z-index:1000;flex-direction:column;gap:8px;}
+  #mapLocateBtn svg{width:20px;height:20px;stroke:currentColor;}
   .fav-panel{
-    position:absolute;top:104px;right:12px;z-index:1050;width:240px;
+    position:absolute;top:150px;right:12px;z-index:1050;width:240px;
     background:rgba(18,22,29,.96);border:1px solid var(--line);border-radius:10px;
     backdrop-filter:blur(4px);padding:10px;display:none;
   }
@@ -644,6 +653,7 @@
   <div id="mapWrap" style="position:relative;flex:1;">
     <div id="map"></div>
     <canvas id="windStreaksCanvas"></canvas>
+    <div class="map-toast" id="mapToast"></div>
     <div class="map-menu-cluster">
       <button class="map-menu-btn pulse-hint" id="sidebarToggle" aria-label="Menu">☰</button>
       <button class="map-menu-btn" id="mapInfoBtn" data-i18n-title="infoBtnTitle" title="Wie wird berechnet?">i</button>
@@ -668,6 +678,15 @@
     <button class="lang-btn map-lang-btn" id="mapLangBtn" title="Switch to English">EN</button>
     <div class="map-fav-cluster">
       <button class="map-menu-btn" id="mapFavBtn" data-i18n-title="favBtnTitle" title="Favoriten">★</button>
+      <button class="map-menu-btn" id="mapLocateBtn" data-i18n-title="locateBtnTitle" title="Meinen Standort verwenden">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
+          <circle cx="12" cy="12" r="4.5"/>
+          <line x1="12" y1="2" x2="12" y2="6"/>
+          <line x1="12" y1="18" x2="12" y2="22"/>
+          <line x1="2" y1="12" x2="6" y2="12"/>
+          <line x1="18" y1="12" x2="22" y2="12"/>
+        </svg>
+      </button>
     </div>
     <div class="fav-panel" id="favPanel">
       <div class="fav-panel-title" data-i18n="favPanelTitle">Favoriten</div>
@@ -1351,8 +1370,8 @@ const plotWindAnimCheckbox = document.getElementById('plotWindAnim');
 // Particle count and streak length both scale with wind speed (stronger wind = more, longer streaks);
 // only the base/floor values are named - the actual per-frame count is computed by
 // desiredWindParticleCount() below. Speed itself already scales with wind (see windAnimFrame).
-const WIND_PARTICLE_BASE = 54;
-const WIND_PARTICLE_MAX = 180;
+const WIND_PARTICLE_BASE = 75;
+const WIND_PARTICLE_MAX = 250;
 let windParticles = [];
 let windAnimRAF = null;
 let windAnimLastT = null;
@@ -1375,7 +1394,7 @@ function resizeWindCanvas() {
 
 // Target on-screen streak count for a given wind speed - grows roughly linearly, capped at both ends.
 function desiredWindParticleCount(windSpeedKmh) {
-  return Math.round(Math.max(WIND_PARTICLE_BASE, Math.min(WIND_PARTICLE_MAX, WIND_PARTICLE_BASE + windSpeedKmh * 0.8)));
+  return Math.round(Math.max(WIND_PARTICLE_BASE, Math.min(WIND_PARTICLE_MAX, WIND_PARTICLE_BASE + windSpeedKmh * 1.1)));
 }
 
 function spawnWindParticle(p) {
@@ -1414,7 +1433,7 @@ function windAnimFrame(t) {
   const speedPxPerMs = Math.max(15, state.perf.windSpeedKmh * 2.2) / 1000;
   const [ux, uy] = screenOffsetFromBearing(pushDir, 1); // unit vector, screen px
 
-  windCtx.lineWidth = 1.3;
+  windCtx.lineWidth = 1.0;
   windCtx.lineCap = 'round';
   // Dark halo behind each streak (same contrast trick as the flight-path casing lines) so it stays
   // readable over bright/busy satellite terrain, not just the darker background.
@@ -1588,6 +1607,40 @@ function setHand(hand) {
 handLeft.addEventListener('click', () => setHand('left'));
 handRight.addEventListener('click', () => setHand('right'));
 mapHandToggleBtn.addEventListener('click', () => setHand(state.hand === 'left' ? 'right' : 'left'));
+
+// ---------- "Use my location" ----------
+const mapLocateBtn = document.getElementById('mapLocateBtn');
+const mapToast = document.getElementById('mapToast');
+let mapToastTimer = null;
+function showMapToast(msg) {
+  mapToast.textContent = msg;
+  mapToast.classList.add('show');
+  clearTimeout(mapToastTimer);
+  mapToastTimer = setTimeout(() => mapToast.classList.remove('show'), 3500);
+}
+mapLocateBtn.addEventListener('click', () => {
+  if (!navigator.geolocation) {
+    showMapToast(state.lang === 'en' ? 'Geolocation not supported' : 'Geolokalisierung nicht unterstützt');
+    return;
+  }
+  mapLocateBtn.disabled = true;
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      mapLocateBtn.disabled = false;
+      // Only pans/zooms the map - doesn't set the target itself, since the user's own position
+      // usually isn't the intended landing spot, just a starting point to find it from.
+      map.setView([pos.coords.latitude, pos.coords.longitude], 15);
+    },
+    (err) => {
+      mapLocateBtn.disabled = false;
+      const msg = err.code === err.PERMISSION_DENIED
+        ? (state.lang === 'en' ? 'Location permission denied' : 'Standortzugriff verweigert')
+        : (state.lang === 'en' ? 'Could not determine location' : 'Standort konnte nicht ermittelt werden');
+      showMapToast(msg);
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+  );
+});
 
 // ---------- Leg length inputs (unit-aware) ----------
 const lenInputs = {
@@ -2088,6 +2141,7 @@ const I18N_EN = {
   infoBtnTitle__title: "How is this calculated?",
   helpBtnTitle__title: "User guide",
   favBtnTitle__title: "Favorites",
+  locateBtnTitle__title: "Use my location",
   favPanelTitle: "Favorites",
   favNamePlaceholder__placeholder: "Name this location…",
   favAddBtnTitle__title: "Save current target as favorite",
