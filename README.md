@@ -11,7 +11,8 @@ A landing pattern simulator for skydivers — plan your downwind/base/final appr
 - Shows the wind-drift correction (crab angle) needed on each leg, color-coded to match the pattern
 - Compares three flight paths: no-wind reference, uncorrected (nose held straight), and corrected (crabbed into the wind)
 - Wingload estimator: rough forward speed / sink rate from exit weight and canopy size
-- Save favorite locations to jump back to quickly
+- Save favorite locations to jump back to quickly - their surroundings are pre-cached for offline use
+- Works offline for any dropzone you've already viewed or saved as a favorite (service worker-backed)
 - Left-hand / right-hand pattern toggle, metric/imperial + km-h/knots unit toggles
 - English and German
 

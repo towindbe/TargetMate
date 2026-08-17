@@ -89,6 +89,13 @@
     max-width:80%;text-align:center;opacity:0;pointer-events:none;transition:opacity .2s;
   }
   .map-toast.show{opacity:1;}
+  .offline-badge{
+    display:none;position:absolute;bottom:60px;left:50%;transform:translateX(-50%);z-index:1200;
+    background:rgba(255,176,32,.14);border:1px solid var(--amber);color:var(--amber);
+    font-family:var(--sans);font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;
+    backdrop-filter:blur(4px);white-space:nowrap;
+  }
+  .offline-badge.show{display:block;}
   .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1900;}
   .sidebar-backdrop.open{display:block;}
 
@@ -654,6 +661,7 @@
     <div id="map"></div>
     <canvas id="windStreaksCanvas"></canvas>
     <div class="map-toast" id="mapToast"></div>
+    <div class="offline-badge" id="offlineBadge" data-i18n="offlineBadgeText">⚠ Offline - zwischengespeicherte Daten werden angezeigt</div>
     <div class="map-menu-cluster">
       <button class="map-menu-btn pulse-hint" id="sidebarToggle" aria-label="Menu">☰</button>
       <button class="map-menu-btn" id="mapInfoBtn" data-i18n-title="infoBtnTitle" title="Wie wird berechnet?">i</button>
@@ -2110,6 +2118,7 @@ favAddBtn.addEventListener('click', () => {
   if (!name) { favNameInput.focus(); return; }
   state.favorites.push({ name, target: state.target.slice() });
   saveState();
+  precacheFavoriteTiles(state.target[0], state.target[1]);
   favNameInput.value = '';
   renderFavorites();
 });
@@ -2117,6 +2126,52 @@ favNameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') favAddB
 document.addEventListener('click', (e) => {
   if (!e.target.closest('.fav-panel') && !e.target.closest('.map-fav-cluster')) favPanel.classList.remove('open');
 });
+
+// ---------- Offline support (service worker) ----------
+// Map tiles are cached the moment they're drawn (see sw.js), so anywhere the user has already
+// looked at works offline afterward. This additionally warms the cache for a favorite's
+// surroundings right when it's saved, so it's available offline even before ever being viewed.
+const TILE_URL_TEMPLATES = [
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'
+];
+const PRECACHE_ZOOMS = [13, 14, 15, 16, 17]; // brackets the zoom level (15) used when jumping to a favorite
+const PRECACHE_RADIUS = 1; // tiles around the center tile in each direction, per zoom level
+
+function lonToTileX(lon, z) { return Math.floor((lon + 180) / 360 * (1 << z)); }
+function latToTileY(lat, z) {
+  const rad = lat * Math.PI / 180;
+  return Math.floor((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2 * (1 << z));
+}
+
+function precacheFavoriteTiles(lat, lon) {
+  if (!navigator.serviceWorker || !navigator.serviceWorker.controller) return;
+  const urls = [];
+  PRECACHE_ZOOMS.forEach((z) => {
+    const cx = lonToTileX(lon, z), cy = latToTileY(lat, z);
+    for (let dx = -PRECACHE_RADIUS; dx <= PRECACHE_RADIUS; dx++) {
+      for (let dy = -PRECACHE_RADIUS; dy <= PRECACHE_RADIUS; dy++) {
+        TILE_URL_TEMPLATES.forEach((tpl) => {
+          urls.push(tpl.replace('{z}', z).replace('{y}', cy + dy).replace('{x}', cx + dx));
+        });
+      }
+    }
+  });
+  navigator.serviceWorker.controller.postMessage({ type: 'precache-tiles', urls });
+}
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready).then(() => {
+    state.favorites.forEach((fav) => precacheFavoriteTiles(fav.target[0], fav.target[1]));
+  }).catch(() => {});
+}
+
+// ---------- Offline indicator ----------
+const offlineBadge = document.getElementById('offlineBadge');
+function updateOfflineBadge() { offlineBadge.classList.toggle('show', !navigator.onLine); }
+window.addEventListener('online', updateOfflineBadge);
+window.addEventListener('offline', updateOfflineBadge);
+updateOfflineBadge();
 
 // ---------- Info / Help modals ----------
 function openModal(id) { document.getElementById(id).classList.add('open'); }
@@ -2142,6 +2197,7 @@ const I18N_EN = {
   helpBtnTitle__title: "User guide",
   favBtnTitle__title: "Favorites",
   locateBtnTitle__title: "Use my location",
+  offlineBadgeText: "⚠ Offline - showing cached data",
   favPanelTitle: "Favorites",
   favNamePlaceholder__placeholder: "Name this location…",
   favAddBtnTitle__title: "Save current target as favorite",
