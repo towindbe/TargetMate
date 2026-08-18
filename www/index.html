@@ -902,18 +902,44 @@
     <h3 data-i18n="infoReachH">Reichweiten-Ringe</h3>
     <p data-i18n="infoReachP1">Stell dir vor, du könntest nach dem Öffnen sofort in jede beliebige Richtung fliegen. Ohne Wind wäre die Menge aller Orte, die du in der verbleibenden Zeit noch erreichen kannst, einfach ein Kreis um dich herum - er wächst, je mehr Zeit dir bleibt. Wind ändert daran nichts Grundsätzliches: der Kreis bleibt ein Kreis, er wandert nur mit dem Wind mit, statt zentriert zu bleiben.</p>
     <p data-i18n="infoReachP2">Für die Ringe wird das umgedreht gefragt: nicht "wie weit komme ich von hier", sondern "von wo aus schaffe ich es gerade noch bis zum Einstiegspunkt der Platzrunde". Die Antwort ist wieder ein Kreis - nur diesmal windwärts (also gegen den Wind) vom Einstiegspunkt verschoben, weil man auf dem Weg dorthin mit dem Wind zu ihm hin abtreibt.</p>
+    <svg viewBox="0 0 300 240" width="100%" style="max-width:300px;">
+      <circle cx="140" cy="120" r="30" fill="none" stroke="#8FA6C2" stroke-width="1.3" stroke-dasharray="3 5" opacity="0.5"/>
+      <circle cx="140" cy="120" r="55" fill="none" stroke="#8FA6C2" stroke-width="1.3" stroke-dasharray="3 5" opacity="0.7"/>
+      <circle cx="140" cy="120" r="80" fill="none" stroke="#8FA6C2" stroke-width="1.3" stroke-dasharray="3 5" opacity="0.9"/>
+      <line x1="201" y1="69" x2="140" y2="120" stroke="#7C8798" stroke-width="1.3" stroke-dasharray="2 3"/>
+      <polygon points="0,-6 -4,4 4,4" fill="#7C8798" transform="translate(140,120) rotate(230)"/>
+      <g transform="translate(181,51) scale(0.4) rotate(230 50 45)">
+        <path d="M20 30 Q35 14 50 14 Q65 14 80 30" fill="none" stroke="#8FA6C2" stroke-width="6" stroke-linecap="round"/>
+        <line x1="20" y1="30" x2="50" y2="50" stroke="#8FA6C2" stroke-width="2.5" opacity="0.85"/>
+        <line x1="37" y1="16" x2="50" y2="50" stroke="#8FA6C2" stroke-width="2.5" opacity="0.85"/>
+        <line x1="63" y1="16" x2="50" y2="50" stroke="#8FA6C2" stroke-width="2.5" opacity="0.85"/>
+        <line x1="80" y1="30" x2="50" y2="50" stroke="#8FA6C2" stroke-width="2.5" opacity="0.85"/>
+        <ellipse cx="50" cy="60" rx="5.5" ry="10" fill="#8FA6C2"/>
+      </g>
+      <line x1="140" y1="120" x2="50" y2="120" stroke="#3ED9C7" stroke-width="2.5"/>
+      <polygon points="0,-6 -4,4 4,4" fill="#3ED9C7" transform="translate(50,120) rotate(270)"/>
+      <line x1="50" y1="120" x2="50" y2="205" stroke="#9D8CFF" stroke-width="2.5"/>
+      <polygon points="0,-6 -4,4 4,4" fill="#9D8CFF" transform="translate(50,205) rotate(180)"/>
+      <line x1="50" y1="205" x2="115" y2="205" stroke="#FFB020" stroke-width="2.5"/>
+      <polygon points="0,-6 -4,4 4,4" fill="#FFB020" transform="translate(115,205) rotate(90)"/>
+      <circle cx="115" cy="205" r="6" fill="none" stroke="#FF5D5D" stroke-width="2"/>
+      <circle cx="115" cy="205" r="2.2" fill="#FF5D5D"/>
+      <circle cx="140" cy="120" r="7" fill="none" stroke="#8FA6C2" stroke-width="2"/>
+      <circle cx="140" cy="120" r="2.5" fill="#8FA6C2"/>
+      <text x="140" y="162" fill="#8FA6C2" font-size="10" text-anchor="middle" font-family="ui-monospace,monospace">Entry</text>
+    </svg>
     <div class="formula" data-i18n="infoReachFormula">Radius = Fahrt × T<br>Mittelpunkt = Einstiegspunkt windwärts verschoben um Wind × T<br>T = (Höhe − Einstiegshöhe) ÷ Sinkrate</div>
     <p class="muted" data-i18n="infoReachNote">Anders als bei den drei Flugbahn-Plots wird hier angenommen, dass die Richtung sofort exakt gewählt werden kann - ohne Zeit für die Kurve selbst. Der real erreichbare Bereich ist dadurch etwas kleiner als der gezeichnete Kreis, besonders wenn direkt nach dem Öffnen eine große Richtungsänderung nötig wäre. Die Ringe zeigen die theoretische Obergrenze, keine Empfehlung.</p>
 
     <h3 data-i18n="infoEmergencyH">Notlandungsreichweite</h3>
     <p data-i18n="infoEmergencyP1">Wichtig, um frühzeitig zu erkennen, wo auf der Karte du im Fall einer Notlandung potenziell noch landen könntest: Du setzt einen beliebigen Punkt auf der Karte, und die App zeigt dir für jede Höhe, wie weit du von dort aus noch kommen würdest.</p>
-    <svg viewBox="0 0 260 200" width="100%" style="max-width:260px;">
-      <circle cx="90" cy="140" r="35" fill="none" stroke="#E85DC0" stroke-width="1.3" stroke-dasharray="3 5" opacity="0.5"/>
-      <circle cx="90" cy="140" r="65" fill="none" stroke="#E85DC0" stroke-width="1.3" stroke-dasharray="3 5" opacity="0.7"/>
-      <circle cx="90" cy="140" r="95" fill="none" stroke="#E85DC0" stroke-width="1.3" stroke-dasharray="3 5" opacity="0.9"/>
-      <line x1="90" y1="140" x2="160" y2="90" stroke="#7C8798" stroke-width="1.3" stroke-dasharray="2 3"/>
-      <polygon points="160,90 149,92 155,101" fill="#7C8798"/>
-      <g transform="translate(70,122) scale(0.4) rotate(-40 50 45)">
+    <svg viewBox="0 0 300 240" width="100%" style="max-width:300px;">
+      <circle cx="140" cy="120" r="30" fill="none" stroke="#E85DC0" stroke-width="1.3" stroke-dasharray="3 5" opacity="0.5"/>
+      <circle cx="140" cy="120" r="55" fill="none" stroke="#E85DC0" stroke-width="1.3" stroke-dasharray="3 5" opacity="0.7"/>
+      <circle cx="140" cy="120" r="80" fill="none" stroke="#E85DC0" stroke-width="1.3" stroke-dasharray="3 5" opacity="0.9"/>
+      <line x1="140" y1="120" x2="201" y2="69" stroke="#7C8798" stroke-width="1.3" stroke-dasharray="2 3"/>
+      <polygon points="0,-6 -4,4 4,4" fill="#7C8798" transform="translate(201,69) rotate(50)"/>
+      <g transform="translate(120,102) scale(0.4) rotate(50 50 45)">
         <path d="M20 30 Q35 14 50 14 Q65 14 80 30" fill="none" stroke="#E85DC0" stroke-width="6" stroke-linecap="round"/>
         <line x1="20" y1="30" x2="50" y2="50" stroke="#E85DC0" stroke-width="2.5" opacity="0.85"/>
         <line x1="37" y1="16" x2="50" y2="50" stroke="#E85DC0" stroke-width="2.5" opacity="0.85"/>
@@ -921,11 +947,12 @@
         <line x1="80" y1="30" x2="50" y2="50" stroke="#E85DC0" stroke-width="2.5" opacity="0.85"/>
         <ellipse cx="50" cy="60" rx="5.5" ry="10" fill="#E85DC0"/>
       </g>
-      <text x="90" y="182" fill="#E85DC0" font-size="10" text-anchor="middle" font-family="ui-monospace,monospace">Start</text>
-      <circle cx="160" cy="90" r="4" fill="#E7ECF3"/>
-      <text x="168" y="83" fill="#E7ECF3" font-size="9" font-family="ui-monospace,monospace" data-i18n="svgEmergencyLanding">mögliche Landung</text>
+      <text x="140" y="162" fill="#E85DC0" font-size="10" text-anchor="middle" font-family="ui-monospace,monospace">Start</text>
+      <circle cx="201" cy="69" r="4" fill="#E7ECF3"/>
+      <text x="193" y="62" fill="#E7ECF3" font-size="9" text-anchor="end" font-family="ui-monospace,monospace" data-i18n="svgEmergencyLanding">mögliche Landung</text>
     </svg>
-    <p data-i18n="infoEmergencyP2">Die Rechnung ist die Spiegelung der Reichweiten-Ringe: statt rückwärts vom Einstiegspunkt aus zu fragen "von wo komme ich gerade noch hierhin", wird hier vorwärts gefragt "wie weit komme ich von hier aus". Der Kreis wandert deshalb windabwärts statt windwärts, und es wird bis zum Boden gerechnet statt bis zur Einstiegshöhe - der Punkt selbst ist also kein festgelegter Landeplatz, sondern nur der Ausgangspunkt für die Berechnung.</p>
+    <p data-i18n="infoEmergencyP2">Die Berechnung ist das Gegenstück zu den Reichweiten-Ringen. Dort fragst du rückwärts: "Von wo aus schaffe ich es noch bis zum Einstiegspunkt?" Hier fragst du vorwärts: "Wie weit komme ich von diesem Punkt aus?"</p>
+    <p data-i18n="infoEmergencyP3">Dadurch drehen sich zwei Dinge um: Der Kreis wandert windabwärts statt windwärts, weil du dich jetzt vom Punkt weg bewegst statt auf ihn zu. Und gerechnet wird bis zum Boden (0 ft), nicht bis zur Einstiegshöhe der Platzrunde - hier geht es ja ums Landen, nicht um den Anschluss an die Platzrunde. Der gesetzte Punkt ist deshalb kein fester Landeplatz, sondern nur der Ausgangspunkt für die Berechnung.</p>
     <p class="muted" data-i18n="infoEmergencyNote">Weil beide Ring-Sätze bis zu unterschiedlichen Höhen rechnen (Einstiegshöhe vs. Boden), lässt sich eine Überschneidung nicht direkt als "hier komme ich noch zu beidem" lesen. Ob von der Notlandungsreichweite aus noch eine Rückkehr zum Zielpunkt möglich wäre, zeigt stattdessen die Lage dieses Punkts relativ zu den (blauen) Reichweiten-Ringen selbst.</p>
   </div>
 </div>
@@ -2687,7 +2714,8 @@ const I18N_EN = {
   infoEmergencyH: "Emergency reach",
   infoEmergencyP1: `Important for spotting early where on the map you could potentially still land if you had to make an emergency landing: place a point anywhere on the map, and the app shows you, for each altitude, how far you could still get from there.`,
   svgEmergencyLanding: "possible landing",
-  infoEmergencyP2: `The math mirrors the reach rings: instead of asking backward from the entry point ("where could I still reach it from"), this asks forward ("how far could I get from here"). The circle therefore drifts downwind instead of upwind, and the calculation runs down to the ground instead of down to the entry altitude - so the point itself isn't a fixed landing spot, just the starting point for the calculation.`,
+  infoEmergencyP2: `This calculation is the mirror image of the reach rings. There, you ask backward: "from where could I still reach the entry point?" Here, you ask forward: "how far could I get from this point?"`,
+  infoEmergencyP3: `Two things flip as a result: the circle drifts downwind instead of upwind, since you're now moving away from the point instead of toward it. And the calculation runs down to the ground (0 ft) instead of down to the pattern's entry altitude - this is about landing, not about connecting to the pattern. The point you place is therefore not a fixed landing spot, just the starting point for the calculation.`,
   infoEmergencyNote: `Because the two ring sets are computed down to different altitudes (entry altitude vs. ground), an overlap between them doesn't directly mean "both are still reachable from here." Whether a return to the target is still possible from the emergency reach point is instead shown by that point's position relative to the (blue) reach rings themselves.`,
 
   infoColorH: "Color legend",
