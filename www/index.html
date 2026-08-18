@@ -99,6 +99,33 @@
   .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1900;}
   .sidebar-backdrop.open{display:block;}
 
+  .tour-overlay{display:none;position:fixed;inset:0;z-index:4000;}
+  .tour-overlay.open{display:block;}
+  .tour-spotlight{
+    position:fixed;border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,.65);
+    transition:top .2s ease,left .2s ease,width .2s ease,height .2s ease;pointer-events:none;
+  }
+  .tour-card{
+    position:fixed;max-width:280px;background:var(--panel);border:1px solid var(--amber);border-radius:10px;
+    padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,.5);transition:top .2s ease,left .2s ease;
+  }
+  .tour-progress{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.06em;margin-bottom:4px;}
+  .tour-card h4{margin:0 0 6px;color:var(--amber);font-size:14px;font-weight:600;}
+  .tour-card p{margin:0 0 14px;font-size:12px;line-height:1.5;color:var(--text);}
+  .tour-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .tour-skip{background:none;border:none;color:var(--muted);font-family:var(--sans);font-size:11px;cursor:pointer;text-decoration:underline;text-underline-offset:2px;padding:0;}
+  .tour-btns{display:flex;gap:6px;}
+  .tour-back,.tour-next{
+    border-radius:6px;font-family:var(--sans);font-size:12px;font-weight:600;padding:7px 12px;cursor:pointer;border:1px solid var(--line);
+  }
+  .tour-back{background:var(--panel-2);color:var(--text);}
+  .tour-back:disabled{opacity:.35;cursor:default;}
+  .tour-next{background:var(--amber);color:#1a1204;border-color:var(--amber);}
+  .tour-start-btn{
+    display:block;width:100%;background:var(--amber);color:#1a1204;border:none;border-radius:6px;
+    font-family:var(--sans);font-size:13px;font-weight:600;padding:10px 0;cursor:pointer;margin-bottom:18px;
+  }
+
   .header{padding:18px 18px 14px;border-bottom:1px solid var(--line);}
   .eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--amber);text-transform:uppercase;}
   h1{font-size:17px;margin:4px 0 2px;font-weight:600;letter-spacing:-.01em;}
@@ -439,6 +466,7 @@
     dismissed = true;
     el.classList.add('hide');
     setTimeout(function(){ el.remove(); }, 550);
+    document.dispatchEvent(new CustomEvent('tm:splashDismissed'));
   }
   document.getElementById('splashContinue').addEventListener('click', function(e){ e.stopPropagation(); dismiss(); });
   document.addEventListener('keydown', function(e){
@@ -454,7 +482,7 @@
       <div class="sub" data-i18n="headerSub">Karte antippen, um den Zielpunkt zu setzen. Pattern rotiert automatisch mit dem Wind.</div>
     </div>
 
-    <div class="section">
+    <div class="section" id="sectionHand">
       <div class="label" data-i18n="handLabel">Platzrunde</div>
       <div class="toggle">
         <button id="handLeft" class="active" data-i18n="handLeftBtn">Linksplatz</button>
@@ -462,7 +490,7 @@
       </div>
     </div>
 
-    <div class="section">
+    <div class="section" id="sectionWind">
       <div class="label"><span data-i18n="windDirLabel">Windrichtung (woher)</span> <b id="windDegLabel">270°</b></div>
       <div class="dial-wrap">
         <div id="dial">
@@ -491,7 +519,7 @@
 
       <div style="margin-top:16px;padding-top:16px;border-top:1px dashed var(--line);">
         <div class="label" style="margin-bottom:8px;"><span data-i18n="landingDirLabel">Landerichtung</span> <b id="landingDegLabel">270°</b></div>
-        <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:12px;color:var(--muted);cursor:pointer;">
+        <label id="landingIntoWindRow" style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:12px;color:var(--muted);cursor:pointer;">
           <input type="checkbox" id="landingIntoWind" checked style="accent-color:var(--amber);width:15px;height:15px;cursor:pointer;flex:none;">
           <span data-i18n="landingIntoWindLabel">Landerichtung = in den Wind (deaktivieren bei vorgeschriebener Landerichtung)</span>
         </label>
@@ -522,7 +550,7 @@
       </div>
     </div>
 
-    <div class="section">
+    <div class="section" id="sectionPerf">
       <div class="label"><span data-i18n="windFahrtLabel">Wind &amp; Fahrt</span>
         <div class="toggle" style="width:120px;">
           <button id="windUnitKmh" class="active">km/h</button>
@@ -564,7 +592,7 @@
       </div>
     </div>
 
-    <div class="section">
+    <div class="section" id="sectionPlots">
       <div class="label" data-i18n="plotsLabel">Plots auf der Karte</div>
       <div class="plot-row">
         <input type="checkbox" id="plotNowind" checked>
@@ -587,7 +615,7 @@
         <label for="plotWindAnim" data-i18n="plotWindAnimLabel">Windanimation</label>
       </div>
       <div class="plot-row">
-        <input type="checkbox" id="plotReach">
+        <input type="checkbox" id="plotReach" checked>
         <span class="plot-swatch reach"></span>
         <label for="plotReach" data-i18n="plotReachLabel">Reichweiten-Ringe</label>
       </div>
@@ -598,7 +626,7 @@
       </div>
     </div>
 
-    <div class="section">
+    <div class="section" id="sectionLegs">
       <div class="label"><span data-i18n="legsLabel">Legs</span>
         <div class="toggle" style="width:100px;">
           <button id="unitM" class="active">m</button>
@@ -736,6 +764,22 @@
 </div>
 <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
+<div class="tour-overlay" id="tourOverlay">
+  <div class="tour-spotlight" id="tourSpotlight"></div>
+  <div class="tour-card" id="tourCard">
+    <div class="tour-progress" id="tourProgress"></div>
+    <h4 id="tourCardTitle"></h4>
+    <p id="tourCardText"></p>
+    <div class="tour-footer">
+      <button class="tour-skip" id="tourSkip" data-i18n="tourSkipBtn">Überspringen</button>
+      <div class="tour-btns">
+        <button class="tour-back" id="tourBack" data-i18n="tourBackBtn">Zurück</button>
+        <button class="tour-next" id="tourNext" data-i18n="tourNextBtn">Weiter</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="infoModal">
   <div class="modal-box">
     <button class="modal-close" data-close-modal="infoModal">✕</button>
@@ -860,6 +904,7 @@
   <div class="modal-box">
     <button class="modal-close" data-close-modal="helpModal">✕</button>
     <h2 data-i18n="helpTitle">Bedienanleitung</h2>
+    <button class="tour-start-btn" id="startTourBtn" data-i18n="tourStartBtn">Geführte Tour starten</button>
 
     <h3 data-i18n="help1H">1. Windrichtung</h3>
     <p data-i18n="help1P">Dial ziehen oder Gradzahl eintippen - die Richtung, <b>aus der</b> der Wind kommt (Windsack-Konvention).</p>
@@ -911,10 +956,11 @@ let state = {
   altitudes: { downwind: 1000, base: 500, final: 250 }, // always stored in ft
   openingAltFt: 4000, // canopy opening altitude, for the experimental reach-ring overlay - always stored in ft
   turnCostFt: 100, // altitude spent per 90° turn, deducted from the following leg's budget - 0 = disabled
-  plots: { nowind: true, uncorrected: true, corrected: false, reach: false },
+  plots: { nowind: true, uncorrected: true, corrected: false, reach: true },
   windAnimEnabled: true,
   hasUsedWindDrag: false, // pulses the map wind arrow as a "this is draggable" hint until first used
   hasOpenedSidebar: false, // pulses the mobile drawer toggle until first opened
+  hasSeenTour: false, // guided tour auto-launches once for a new visitor, then only from the "?" page
   favorites: [] // [{ name, target: [lat, lon] }, ...] user-saved map locations
 };
 
@@ -962,6 +1008,118 @@ function setSidebarOpen(open) {
 }
 sidebarToggle.addEventListener('click', () => setSidebarOpen(!panelEl.classList.contains('open')));
 sidebarBackdrop.addEventListener('click', () => setSidebarOpen(false));
+
+// ---------- Guided tour ----------
+// A short spotlight walkthrough of the sidebar controls, launched once automatically for a genuinely
+// new visitor (no saved target yet) and always re-launchable from the "?" user guide. Content lives
+// here in JS rather than as static data-i18n markup, since each step's text is tied to a live DOM
+// target rather than to any element that's already on the page.
+function tourStepData() {
+  const en = state.lang === 'en';
+  return [
+    { selector: '.map-search', sidebar: false,
+      title: en ? 'Set your target' : 'Zielpunkt setzen',
+      text: en ? 'Tap the map, or search a dropzone by name, to place the point the pattern is built around.' : 'Karte antippen, oder eine Dropzone per Namen suchen, um den Zielpunkt zu setzen, um den die Platzrunde gebaut wird.' },
+    { selector: '#sectionHand', sidebar: true,
+      title: en ? 'Pattern direction' : 'Platzrunde',
+      text: en ? 'Left-hand or right-hand - sets which way the pattern turns from downwind via base to final.' : 'Links- oder Rechtsplatz - bestimmt, in welche Richtung die Platzrunde von Downwind über Base nach Final dreht.' },
+    { selector: '#sectionWind', sidebar: true,
+      title: en ? 'Wind direction' : 'Windrichtung',
+      text: en ? 'Drag the dial or type a degree value - the direction the wind is coming from. The pattern rotates with it automatically.' : 'Dial ziehen oder Gradzahl eintippen - die Richtung, aus der der Wind kommt. Die Platzrunde dreht sich automatisch mit.' },
+    { selector: '#landingIntoWindRow', sidebar: true,
+      title: en ? 'Landing direction' : 'Landerichtung',
+      text: en ? 'Locked to the wind direction by default. Uncheck it if the dropzone has a fixed landing direction instead.' : 'Standardmäßig an die Windrichtung gekoppelt. Häkchen entfernen, falls die Dropzone eine feste Landerichtung vorschreibt.' },
+    { selector: '#sectionPerf', sidebar: true,
+      title: en ? 'Wind & airspeed' : 'Wind & Fahrt',
+      text: en ? "Wind speed, canopy forward speed, and sink rate. Not sure what to enter? The wingload estimator below gives a rough starting point." : 'Windgeschwindigkeit, Vorwärtsfahrt der Kappe und Sinkrate. Keine Ahnung, was du eintragen sollst? Die Schätzhilfe (Wingload) darunter gibt einen groben Richtwert.' },
+    { selector: '#sectionPlots', sidebar: true,
+      title: en ? 'Plots on the map' : 'Plots auf der Karte',
+      text: en ? 'Toggle which flight paths and overlays are shown on the map.' : 'Blendet ein, welche Flugbahnen und Zusatz-Overlays auf der Karte angezeigt werden.' },
+    { selector: '#sectionLegs', sidebar: true,
+      title: en ? 'Legs' : 'Legs',
+      text: en ? 'Enter altitude loss down to each turn point - leg distances and times are calculated automatically.' : 'Höhenverlust bis zu den Turnpunkten eingeben - Streckenlängen und Zeiten werden automatisch berechnet.' }
+  ];
+}
+
+let tourIndex = 0;
+const tourOverlay = document.getElementById('tourOverlay');
+const tourSpotlightEl = document.getElementById('tourSpotlight');
+const tourCardEl = document.getElementById('tourCard');
+const tourCardTitle = document.getElementById('tourCardTitle');
+const tourCardText = document.getElementById('tourCardText');
+const tourProgressEl = document.getElementById('tourProgress');
+const tourBackBtn = document.getElementById('tourBack');
+const tourNextBtn = document.getElementById('tourNext');
+const tourSkipBtn = document.getElementById('tourSkip');
+
+function positionSpotlight(el) {
+  const rect = el.getBoundingClientRect();
+  const pad = 6;
+  tourSpotlightEl.style.top = (rect.top - pad) + 'px';
+  tourSpotlightEl.style.left = (rect.left - pad) + 'px';
+  tourSpotlightEl.style.width = (rect.width + pad * 2) + 'px';
+  tourSpotlightEl.style.height = (rect.height + pad * 2) + 'px';
+  return rect;
+}
+
+function positionTourCard(rect) {
+  const margin = 12;
+  const cw = tourCardEl.offsetWidth, ch = tourCardEl.offsetHeight;
+  let top = rect.bottom + margin;
+  if (top + ch > window.innerHeight - margin) top = Math.max(margin, rect.top - ch - margin);
+  let left = Math.min(rect.left, window.innerWidth - cw - margin);
+  left = Math.max(margin, left);
+  tourCardEl.style.top = top + 'px';
+  tourCardEl.style.left = left + 'px';
+}
+
+function showTourStep(i) {
+  const steps = tourStepData();
+  tourIndex = Math.max(0, Math.min(i, steps.length - 1));
+  const step = steps[tourIndex];
+  setSidebarOpen(!!step.sidebar);
+  // Gives the sidebar's own open/close transition (mobile off-canvas drawer) time to finish before
+  // measuring positions - measuring mid-transition would spotlight the wrong, still-animating spot.
+  setTimeout(() => {
+    const el = document.querySelector(step.selector);
+    if (!el) { endTour(); return; }
+    el.scrollIntoView({ block: 'center' });
+    requestAnimationFrame(() => {
+      const rect = positionSpotlight(el);
+      tourCardTitle.textContent = step.title;
+      tourCardText.textContent = step.text;
+      const en = state.lang === 'en';
+      tourProgressEl.textContent = `${tourIndex + 1} / ${steps.length}`;
+      tourBackBtn.disabled = tourIndex === 0;
+      tourNextBtn.textContent = tourIndex === steps.length - 1 ? (en ? 'Done' : 'Fertig') : (en ? 'Next' : 'Weiter');
+      positionTourCard(rect);
+    });
+  }, 260);
+}
+
+function startTour() {
+  closeModal('helpModal');
+  tourOverlay.classList.add('open');
+  showTourStep(0);
+}
+function endTour() {
+  tourOverlay.classList.remove('open');
+  setSidebarOpen(false);
+  if (!state.hasSeenTour) { state.hasSeenTour = true; saveState(); }
+}
+tourNextBtn.addEventListener('click', () => {
+  if (tourIndex >= tourStepData().length - 1) { endTour(); return; }
+  showTourStep(tourIndex + 1);
+});
+tourBackBtn.addEventListener('click', () => { if (tourIndex > 0) showTourStep(tourIndex - 1); });
+tourSkipBtn.addEventListener('click', endTour);
+document.getElementById('startTourBtn').addEventListener('click', startTour);
+// Auto-launched once for a genuinely new visitor - see the splash screen's dismiss handler, which
+// dispatches this event (the tour must wait for the splash to be gone, and the splash's own inline
+// script runs and can be dismissed before this main script has even finished parsing).
+document.addEventListener('tm:splashDismissed', () => {
+  if (!state.hasSeenTour && !hasUserTarget) startTour();
+});
 
 // ---------- Onboarding banner ----------
 // Shown until the user either dismisses it or sets a target point themselves (map tap, marker drag,
@@ -2424,6 +2582,10 @@ const I18N_EN = {
     </tbody></table>`,
 
   helpTitle: "User guide",
+  tourStartBtn: "Start guided tour",
+  tourSkipBtn: "Skip",
+  tourBackBtn: "Back",
+  tourNextBtn: "Next",
   help1H: "1. Wind direction",
   help1P: "Drag the dial or type a degree value - the direction the wind is coming <b>from</b> (windsock convention).",
   help2H: "2. Landing direction",

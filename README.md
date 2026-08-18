@@ -15,6 +15,7 @@ A landing pattern simulator for skydivers — plan your downwind/base/final appr
 - Save favorite locations to jump back to quickly - their surroundings are pre-cached for offline use
 - Works offline for any dropzone you've already viewed or saved as a favorite (service worker-backed)
 - Left-hand / right-hand pattern toggle, metric/imperial + km-h/knots unit toggles
+- Guided spotlight tour of the controls, shown once automatically and replayable anytime from the "?" user guide
 - English and German
 
 ⚠️ This is a planning aid, not a substitute for an on-site briefing. Always confirm your planned approach with the dropzone's chief instructor before jumping.
