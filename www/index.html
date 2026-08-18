@@ -696,7 +696,7 @@
       Vereinfachtes Modell - Formeln, Skizzen &amp; Grenzen: „i"-Button oben.
     </div>
 
-    <div class="footer">Developed by Tobias Windberg<br><span data-i18n="footerContact">Fragen oder Ideen? <a href="mailto:tobi.windberg@gmail.com" style="color:var(--cyan);">tobi.windberg@gmail.com</a></span><br><span data-i18n="footerVersion" style="opacity:.6;">Stand: 2026-08-16</span></div>
+    <div class="footer">Developed by Tobias Windberg<br><span data-i18n="footerContact">Fragen oder Ideen? <a href="mailto:tobi.windberg@gmail.com" style="color:var(--cyan);">tobi.windberg@gmail.com</a></span><br><span data-i18n="footerVersion" style="opacity:.6;">Stand: 2026-08-18</span></div>
   </div>
 
   <div id="mapWrap" style="position:relative;flex:1;">
@@ -885,7 +885,7 @@
     <h3 data-i18n="infoLimitsH">Grenzen des Modells</h3>
     <ul>
       <li data-i18n="infoLimit1">Konstante Sinkrate und Fahrt im Vollflug - kein Bremsen</li>
-      <li data-i18n="infoLimit2">"Höhenverlust pro Turn" ist ein grober, einstellbarer Schätzwert (Standard 0 = deaktiviert) - kein exakter Wert, da stark von Wingload und Steuerungsart abhängig</li>
+      <li data-i18n="infoLimit2">"Höhenverlust pro Turn" ist ein grober, einstellbarer Schätzwert (Standard 100 ft, auf 0 stellbar zum Deaktivieren) - kein exakter Wert, da stark von Wingload und Steuerungsart abhängig</li>
       <li data-i18n="infoLimit3">Wind gilt als konstant über den gesamten Sinkflug - keine Windscherung mit der Höhe (real oft stärker/anders oben als am Boden)</li>
       <li data-i18n="infoLimit4">Reale Kappensteuerung ist ungenauer als der berechnete Vorhaltewinkel suggeriert - er ist eine Zielgröße, keine exakt fliegbare Führung</li>
       <li data-i18n="infoLimit5">Die Reichweiten-Ringe nehmen einen sofortigen Richtungswechsel an - reale Kurvenzeit wird nicht abgezogen, der tatsächlich erreichbare Bereich ist etwas kleiner</li>
@@ -2672,7 +2672,7 @@ const I18N_EN = {
   plotReachHint: "Shows the furthest you can be from the entry point at a given altitude and still reach it at full flight.",
   openingAltLabel: "Opening altitude",
   footerContact: `Questions or ideas? <a href="mailto:tobi.windberg@gmail.com" style="color:var(--cyan);">tobi.windberg@gmail.com</a>`,
-  footerVersion: "Updated: 2026-08-16",
+  footerVersion: "Updated: 2026-08-18",
   onboardingIntro: "This tool simulates your landing approach at any dropzone - depending on wind, wing loading, and adjustable turn points.",
   onboardingTitle: "Let's go",
   onboardingStep1: "Set the wind direction",
@@ -2765,7 +2765,7 @@ const I18N_EN = {
 
   infoLimitsH: "Model limitations",
   infoLimit1: "Constant sink rate and airspeed in full flight - no braking",
-  infoLimit2: `"Altitude loss per turn" is a rough, adjustable estimate (default 0 = disabled) - not an exact value, since it depends heavily on wing loading and control input`,
+  infoLimit2: `"Altitude loss per turn" is a rough, adjustable estimate (default 100 ft, can be set to 0 to disable) - not an exact value, since it depends heavily on wing loading and control input`,
   infoLimit3: "Wind is treated as constant over the whole descent - no wind shear with altitude (in reality often stronger/different higher up than at ground level)",
   infoLimit4: "Real canopy steering is less precise than the calculated correction angle suggests - it's a target value, not an exactly flyable guide",
   infoLimit5: "The reach rings assume an instant heading change - real turn time isn't subtracted, so the actually reachable area is somewhat smaller",

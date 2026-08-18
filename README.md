@@ -89,7 +89,7 @@ Forward speed and sink rate are then linearly interpolated between the two neare
 ### Known limitations
 
 - Constant sink rate and airspeed assumed in full flight — no braking
-- "Altitude loss per turn" is a rough, adjustable estimate (default off), not an exact value — depends heavily on wing loading and control input
+- "Altitude loss per turn" is a rough, adjustable estimate (default 100 ft, can be set to 0 to disable), not an exact value — depends heavily on wing loading and control input
 - Wind is treated as constant over the whole descent — no wind shear with altitude
 - The crab angle is a target value, not an exactly flyable guide — real canopy steering is less precise
 - The reach rings assume an instant heading change — real turn time isn't subtracted, so the actually reachable area is somewhat smaller
