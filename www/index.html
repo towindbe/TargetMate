@@ -953,7 +953,7 @@
         <line x1="80" y1="30" x2="50" y2="50" stroke="#E85DC0" stroke-width="2.5" opacity="0.85"/>
         <ellipse cx="50" cy="60" rx="5.5" ry="10" fill="#E85DC0"/>
       </g>
-      <text x="140" y="162" fill="#E85DC0" font-size="10" text-anchor="middle" font-family="ui-monospace,monospace">Position</text>
+      <text x="140" y="162" fill="#E85DC0" font-size="10" text-anchor="middle" font-family="ui-monospace,monospace" data-i18n="svgEmergencyPosition">Notlandungsreichweite</text>
       <circle cx="201" cy="69" r="4" fill="#E7ECF3"/>
       <text x="193" y="62" fill="#E7ECF3" font-size="9" text-anchor="end" font-family="ui-monospace,monospace" data-i18n="svgEmergencyLanding">mögliche Landung</text>
     </svg>
@@ -1708,9 +1708,9 @@ function drawEmergencyRings() {
     canopyLayers.push(label);
   });
 
-  const emergencyDot = L.circleMarker(state.emergencyPoint, {
-    radius: 5, color: '#E85DC0', weight: 2, fillColor: '#E85DC0', fillOpacity: 0.9
-  }).addTo(map);
+  // Same canopy glyph used for the flight-path legs, rather than a plain dot - reinforces that this
+  // is a hypothetical jumper position, not just an abstract map marker.
+  const emergencyDot = canopyMarker(state.emergencyPoint, 0, '#E85DC0').addTo(map);
   // Clicking the point itself also removes it, as a redundant shortcut to the map button doing the
   // same - handy when the button isn't in view (e.g. scrolled/zoomed away from the cluster).
   emergencyDot.on('click', (e) => {
@@ -1721,10 +1721,9 @@ function drawEmergencyRings() {
     render();
   });
   canopyLayers.push(emergencyDot);
-  // "Position" rather than naming the emergency itself - this marks the reference point the rings
-  // are computed from, not a place the user necessarily intends to land. Avoids "Start", which could
-  // be misread as another pattern-start point alongside "Entry".
-  const emergencyLabel = textMarker(state.emergencyPoint, 'Position', '#E85DC0', { plain: true, offsetPx: [0, 16] }).addTo(map);
+  // Matches the button's own name/title, so it's obvious this is the point that button placed -
+  // "Start" was tried first but risked being misread as another pattern-start point alongside "Entry".
+  const emergencyLabel = textMarker(state.emergencyPoint, state.lang === 'en' ? 'Emergency reach' : 'Notlandungsreichweite', '#E85DC0', { plain: true, offsetPx: [0, 26] }).addTo(map);
   canopyLayers.push(emergencyLabel);
 }
 
@@ -2756,6 +2755,7 @@ const I18N_EN = {
   infoEmergencyH: "Emergency reach",
   infoEmergencyP1: `Important for spotting early where on the map you could potentially still land if you had to make an emergency landing: place a point anywhere on the map, and the app shows you, for each altitude, how far you could still get from there.`,
   svgEmergencyLanding: "possible landing",
+  svgEmergencyPosition: "Emergency reach",
   infoEmergencyP2: `This calculation is the mirror image of the reach rings. There, you ask backward: "from where could I still reach the entry point?" Here, you ask forward: "how far could I get from this point?"`,
   infoEmergencyP3: `Two things flip as a result: the circle drifts downwind instead of upwind, since you're now moving away from the point instead of toward it. And the calculation runs down to the ground (0 ft) instead of down to the pattern's entry altitude - this is about landing, not about connecting to the pattern. The point you place is therefore not a fixed landing spot, just the starting point for the calculation.`,
   infoEmergencyNote: `Because the two ring sets are computed down to different altitudes (entry altitude vs. ground), an overlap between them doesn't directly mean "both are still reachable from here." Whether a return to the target is still possible from the emergency reach point is instead shown by that point's position relative to the (blue) reach rings themselves.`,
