@@ -615,15 +615,17 @@
         <span class="plot-swatch wind-streak"></span>
         <label for="plotWindAnim" data-i18n="plotWindAnimLabel">Windanimation</label>
       </div>
-      <div class="plot-row">
-        <input type="checkbox" id="plotReach" checked>
-        <span class="plot-swatch reach"></span>
-        <label for="plotReach" data-i18n="plotReachLabel">Reichweiten-Ringe</label>
-      </div>
-      <div class="crab-hint" style="margin:-4px 0 10px 20px;" data-i18n="plotReachHint">Zeigt, wie weit du bei welcher Höhe maximal vom Einstiegspunkt entfernt sein darfst, um ihn bei voller Fahrt noch zu erreichen.</div>
-      <div class="alt-row" id="openingAltRow" style="margin:2px 0 0 20px;">
-        <label data-i18n="openingAltLabel">Öffnungshöhe</label>
-        <input type="number" id="altOpening" value="4000" step="50"><span class="alt-unit">ft</span>
+      <div id="reachRingRow">
+        <div class="plot-row">
+          <input type="checkbox" id="plotReach" checked>
+          <span class="plot-swatch reach"></span>
+          <label for="plotReach" data-i18n="plotReachLabel">Reichweiten-Ringe</label>
+        </div>
+        <div class="crab-hint" style="margin:-4px 0 10px 20px;" data-i18n="plotReachHint">Zeigt, wie weit du bei welcher Höhe maximal vom Einstiegspunkt entfernt sein darfst, um ihn bei voller Fahrt noch zu erreichen.</div>
+        <div class="alt-row" id="openingAltRow" style="margin:2px 0 0 20px;">
+          <label data-i18n="openingAltLabel">Öffnungshöhe</label>
+          <input type="number" id="altOpening" value="4000" step="50"><span class="alt-unit">ft</span>
+        </div>
       </div>
     </div>
 
@@ -736,10 +738,13 @@
         </svg>
       </button>
       <button class="map-menu-btn" id="mapEmergencyBtn" data-i18n-title="emergencyBtnTitle" title="Notlandungsreichweite setzen">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6">
-          <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/>
-          <circle cx="12" cy="12" r="6"/>
-          <circle cx="12" cy="12" r="10"/>
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round">
+          <path d="M4 10 Q12 3 20 10"/>
+          <line x1="4" y1="10" x2="12" y2="17"/>
+          <line x1="9" y1="6" x2="12" y2="17"/>
+          <line x1="15" y1="6" x2="12" y2="17"/>
+          <line x1="20" y1="10" x2="12" y2="17"/>
+          <ellipse cx="12" cy="19.3" rx="1.8" ry="2.6" fill="currentColor" stroke="none"/>
         </svg>
       </button>
     </div>
@@ -948,7 +953,7 @@
         <line x1="80" y1="30" x2="50" y2="50" stroke="#E85DC0" stroke-width="2.5" opacity="0.85"/>
         <ellipse cx="50" cy="60" rx="5.5" ry="10" fill="#E85DC0"/>
       </g>
-      <text x="140" y="162" fill="#E85DC0" font-size="10" text-anchor="middle" font-family="ui-monospace,monospace">Start</text>
+      <text x="140" y="162" fill="#E85DC0" font-size="10" text-anchor="middle" font-family="ui-monospace,monospace">Position</text>
       <circle cx="201" cy="69" r="4" fill="#E7ECF3"/>
       <text x="193" y="62" fill="#E7ECF3" font-size="9" text-anchor="end" font-family="ui-monospace,monospace" data-i18n="svgEmergencyLanding">mögliche Landung</text>
     </svg>
@@ -1099,7 +1104,13 @@ function tourStepData() {
       text: en ? 'Toggle which flight paths and overlays are shown on the map.' : 'Blendet ein, welche Flugbahnen und Zusatz-Overlays auf der Karte angezeigt werden.' },
     { selector: '#sectionLegs', sidebar: true,
       title: en ? 'Legs' : 'Legs',
-      text: en ? 'Enter altitude loss down to each turn point - leg distances and times are calculated automatically.' : 'Höhenverlust bis zu den Turnpunkten eingeben - Streckenlängen und Zeiten werden automatisch berechnet.' }
+      text: en ? 'Enter altitude loss down to each turn point - leg distances and times are calculated automatically.' : 'Höhenverlust bis zu den Turnpunkten eingeben - Streckenlängen und Zeiten werden automatisch berechnet.' },
+    { selector: '#reachRingRow', sidebar: true,
+      title: en ? 'Reach rings' : 'Reichweiten-Ringe',
+      text: en ? 'Shows, for a chosen opening altitude, how far you could be from the entry point and still reach it at full flight.' : 'Zeigt bei einer gewählten Öffnungshöhe, wie weit du dich vom Einstiegspunkt entfernt öffnen lassen kannst und ihn bei voller Fahrt noch erreichst.' },
+    { selector: '#mapEmergencyBtn', sidebar: false,
+      title: en ? 'Emergency reach' : 'Notlandungsreichweite',
+      text: en ? 'Places a second point on the map and shows what area you could still reach from there in an emergency.' : 'Setzt einen zweiten Punkt auf der Karte und zeigt, welchen Bereich du von dort aus bei einer Notlandung noch erreichen könntest.' }
   ];
 }
 
@@ -1135,18 +1146,28 @@ function positionTourCard(rect) {
   tourCardEl.style.left = left + 'px';
 }
 
+// Bumped on every showTourStep() call so a slower, overtaken transition (still waiting on its
+// setTimeout/rAF below) can recognize it's stale and bail out instead of clobbering a newer one's
+// result - without this, clicking "Next" faster than the 260ms/rAF delay let an earlier call's DOM
+// writes land after a later call's, showing the wrong step's title/spotlight or even querying a
+// selector that raced past the current step (see the endTour() fallback below).
+let tourRequestId = 0;
+
 function showTourStep(i) {
   const steps = tourStepData();
   tourIndex = Math.max(0, Math.min(i, steps.length - 1));
   const step = steps[tourIndex];
+  const myRequest = ++tourRequestId;
   setSidebarOpen(!!step.sidebar);
   // Gives the sidebar's own open/close transition (mobile off-canvas drawer) time to finish before
   // measuring positions - measuring mid-transition would spotlight the wrong, still-animating spot.
   setTimeout(() => {
+    if (myRequest !== tourRequestId) return; // a newer step transition has since started
     const el = document.querySelector(step.selector);
     if (!el) { endTour(); return; }
     el.scrollIntoView({ block: 'center' });
     requestAnimationFrame(() => {
+      if (myRequest !== tourRequestId) return;
       const rect = positionSpotlight(el);
       tourCardTitle.textContent = step.title;
       tourCardText.textContent = step.text;
@@ -1684,9 +1705,10 @@ function drawEmergencyRings() {
     render();
   });
   canopyLayers.push(emergencyDot);
-  // "Start" rather than naming the emergency itself - this marks the reference point the rings are
-  // computed from, not a place the user necessarily intends to land.
-  const emergencyLabel = textMarker(state.emergencyPoint, 'Start', '#E85DC0', { plain: true, offsetPx: [0, 16] }).addTo(map);
+  // "Position" rather than naming the emergency itself - this marks the reference point the rings
+  // are computed from, not a place the user necessarily intends to land. Avoids "Start", which could
+  // be misread as another pattern-start point alongside "Entry".
+  const emergencyLabel = textMarker(state.emergencyPoint, 'Position', '#E85DC0', { plain: true, offsetPx: [0, 16] }).addTo(map);
   canopyLayers.push(emergencyLabel);
 }
 
