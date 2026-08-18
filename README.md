@@ -12,7 +12,7 @@ A landing pattern simulator for skydivers — plan your downwind/base/final appr
 - Compares three flight paths: no-wind reference, uncorrected (nose held straight), and corrected (crabbed into the wind)
 - Wingload estimator: rough forward speed / sink rate from exit weight and canopy size
 - Reach rings: at a given opening altitude, how far you could be from the pattern's entry point and still reach it at full flight, wind included
-- Optional bailout point: drop a second point on the map to see how far you could get from *there* instead, at each altitude
+- Optional emergency landing point: drop a second point on the map to see how far you could get from *there* instead, at each altitude, down to the ground
 - Save favorite locations to jump back to quickly - their surroundings are pre-cached for offline use
 - Works offline for any dropzone you've already viewed or saved as a favorite (service worker-backed)
 - Left-hand / right-hand pattern toggle, metric/imperial + km-h/knots unit toggles

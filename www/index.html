@@ -254,9 +254,9 @@
     background:rgba(18,22,29,.92);backdrop-filter:blur(4px);border-radius:8px;
   }
   .map-fav-cluster{display:flex;position:absolute;top:58px;right:12px;z-index:1000;flex-direction:column;gap:8px;}
-  #mapLocateBtn svg,#mapBailoutBtn svg{width:20px;height:20px;stroke:currentColor;}
-  #mapBailoutBtn.armed{color:#E85DC0;border-color:#E85DC0;background:rgba(232,93,192,.15);}
-  #mapBailoutBtn.set{color:#1a1204;border-color:#E85DC0;background:#E85DC0;}
+  #mapLocateBtn svg,#mapEmergencyBtn svg{width:20px;height:20px;stroke:currentColor;}
+  #mapEmergencyBtn.armed{color:#E85DC0;border-color:#E85DC0;background:rgba(232,93,192,.15);}
+  #mapEmergencyBtn.set{color:#1a1204;border-color:#E85DC0;background:#E85DC0;}
   .fav-panel{
     position:absolute;top:196px;right:12px;z-index:1050;width:240px;
     background:rgba(18,22,29,.96);border:1px solid var(--line);border-radius:10px;
@@ -735,7 +735,7 @@
           <line x1="18" y1="12" x2="22" y2="12"/>
         </svg>
       </button>
-      <button class="map-menu-btn" id="mapBailoutBtn" data-i18n-title="bailoutBtnTitle" title="Bailout-Punkt setzen">
+      <button class="map-menu-btn" id="mapEmergencyBtn" data-i18n-title="emergencyBtnTitle" title="Notlandepunkt setzen">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="5" y1="21" x2="5" y2="3"/>
           <path d="M5 4h13l-3 4 3 4H5"/>
@@ -962,7 +962,7 @@ let state = {
   sinkUnit: 'ms', // 'ms' | 'ftmin' - display unit only, state.perf.sinkRateMs always stores m/s
   altitudes: { downwind: 1000, base: 500, final: 250 }, // always stored in ft
   openingAltFt: 4000, // canopy opening altitude, for the reach-ring overlay - always stored in ft
-  bailoutPoint: null, // [lat, lon] or null - optional second point for the forward reach rings
+  emergencyPoint: null, // [lat, lon] or null - optional second point for the forward reach rings
   turnCostFt: 100, // altitude spent per 90° turn, deducted from the following leg's budget - 0 = disabled
   plots: { nowind: true, uncorrected: true, corrected: false, reach: true },
   windAnimEnabled: true,
@@ -1180,10 +1180,10 @@ let canopyLayers = [];
 
 targetMarker.on('drag', (e) => { state.target = [e.latlng.lat, e.latlng.lng]; hideOnboarding(); markUserTarget(); render(); });
 map.on('click', (e) => {
-  if (bailoutArmed) {
-    state.bailoutPoint = [e.latlng.lat, e.latlng.lng];
-    bailoutArmed = false;
-    updateBailoutBtn();
+  if (emergencyArmed) {
+    state.emergencyPoint = [e.latlng.lat, e.latlng.lng];
+    emergencyArmed = false;
+    updateEmergencyBtn();
     saveState();
     render();
     return;
@@ -1522,7 +1522,7 @@ function render() {
   if (state.plots.nowind) drawVariant('nowind');
   if (state.plots.uncorrected) drawVariant('uncorrected');
   if (state.plots.corrected) drawVariant('corrected');
-  if (state.plots.reach) { drawReachRings(); drawBailoutRings(); }
+  if (state.plots.reach) { drawReachRings(); drawEmergencyRings(); }
 
   // Auto-zoom/fit-to-pattern was removed by request - the map no longer re-centers or re-zooms itself
   // as the pattern changes. Users navigate the map manually; nothing in render() touches the view.
@@ -1586,9 +1586,11 @@ function drawReachRings() {
 // Mirror image of drawReachRings(), for an optional user-placed "what if I opened here instead" point:
 // forward instead of backward, so the ring center drifts downwind (the direction wind blows toward)
 // with time rather than upwind, and altitude counts down to the ground (0 ft) rather than to the
-// pattern's entry altitude, since there's no fixed leg structure to end at.
-function drawBailoutRings() {
-  if (!state.bailoutPoint) return;
+// pattern's entry altitude, since there's no fixed leg structure to end at - this deliberately answers
+// a different question than the reach rings (where could I land at all, not just "can I still make the
+// entry point") and isn't meant to be compared ring-for-ring against them.
+function drawEmergencyRings() {
+  if (!state.emergencyPoint) return;
   const openingAltFt = state.openingAltFt;
   if (openingAltFt <= 0) return;
 
@@ -1605,7 +1607,7 @@ function drawBailoutRings() {
     const t = legTimeFromAlt(h);
     const radiusM = fwdMs * t;
     if (radiusM <= 0) return;
-    const center = destPoint(state.bailoutPoint[0], state.bailoutPoint[1], downwindBearing, windMs * t);
+    const center = destPoint(state.emergencyPoint[0], state.emergencyPoint[1], downwindBearing, windMs * t);
     const ring = L.circle(center, {
       radius: radiusM, color: '#E85DC0', weight: 1.5, opacity: 0.8, fill: false, dashArray: '4 6'
     }).addTo(map);
@@ -1615,21 +1617,21 @@ function drawBailoutRings() {
     canopyLayers.push(label);
   });
 
-  const bailoutDot = L.circleMarker(state.bailoutPoint, {
+  const emergencyDot = L.circleMarker(state.emergencyPoint, {
     radius: 5, color: '#E85DC0', weight: 2, fillColor: '#E85DC0', fillOpacity: 0.9
   }).addTo(map);
-  // Clicking the point itself removes it - the flag button re-arms to place a new one anyway, so a
-  // separate delete control would just be a second way to do the same thing.
-  bailoutDot.on('click', (e) => {
+  // Clicking the point itself also removes it, as a redundant shortcut to the map button doing the
+  // same - handy when the button isn't in view (e.g. scrolled/zoomed away from the cluster).
+  emergencyDot.on('click', (e) => {
     L.DomEvent.stopPropagation(e); // don't let the click also fall through to map.on('click') and move the target
-    state.bailoutPoint = null;
-    updateBailoutBtn();
+    state.emergencyPoint = null;
+    updateEmergencyBtn();
     saveState();
     render();
   });
-  canopyLayers.push(bailoutDot);
-  const bailoutLabel = textMarker(state.bailoutPoint, 'Bailout', '#E85DC0', { plain: true, offsetPx: [0, 16] }).addTo(map);
-  canopyLayers.push(bailoutLabel);
+  canopyLayers.push(emergencyDot);
+  const emergencyLabel = textMarker(state.emergencyPoint, state.lang === 'en' ? 'Emergency' : 'Notlandung', '#E85DC0', { plain: true, offsetPx: [0, 16] }).addTo(map);
+  canopyLayers.push(emergencyLabel);
 }
 
 // ---------- Wind dial ----------
@@ -1950,37 +1952,37 @@ mapLocateBtn.addEventListener('click', () => {
   );
 });
 
-// ---------- Bailout point (forward reach rings) ----------
+// ---------- Emergency landing point (forward reach rings) ----------
 // The button is a 3-state toggle: nothing set -> click arms a single-shot "next map tap places it"
 // mode (so a forgotten mode can never hijack a later, unrelated tap - it disarms itself after exactly
 // one tap); armed -> click cancels; already placed -> click removes it directly, since clicking the
 // (small, easy to miss) marker itself isn't a discoverable way to delete something.
-const mapBailoutBtn = document.getElementById('mapBailoutBtn');
-let bailoutArmed = false;
-function updateBailoutBtn() {
-  const has = !!state.bailoutPoint;
-  mapBailoutBtn.classList.toggle('armed', bailoutArmed);
-  mapBailoutBtn.classList.toggle('set', has && !bailoutArmed);
+const mapEmergencyBtn = document.getElementById('mapEmergencyBtn');
+let emergencyArmed = false;
+function updateEmergencyBtn() {
+  const has = !!state.emergencyPoint;
+  mapEmergencyBtn.classList.toggle('armed', emergencyArmed);
+  mapEmergencyBtn.classList.toggle('set', has && !emergencyArmed);
   const en = state.lang === 'en';
-  mapBailoutBtn.title = has && !bailoutArmed
-    ? (en ? 'Remove bailout point' : 'Bailout-Punkt entfernen')
-    : (en ? 'Set bailout point' : 'Bailout-Punkt setzen');
+  mapEmergencyBtn.title = has && !emergencyArmed
+    ? (en ? 'Remove emergency landing point' : 'Notlandepunkt entfernen')
+    : (en ? 'Set emergency landing point' : 'Notlandepunkt setzen');
 }
-function setBailoutArmed(armed) {
-  bailoutArmed = armed;
-  updateBailoutBtn();
-  if (armed) showMapToast(state.lang === 'en' ? 'Tap the map to place the bailout point' : 'Auf die Karte tippen, um den Bailout-Punkt zu setzen');
+function setEmergencyArmed(armed) {
+  emergencyArmed = armed;
+  updateEmergencyBtn();
+  if (armed) showMapToast(state.lang === 'en' ? 'Tap the map to place the emergency landing point' : 'Auf die Karte tippen, um den Notlandepunkt zu setzen');
 }
-mapBailoutBtn.addEventListener('click', () => {
-  if (bailoutArmed) { setBailoutArmed(false); return; }
-  if (state.bailoutPoint) {
-    state.bailoutPoint = null;
+mapEmergencyBtn.addEventListener('click', () => {
+  if (emergencyArmed) { setEmergencyArmed(false); return; }
+  if (state.emergencyPoint) {
+    state.emergencyPoint = null;
     saveState();
     render();
-    updateBailoutBtn();
+    updateEmergencyBtn();
     return;
   }
-  setBailoutArmed(true);
+  setEmergencyArmed(true);
 });
 
 // ---------- Leg length inputs (unit-aware) ----------
@@ -2538,7 +2540,7 @@ const I18N_EN = {
   helpBtnTitle__title: "User guide",
   favBtnTitle__title: "Favorites",
   locateBtnTitle__title: "Use my location",
-  bailoutBtnTitle__title: "Set bailout point",
+  emergencyBtnTitle__title: "Set emergency landing point",
   offlineBadgeText: "⚠ Offline - showing cached data",
   favPanelTitle: "Favorites",
   favNamePlaceholder__placeholder: "Name this location…",
@@ -2740,7 +2742,7 @@ function applyLanguage(lang) {
   // Re-run everything that generates its own text in JS (cardinal names, hints, dynamic labels).
   updateLandingReadout();
   updateMapHandToggle();
-  updateBailoutBtn();
+  updateEmergencyBtn();
   setWind(state.windDir, true);
   refreshLegInputs();
   refreshAltInputs();
@@ -2768,7 +2770,7 @@ function syncUIFromState() {
 // ---------- Init ----------
 captureDefaultTexts();
 if (state.lang === 'en') applyLanguage('en');
-updateBailoutBtn();
+updateEmergencyBtn();
 setWind(state.windDir, true);
 setUnit(state.unit);
 setSpeedUnit(state.speedUnit);
