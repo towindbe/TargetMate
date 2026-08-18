@@ -1606,6 +1606,25 @@ function render() {
   // as the pattern changes. Users navigate the map manually; nothing in render() touches the view.
 }
 
+// Ring altitudes between (lowerFt, upperFt] on a round step in whichever unit is currently active -
+// 500 ft or 150 m (chosen because it's close to 500 ft, so the ring count/density looks about the
+// same either way). Stepping in ft directly would work fine for ft but produces ugly fractional
+// metric labels (152.4 m, 304.8 m, ...) once converted, since 500 ft isn't a round number in metres.
+// The outermost ring rounds DOWN to the nearest step too (e.g. a 4050 ft opening altitude still tops
+// out at a 4000 ft ring) rather than landing on the exact opening altitude - every ring stays a clean
+// round number, at the cost of a sub-step sliver of altitude that's negligible next to this overlay's
+// existing "theoretical upper bound, not a recommendation" margin.
+function reachRingAltitudesFt(lowerFt, upperFt) {
+  const stepDisplay = state.unit === 'm' ? 150 : 500;
+  const lowerDisplay = ftToAltDisplay(lowerFt);
+  const upperDisplay = ftToAltDisplay(upperFt);
+  const alts = [];
+  for (let h = Math.floor(lowerDisplay / stepDisplay) * stepDisplay + stepDisplay; h <= upperDisplay; h += stepDisplay) {
+    alts.push(altDisplayToFt(h));
+  }
+  return alts;
+}
+
 // Experimental: at a given altitude between opening and the pattern entry point, the furthest a
 // jumper could still be from the pattern's entry point (not the landing target itself - that's a
 // separate spot, offset by the whole downwind+base+final distance) and still reach it by the time
@@ -1626,10 +1645,7 @@ function drawReachRings() {
 
   const fwdMs = state.perf.fwdSpeedKmh / 3.6;
   const windMs = state.perf.windSpeedKmh / 3.6;
-  const ringStepFt = 500;
-  const alts = [];
-  for (let h = entryAltFt + ringStepFt; h < openingAltFt; h += ringStepFt) alts.push(h);
-  alts.push(openingAltFt); // outermost ring always lands exactly on the opening altitude itself
+  const alts = reachRingAltitudesFt(entryAltFt, openingAltFt);
 
   const unitLabel = state.unit === 'm' ? 'm' : 'ft';
   alts.forEach(h => {
@@ -1674,10 +1690,7 @@ function drawEmergencyRings() {
 
   const fwdMs = state.perf.fwdSpeedKmh / 3.6;
   const windMs = state.perf.windSpeedKmh / 3.6;
-  const ringStepFt = 500;
-  const alts = [];
-  for (let h = ringStepFt; h < openingAltFt; h += ringStepFt) alts.push(h);
-  alts.push(openingAltFt);
+  const alts = reachRingAltitudesFt(0, openingAltFt);
 
   const unitLabel = state.unit === 'm' ? 'm' : 'ft';
   const downwindBearing = norm(state.windDir + 180);
