@@ -736,9 +736,10 @@
         </svg>
       </button>
       <button class="map-menu-btn" id="mapEmergencyBtn" data-i18n-title="emergencyBtnTitle" title="Notlandungsreichweite setzen">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="5" y1="21" x2="5" y2="3"/>
-          <path d="M5 4h13l-3 4 3 4H5"/>
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6">
+          <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/>
+          <circle cx="12" cy="12" r="6"/>
+          <circle cx="12" cy="12" r="10"/>
         </svg>
       </button>
     </div>
@@ -963,24 +964,24 @@
     <h2 data-i18n="helpTitle">Bedienanleitung</h2>
     <button class="tour-start-btn" id="startTourBtn" data-i18n="tourStartBtn">Geführte Tour starten</button>
 
-    <h3 data-i18n="help1H">1. Windrichtung</h3>
-    <p data-i18n="help1P">Dial ziehen oder Gradzahl eintippen - die Richtung, <b>aus der</b> der Wind kommt (Windsack-Konvention).</p>
-
-    <h3 data-i18n="help2H">2. Landerichtung</h3>
-    <p data-i18n="help2P">Standardmäßig gesperrt und identisch mit der Windrichtung. Bei einer vorgeschriebenen Landerichtung (z.B. feste Bahnrichtung am Flugplatz) das Häkchen "Landerichtung = gegen Wind" entfernen und den eigenen Dial einstellen.</p>
-
-    <h3 data-i18n="help3H">3. Zielpunkt</h3>
+    <h3 data-i18n="help3H">1. Zielpunkt</h3>
     <p data-i18n="help3P">Karte antippen, um den Zielpunkt zu setzen - per Ortssuche (auch Dropzone-Namen) lässt sich vorher an den richtigen Ort navigieren.</p>
     <p class="muted" data-i18n="help3Privacy">Die Ortssuche schickt deine Eingabe an OpenStreetMap/Nominatim, einen externen Dienst - es werden dabei keine anderen App-Daten übertragen.</p>
 
-    <h3 data-i18n="help4H">4. Wind &amp; Fahrt</h3>
-    <p data-i18n="help4P">Windgeschwindigkeit, Vorwärtsfahrt der Kappe (km/h ⟷ kn umschaltbar) und Sinkrate (m/s ⟷ ft/min umschaltbar) eingeben. Die Schätzhilfe (Wingload) liefert aus Gewicht und Kappengröße einen groben Richtwert für Fahrt und Sinkrate.</p>
-
-    <h3 data-i18n="help5H">5. Platzrunde</h3>
+    <h3 data-i18n="help5H">2. Platzrunde</h3>
     <p data-i18n="help5P">Links- oder Rechtsplatz wählen - bestimmt die Kurvenrichtung von Downwind über Base nach Final.</p>
 
+    <h3 data-i18n="help1H">3. Windrichtung</h3>
+    <p data-i18n="help1P">Dial ziehen oder Gradzahl eintippen - die Richtung, <b>aus der</b> der Wind kommt (Windsack-Konvention).</p>
+
+    <h3 data-i18n="help2H">4. Landerichtung</h3>
+    <p data-i18n="help2P">Standardmäßig gesperrt und identisch mit der Windrichtung. Bei einer vorgeschriebenen Landerichtung (z.B. feste Bahnrichtung am Flugplatz) das Häkchen "Landerichtung = gegen Wind" entfernen und den eigenen Dial einstellen.</p>
+
+    <h3 data-i18n="help4H">5. Wind &amp; Fahrt</h3>
+    <p data-i18n="help4P">Windgeschwindigkeit, Vorwärtsfahrt der Kappe (km/h ⟷ kn umschaltbar) und Sinkrate (m/s ⟷ ft/min umschaltbar) eingeben. Die Schätzhilfe (Wingload) liefert aus Gewicht und Kappengröße einen groben Richtwert für Fahrt und Sinkrate.</p>
+
     <h3 data-i18n="help6H">6. Plots auf der Karte</h3>
-    <p data-i18n="help6P">Checkboxen blenden Referenz-, reale und korrigierte Flugbahn sowie die Windanimation einzeln ein oder aus. Die Reichweiten-Ringe zeigen zusätzlich, wie weit du dich bei welcher Öffnungshöhe maximal vom Einstiegspunkt der Platzrunde entfernt öffnen lassen kannst und ihn bei voller Fahrt noch erreichst. Über den Flaggen-Button auf der Karte (unter Favoriten und Standort) lässt sich zusätzlich ein zweiter Punkt setzen, der zeigt, welchen Bereich du von dort aus bei einer Notlandung noch erreichen könntest - Details zu beidem im "i"-Info.</p>
+    <p data-i18n="help6P">Checkboxen blenden Referenz-, reale und korrigierte Flugbahn sowie die Windanimation einzeln ein oder aus.</p>
 
     <h3 data-i18n="help7H">7. Legs</h3>
     <p data-i18n="help7P">Höhenverlust bis zu den Turnpunkten eingeben (m ⟷ ft umschaltbar, gilt auch für die Streckenlängen) - Streckenlängen und Zeiten werden automatisch berechnet.</p>
@@ -992,6 +993,9 @@
       <li data-i18n="help8_3">Weiße Zahl: Flugzeit des Legs in Sekunden</li>
       <li data-i18n="help8_4">Blauer Pfeil unten rechts: Windrichtung (wohin der Wind weht) - ziehen, um den Wind direkt auf der Karte zu ändern</li>
     </ul>
+
+    <h3 data-i18n="help9H">9. Reichweiten-Ringe &amp; Notlandung</h3>
+    <p data-i18n="help9P">Zeigt (falls aktiviert), wie weit du dich bei welcher Höhe maximal vom Einstiegspunkt entfernt öffnen lassen kannst und ihn bei voller Fahrt noch erreichst. Über den Ring-Button auf der Karte (unter Favoriten und Standort) lässt sich zusätzlich ein zweiter Punkt setzen, der zeigt, welchen Bereich du von dort aus bei einer Notlandung noch erreichen könntest. Details und Herleitung im "i"-Info.</p>
   </div>
 </div>
 
@@ -2747,26 +2751,29 @@ const I18N_EN = {
   tourSkipBtn: "Skip",
   tourBackBtn: "Back",
   tourNextBtn: "Next",
-  help1H: "1. Wind direction",
+  help1H: "3. Wind direction",
   help1P: "Drag the dial or type a degree value - the direction the wind is coming <b>from</b> (windsock convention).",
-  help2H: "2. Landing direction",
+  help2H: "4. Landing direction",
   help2P: `Locked by default and identical to the wind direction. For a prescribed landing direction (e.g. a fixed runway heading at the airfield), uncheck "Landing direction = into wind" and set its own dial.`,
-  help3H: "3. Target point",
+  help3H: "1. Target point",
   help3P: "Tap the map to set the target point - use the location search (dropzone names work too) to navigate to the right spot first.",
   help3Privacy: "The location search sends your query to OpenStreetMap/Nominatim, an external service - no other app data is transmitted.",
-  help4H: "4. Wind &amp; airspeed",
+  help4H: "5. Wind &amp; airspeed",
   help4P: "Enter wind speed, canopy forward speed (km/h ⟷ kn toggle) and sink rate (m/s ⟷ ft/min toggle). The estimator (wingload) gives a rough estimate for forward speed and sink rate from weight and canopy size.",
-  help5H: "5. Pattern direction",
+  help5H: "2. Pattern direction",
   help5P: "Choose left-hand or right-hand - determines the turn direction from downwind via base to final.",
   help6H: "6. Plots on the map",
-  help6P: `Checkboxes show or hide the reference, real, and corrected path, plus the wind animation, independently. The reach rings additionally show how far you could be from the pattern's entry point at a given opening altitude and still reach it at full flight. The flag button on the map (below favorites and locate) lets you place a second point to see what area you could still reach from there in an emergency - see the "i" info for both.`,
+  help6P: `Checkboxes show or hide the reference, real, and corrected path, plus the wind animation, independently.`,
   help7H: "7. Legs",
   help7P: "Enter altitude loss down to the turn points (m ⟷ ft toggle, also applies to the leg distances) - distances and times are calculated automatically.",
   help8H: "8. Map symbols",
   help8_1: "Canopy icon: shows the actual nose orientation",
   help8_2: `"Correction X°": correction angle needed against the crosswind`,
   help8_3: "White number: flight time of the leg in seconds",
-  help8_4: "Blue arrow bottom right: wind direction (where the wind is blowing to) - drag it to change the wind directly on the map"
+  help8_4: "Blue arrow bottom right: wind direction (where the wind is blowing to) - drag it to change the wind directly on the map",
+
+  help9H: "9. Reach rings &amp; emergency landing",
+  help9P: `Shows (when enabled) how far you could be from the pattern's entry point at a given altitude and still reach it at full flight. The rings button on the map (below favorites and locate) additionally lets you place a second point to see what area you could still reach from there in an emergency. Details and derivation in the "i" info.`
 };
 
 const I18N_DE = {}; // captured live from the DOM's own default (German) text
