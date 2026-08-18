@@ -900,7 +900,7 @@
     </tbody></table></div>
 
     <h3 data-i18n="infoReachH">Reichweiten-Ringe</h3>
-    <p data-i18n="infoReachP1">Stell dir vor, du könntest nach dem Öffnen sofort in jede beliebige Richtung fliegen. Ohne Wind wäre die Menge aller Orte, die du in der verbleibenden Zeit noch erreichen kannst, einfach ein Kreis um dich herum - er wächst, je mehr Zeit dir bleibt. Wind ändert daran nichts Grundsätzliches: der Kreis bleibt ein Kreis, er wandert nur mit dem Wind mit, statt zentriert zu bleiben.</p>
+    <p data-i18n="infoReachP1">Stell dir vor, du könntest nach dem Öffnen sofort in jede beliebige Richtung fliegen. Ohne Wind wäre die Menge aller Orte, die du in der verbleibenden Zeit noch erreichen kannst, einfach ein Kreis um dich herum - er wird kleiner, je näher du dem Boden kommst. Wind ändert daran nichts Grundsätzliches: der Kreis bleibt ein Kreis, er wandert nur mit dem Wind mit, statt zentriert zu bleiben.</p>
     <p data-i18n="infoReachP2">Für die Ringe wird das umgedreht gefragt: nicht "wie weit komme ich von hier", sondern "von wo aus schaffe ich es gerade noch bis zum Einstiegspunkt der Platzrunde". Die Antwort ist wieder ein Kreis - nur diesmal windwärts (also gegen den Wind) vom Einstiegspunkt verschoben, weil man auf dem Weg dorthin mit dem Wind zu ihm hin abtreibt.</p>
     <svg viewBox="0 0 300 240" width="100%" style="max-width:300px;">
       <circle cx="140" cy="120" r="30" fill="none" stroke="#8FA6C2" stroke-width="1.3" stroke-dasharray="3 5" opacity="0.5"/>
@@ -2706,7 +2706,7 @@ const I18N_EN = {
   infoLandingDirP: "If the prescribed landing direction isn't identical to the wind direction, the same decomposition applies to <b>all three</b> legs, not just base. The canopy icon, correction angle, and nose line then appear on every affected leg.",
 
   infoReachH: "Reach rings",
-  infoReachP1: "Imagine you could instantly fly in any direction you like after deploying. With no wind, the set of places you could still reach in the time you have left would simply be a circle around you - growing as more time remains. Wind doesn't change that basic shape: the circle stays a circle, it just drifts along with the wind instead of staying centered.",
+  infoReachP1: "Imagine you could instantly fly in any direction you like after deploying. With no wind, the set of places you could still reach in the time you have left would simply be a circle around you - shrinking the closer you get to the ground. Wind doesn't change that basic shape: the circle stays a circle, it just drifts along with the wind instead of staying centered.",
   infoReachP2: `For the rings, that question is flipped around: not "how far can I get from here", but "from where could I still just barely make it to the pattern's entry point". The answer is again a circle - just shifted upwind (against the wind) from the entry point, since you'd drift toward it with the wind along the way.`,
   infoReachFormula: "Radius = airspeed × T<br>Center = entry point shifted upwind by wind × T<br>T = (altitude − entry altitude) ÷ sink rate",
   infoReachNote: "Unlike the three flight-path plots, this assumes the direction can be chosen exactly and instantly - no time is spent turning. The real reachable area is therefore somewhat smaller than the drawn circle, especially if a large heading change would be needed right after opening. The rings show the theoretical upper bound, not a recommendation.",
