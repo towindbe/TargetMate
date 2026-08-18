@@ -1600,7 +1600,11 @@ function render() {
   if (state.plots.nowind) drawVariant('nowind');
   if (state.plots.uncorrected) drawVariant('uncorrected');
   if (state.plots.corrected) drawVariant('corrected');
-  if (state.plots.reach) { drawReachRings(); drawEmergencyRings(); }
+  // Independent of each other: the "Reichweiten-Ringe" checkbox only controls the entry-anchored
+  // rings. The emergency-reach rings are opted into separately, by placing a point via the map
+  // button - drawEmergencyRings() itself already no-ops with nothing to draw when no point is set.
+  if (state.plots.reach) drawReachRings();
+  drawEmergencyRings();
 
   // Auto-zoom/fit-to-pattern was removed by request - the map no longer re-centers or re-zooms itself
   // as the pattern changes. Users navigate the map manually; nothing in render() touches the view.
