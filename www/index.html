@@ -869,12 +869,6 @@
     <h3 data-i18n="infoLandingDirH">Landerichtung ≠ Windrichtung</h3>
     <p data-i18n="infoLandingDirP">Ist die vorgeschriebene Landerichtung nicht identisch mit der Windrichtung, gilt dieselbe Zerlegung für <b>alle drei</b> Legs, nicht nur für Base. Dann zeigen Kappen-Symbol, Korrektur-Winkel und Nasenlinie auf jedem betroffenen Leg.</p>
 
-    <h3 data-i18n="infoReachH">Reichweiten-Ringe</h3>
-    <p data-i18n="infoReachP1">Stell dir vor, du könntest nach dem Öffnen sofort in jede beliebige Richtung fliegen. Ohne Wind wäre die Menge aller Orte, die du in der verbleibenden Zeit noch erreichen kannst, einfach ein Kreis um dich herum - er wächst, je mehr Zeit dir bleibt. Wind ändert daran nichts Grundsätzliches: der Kreis bleibt ein Kreis, er wandert nur mit dem Wind mit, statt zentriert zu bleiben.</p>
-    <p data-i18n="infoReachP2">Für die Ringe wird das umgedreht gefragt: nicht "wie weit komme ich von hier", sondern "von wo aus schaffe ich es gerade noch bis zum Einstiegspunkt der Platzrunde". Die Antwort ist wieder ein Kreis - nur diesmal windwärts (also gegen den Wind) vom Einstiegspunkt verschoben, weil man auf dem Weg dorthin mit dem Wind zu ihm hin abtreibt.</p>
-    <div class="formula" data-i18n="infoReachFormula">Radius = Fahrt × T<br>Mittelpunkt = Einstiegspunkt windwärts verschoben um Wind × T<br>T = (Höhe − Einstiegshöhe) ÷ Sinkrate</div>
-    <p class="muted" data-i18n="infoReachNote">Anders als bei den drei Flugbahn-Plots wird hier angenommen, dass die Richtung sofort exakt gewählt werden kann - ohne Zeit für die Kurve selbst. Der real erreichbare Bereich ist dadurch etwas kleiner als der gezeichnete Kreis, besonders wenn direkt nach dem Öffnen eine große Richtungsänderung nötig wäre. Die Ringe zeigen die theoretische Obergrenze, keine Empfehlung.</p>
-
     <h3 data-i18n="infoColorH">Farblegende</h3>
     <p>
        <span class="swatch-inline" style="background:#3ED9C7;"></span>Downwind &nbsp;
@@ -904,6 +898,16 @@
       <tr><td>1,5 · 7,32</td><td>42 · 22,7</td><td>4,0 · 787</td></tr>
       <tr><td>1,8 · 8,79</td><td>46 · 24,8</td><td>4,4 · 866</td></tr>
     </tbody></table></div>
+
+    <h3 data-i18n="infoReachH">Reichweiten-Ringe</h3>
+    <p data-i18n="infoReachP1">Stell dir vor, du könntest nach dem Öffnen sofort in jede beliebige Richtung fliegen. Ohne Wind wäre die Menge aller Orte, die du in der verbleibenden Zeit noch erreichen kannst, einfach ein Kreis um dich herum - er wächst, je mehr Zeit dir bleibt. Wind ändert daran nichts Grundsätzliches: der Kreis bleibt ein Kreis, er wandert nur mit dem Wind mit, statt zentriert zu bleiben.</p>
+    <p data-i18n="infoReachP2">Für die Ringe wird das umgedreht gefragt: nicht "wie weit komme ich von hier", sondern "von wo aus schaffe ich es gerade noch bis zum Einstiegspunkt der Platzrunde". Die Antwort ist wieder ein Kreis - nur diesmal windwärts (also gegen den Wind) vom Einstiegspunkt verschoben, weil man auf dem Weg dorthin mit dem Wind zu ihm hin abtreibt.</p>
+    <div class="formula" data-i18n="infoReachFormula">Radius = Fahrt × T<br>Mittelpunkt = Einstiegspunkt windwärts verschoben um Wind × T<br>T = (Höhe − Einstiegshöhe) ÷ Sinkrate</div>
+    <p class="muted" data-i18n="infoReachNote">Anders als bei den drei Flugbahn-Plots wird hier angenommen, dass die Richtung sofort exakt gewählt werden kann - ohne Zeit für die Kurve selbst. Der real erreichbare Bereich ist dadurch etwas kleiner als der gezeichnete Kreis, besonders wenn direkt nach dem Öffnen eine große Richtungsänderung nötig wäre. Die Ringe zeigen die theoretische Obergrenze, keine Empfehlung.</p>
+
+    <h3 data-i18n="infoEmergencyH">Notlandungsreichweite</h3>
+    <p data-i18n="infoEmergencyP">Spiegelbildlich zu den Reichweiten-Ringen: statt rückwärts vom Einstiegspunkt aus zu rechnen ("von wo komme ich gerade noch hierhin"), wird hier vorwärts von einem frei gesetzten Punkt aus gerechnet ("wie weit komme ich von hier aus"). Der Kreis-Mittelpunkt wandert dabei windabwärts statt windwärts, und es wird bis zum Boden (0 ft) gerechnet statt bis zur Einstiegshöhe der Platzrunde - der Punkt markiert also keinen festen Landeplatz, sondern nur den Ausgangspunkt der Berechnung.</p>
+    <p class="muted" data-i18n="infoEmergencyNote">Weil beide Ring-Sätze bis zu unterschiedlichen Höhen rechnen (Einstiegshöhe vs. Boden), lässt sich eine Überschneidung nicht direkt als "hier komme ich noch zu beidem" lesen. Ob von der Notlandungsreichweite aus noch eine Rückkehr zum Zielpunkt möglich wäre, zeigt stattdessen die Lage dieses Punkts relativ zu den (blauen) Reichweiten-Ringen selbst.</p>
   </div>
 </div>
 
@@ -930,7 +934,7 @@
     <p data-i18n="help5P">Links- oder Rechtsplatz wählen - bestimmt die Kurvenrichtung von Downwind über Base nach Final.</p>
 
     <h3 data-i18n="help6H">6. Plots auf der Karte</h3>
-    <p data-i18n="help6P">Checkboxen blenden Referenz-, reale und korrigierte Flugbahn sowie die Windanimation einzeln ein oder aus. Die Reichweiten-Ringe zeigen zusätzlich, wie weit du dich bei welcher Öffnungshöhe maximal vom Einstiegspunkt der Platzrunde entfernt öffnen lassen kannst und ihn bei voller Fahrt noch erreichst - Details dazu im "i"-Info.</p>
+    <p data-i18n="help6P">Checkboxen blenden Referenz-, reale und korrigierte Flugbahn sowie die Windanimation einzeln ein oder aus. Die Reichweiten-Ringe zeigen zusätzlich, wie weit du dich bei welcher Öffnungshöhe maximal vom Einstiegspunkt der Platzrunde entfernt öffnen lassen kannst und ihn bei voller Fahrt noch erreichst. Über den Flaggen-Button auf der Karte (unter Favoriten und Standort) lässt sich zusätzlich ein zweiter Punkt setzen, der zeigt, welchen Bereich du von dort aus bei einer Notlandung noch erreichen könntest - Details zu beidem im "i"-Info.</p>
 
     <h3 data-i18n="help7H">7. Legs</h3>
     <p data-i18n="help7P">Höhenverlust bis zu den Turnpunkten eingeben (m ⟷ ft umschaltbar, gilt auch für die Streckenlängen) - Streckenlängen und Zeiten werden automatisch berechnet.</p>
@@ -2661,6 +2665,10 @@ const I18N_EN = {
   infoReachFormula: "Radius = airspeed × T<br>Center = entry point shifted upwind by wind × T<br>T = (altitude − entry altitude) ÷ sink rate",
   infoReachNote: "Unlike the three flight-path plots, this assumes the direction can be chosen exactly and instantly - no time is spent turning. The real reachable area is therefore somewhat smaller than the drawn circle, especially if a large heading change would be needed right after opening. The rings show the theoretical upper bound, not a recommendation.",
 
+  infoEmergencyH: "Emergency reach",
+  infoEmergencyP: `Mirrors the reach rings: instead of working backward from the entry point ("where could I still reach it from"), this works forward from a freely placed point ("how far could I get from here"). The circle center drifts downwind instead of upwind, and the calculation runs down to the ground (0 ft) instead of down to the pattern's entry altitude - so the point itself doesn't mark a fixed landing spot, just the starting point for the calculation.`,
+  infoEmergencyNote: `Because the two ring sets are computed down to different altitudes (entry altitude vs. ground), an overlap between them doesn't directly mean "both are still reachable from here." Whether a return to the target is still possible from the emergency reach point is instead shown by that point's position relative to the (blue) reach rings themselves.`,
+
   infoColorH: "Color legend",
   infoColorTarget: "Target point / corrected path",
 
@@ -2702,7 +2710,7 @@ const I18N_EN = {
   help5H: "5. Pattern direction",
   help5P: "Choose left-hand or right-hand - determines the turn direction from downwind via base to final.",
   help6H: "6. Plots on the map",
-  help6P: `Checkboxes show or hide the reference, real, and corrected path, plus the wind animation, independently. The reach rings additionally show how far you could be from the pattern's entry point at a given opening altitude and still reach it at full flight - see the "i" info for details.`,
+  help6P: `Checkboxes show or hide the reference, real, and corrected path, plus the wind animation, independently. The reach rings additionally show how far you could be from the pattern's entry point at a given opening altitude and still reach it at full flight. The flag button on the map (below favorites and locate) lets you place a second point to see what area you could still reach from there in an emergency - see the "i" info for both.`,
   help7H: "7. Legs",
   help7P: "Enter altitude loss down to the turn points (m ⟷ ft toggle, also applies to the leg distances) - distances and times are calculated automatically.",
   help8H: "8. Map symbols",
