@@ -735,7 +735,7 @@
           <line x1="18" y1="12" x2="22" y2="12"/>
         </svg>
       </button>
-      <button class="map-menu-btn" id="mapEmergencyBtn" data-i18n-title="emergencyBtnTitle" title="Notlandepunkt setzen">
+      <button class="map-menu-btn" id="mapEmergencyBtn" data-i18n-title="emergencyBtnTitle" title="Notlandungsreichweite setzen">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="5" y1="21" x2="5" y2="3"/>
           <path d="M5 4h13l-3 4 3 4H5"/>
@@ -1630,7 +1630,9 @@ function drawEmergencyRings() {
     render();
   });
   canopyLayers.push(emergencyDot);
-  const emergencyLabel = textMarker(state.emergencyPoint, state.lang === 'en' ? 'Emergency' : 'Notlandung', '#E85DC0', { plain: true, offsetPx: [0, 16] }).addTo(map);
+  // "Start" rather than naming the emergency itself - this marks the reference point the rings are
+  // computed from, not a place the user necessarily intends to land.
+  const emergencyLabel = textMarker(state.emergencyPoint, 'Start', '#E85DC0', { plain: true, offsetPx: [0, 16] }).addTo(map);
   canopyLayers.push(emergencyLabel);
 }
 
@@ -1965,13 +1967,13 @@ function updateEmergencyBtn() {
   mapEmergencyBtn.classList.toggle('set', has && !emergencyArmed);
   const en = state.lang === 'en';
   mapEmergencyBtn.title = has && !emergencyArmed
-    ? (en ? 'Remove emergency landing point' : 'Notlandepunkt entfernen')
-    : (en ? 'Set emergency landing point' : 'Notlandepunkt setzen');
+    ? (en ? 'Remove emergency reach point' : 'Notlandungsreichweite entfernen')
+    : (en ? 'Set emergency reach point' : 'Notlandungsreichweite setzen');
 }
 function setEmergencyArmed(armed) {
   emergencyArmed = armed;
   updateEmergencyBtn();
-  if (armed) showMapToast(state.lang === 'en' ? 'Tap the map to place the emergency landing point' : 'Auf die Karte tippen, um den Notlandepunkt zu setzen');
+  if (armed) showMapToast(state.lang === 'en' ? 'Tap the map to place the emergency reach point' : 'Auf die Karte tippen, um die Notlandungsreichweite zu setzen');
 }
 mapEmergencyBtn.addEventListener('click', () => {
   if (emergencyArmed) { setEmergencyArmed(false); return; }
@@ -2540,7 +2542,7 @@ const I18N_EN = {
   helpBtnTitle__title: "User guide",
   favBtnTitle__title: "Favorites",
   locateBtnTitle__title: "Use my location",
-  emergencyBtnTitle__title: "Set emergency landing point",
+  emergencyBtnTitle__title: "Set emergency reach point",
   offlineBadgeText: "⚠ Offline - showing cached data",
   favPanelTitle: "Favorites",
   favNamePlaceholder__placeholder: "Name this location…",
