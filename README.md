@@ -11,6 +11,7 @@ A landing pattern simulator for skydivers — plan your downwind/base/final appr
 - Shows the wind-drift correction (crab angle) needed on each leg, color-coded to match the pattern
 - Compares three flight paths: no-wind reference, uncorrected (nose held straight), and corrected (crabbed into the wind)
 - Wingload estimator: rough forward speed / sink rate from exit weight and canopy size
+- Reach rings: at a given opening altitude, how far you could be from the pattern's entry point and still reach it at full flight, wind included
 - Save favorite locations to jump back to quickly - their surroundings are pre-cached for offline use
 - Works offline for any dropzone you've already viewed or saved as a favorite (service worker-backed)
 - Left-hand / right-hand pattern toggle, metric/imperial + km-h/knots unit toggles
@@ -53,6 +54,18 @@ sideways drift = cross × time
 
 If `|cross| ≥ airspeed`, the corrected path can no longer be held — the app flags this instead of showing a broken number.
 
+### Reach rings
+
+At a fixed airspeed and constant wind, the set of points reachable within time `T` from any direction is always a circle — centered not on the start point, but on the start point plus wind drift (`wind × T`). Run backward from the pattern's entry point, the same holds: the circle from which the entry point is just barely reachable has radius `airspeed × T`, centered upwind of the entry point by `wind × T`:
+
+```
+radius = airspeed × T
+center = entry point, shifted upwind by wind × T
+T = (altitude − entry altitude) ÷ sink rate
+```
+
+This assumes the heading can be chosen exactly and instantly — no time is spent turning — so it's a theoretical upper bound, not a recommendation; the actually reachable area is somewhat smaller.
+
 ### Wingload estimator
 
 ```
@@ -77,6 +90,7 @@ Forward speed and sink rate are then linearly interpolated between the two neare
 - "Altitude loss per turn" is a rough, adjustable estimate (default off), not an exact value — depends heavily on wing loading and control input
 - Wind is treated as constant over the whole descent — no wind shear with altitude
 - The crab angle is a target value, not an exactly flyable guide — real canopy steering is less precise
+- The reach rings assume an instant heading change — real turn time isn't subtracted, so the actually reachable area is somewhat smaller
 
 For the interactive version with diagrams and a worked example, tap the **i** button in the app.
 
