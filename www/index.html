@@ -466,7 +466,6 @@
     dismissed = true;
     el.classList.add('hide');
     setTimeout(function(){ el.remove(); }, 550);
-    document.dispatchEvent(new CustomEvent('tm:splashDismissed'));
   }
   document.getElementById('splashContinue').addEventListener('click', function(e){ e.stopPropagation(); dismiss(); });
   document.addEventListener('keydown', function(e){
@@ -1114,12 +1113,6 @@ tourNextBtn.addEventListener('click', () => {
 tourBackBtn.addEventListener('click', () => { if (tourIndex > 0) showTourStep(tourIndex - 1); });
 tourSkipBtn.addEventListener('click', endTour);
 document.getElementById('startTourBtn').addEventListener('click', startTour);
-// Auto-launched once for a genuinely new visitor - see the splash screen's dismiss handler, which
-// dispatches this event (the tour must wait for the splash to be gone, and the splash's own inline
-// script runs and can be dismissed before this main script has even finished parsing).
-document.addEventListener('tm:splashDismissed', () => {
-  if (!state.hasSeenTour && !hasUserTarget) startTour();
-});
 
 // ---------- Onboarding banner ----------
 // Shown until the user either dismisses it or sets a target point themselves (map tap, marker drag,
@@ -1127,7 +1120,12 @@ document.addEventListener('tm:splashDismissed', () => {
 // target from a previous visit (hasUserTarget restored from localStorage).
 const onboardingBanner = document.getElementById('onboardingBanner');
 function hideOnboarding() { onboardingBanner.style.display = 'none'; }
-document.getElementById('onboardingDismiss').addEventListener('click', hideOnboarding);
+document.getElementById('onboardingDismiss').addEventListener('click', () => {
+  hideOnboarding();
+  // Auto-launched once for a genuinely new visitor, right after they've read the onboarding banner -
+  // not straight after the splash screen, which would show the tour and the banner on top of each other.
+  if (!state.hasSeenTour && !hasUserTarget) startTour();
+});
 if (hasUserTarget) hideOnboarding();
 
 // ---------- Map ----------
