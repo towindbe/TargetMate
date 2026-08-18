@@ -959,7 +959,7 @@
     </svg>
     <p data-i18n="infoEmergencyP2">Die Berechnung ist das Gegenstück zu den Reichweiten-Ringen. Dort fragst du rückwärts: "Von wo aus schaffe ich es noch bis zum Einstiegspunkt?" Hier fragst du vorwärts: "Wie weit komme ich von diesem Punkt aus?"</p>
     <p data-i18n="infoEmergencyP3">Dadurch drehen sich zwei Dinge um: Der Kreis wandert windabwärts statt windwärts, weil du dich jetzt vom Punkt weg bewegst statt auf ihn zu. Und gerechnet wird bis zum Boden (0 ft), nicht bis zur Einstiegshöhe der Platzrunde - hier geht es ja ums Landen, nicht um den Anschluss an die Platzrunde. Der gesetzte Punkt ist deshalb kein fester Landeplatz, sondern nur der Ausgangspunkt für die Berechnung.</p>
-    <p class="muted" data-i18n="infoEmergencyNote">Weil beide Ring-Sätze bis zu unterschiedlichen Höhen rechnen (Einstiegshöhe vs. Boden), lässt sich eine Überschneidung nicht direkt als "hier komme ich noch zu beidem" lesen. Ob von der Notlandungsreichweite aus noch eine Rückkehr zum Zielpunkt möglich wäre, zeigt stattdessen die Lage dieses Punkts relativ zu den (blauen) Reichweiten-Ringen selbst.</p>
+    <p class="muted" data-i18n="infoEmergencyNote">Die beiden Ring-Sätze rechnen bis zu unterschiedlichen Höhen (Einstiegshöhe vs. Boden) und sind deshalb nicht direkt vergleichbar - eine Überschneidung der Flächen bedeutet nicht "hier schaffe ich beides". Willst du wissen, ob von der Notlandungsreichweite aus noch eine Rückkehr zum Zielpunkt möglich wäre, schau stattdessen einfach nach: Liegt der gesetzte Punkt selbst innerhalb eines blauen Reichweiten-Rings, ist bei der entsprechenden Höhe noch eine Rückkehr dorthin möglich.</p>
   </div>
 </div>
 
@@ -2762,7 +2762,7 @@ const I18N_EN = {
   svgEmergencyPosition: "Emergency reach",
   infoEmergencyP2: `This calculation is the mirror image of the reach rings. There, you ask backward: "from where could I still reach the entry point?" Here, you ask forward: "how far could I get from this point?"`,
   infoEmergencyP3: `Two things flip as a result: the circle drifts downwind instead of upwind, since you're now moving away from the point instead of toward it. And the calculation runs down to the ground (0 ft) instead of down to the pattern's entry altitude - this is about landing, not about connecting to the pattern. The point you place is therefore not a fixed landing spot, just the starting point for the calculation.`,
-  infoEmergencyNote: `Because the two ring sets are computed down to different altitudes (entry altitude vs. ground), an overlap between them doesn't directly mean "both are still reachable from here." Whether a return to the target is still possible from the emergency reach point is instead shown by that point's position relative to the (blue) reach rings themselves.`,
+  infoEmergencyNote: `The two ring sets are computed down to different altitudes (entry altitude vs. ground) and aren't directly comparable - an overlap between the shaded areas doesn't mean "both are still possible from here." To check whether a return to the target is still possible from the emergency reach point, look at the point itself instead: if it falls inside one of the blue reach rings, a return is still possible at that altitude.`,
 
   infoColorH: "Color legend",
   infoColorTarget: "Target point / corrected path",
