@@ -386,6 +386,13 @@
   .alt-block{margin-bottom:14px;padding-bottom:14px;border-bottom:1px dashed var(--line);}
   .alt-block-title{font-size:11px;color:var(--text);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
 
+  .wind-layer-row{display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:12px;}
+  .wind-layer-row input{
+    width:52px;background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+    font-family:var(--mono);font-size:12px;padding:5px 6px;border-radius:6px;text-align:right;
+  }
+  .wind-layer-row span.unit{font-size:10px;color:var(--muted);flex:none;}
+
   .wind-warning{
     background:rgba(255,93,93,.12);border:1px solid var(--danger);color:var(--danger);
     font-size:12px;line-height:1.5;padding:10px 12px;border-radius:8px;margin-bottom:12px;font-weight:600;
@@ -590,6 +597,15 @@
         <div class="estimator-result" id="estResult">Wingload: <b>–</b> lb/sqft</div>
         <div class="estimator-warning" id="estWarning" style="display:none;" data-i18n="estWarningText">⚠ Außerhalb des Tabellenbereichs (0,5–1,8 lb/sqft) - keine realitätsnahe Schätzung mehr.</div>
         <button class="estimator-apply" id="estApply" data-i18n="estApplyBtn">Geschätzte Werte übernehmen</button>
+      </div>
+      <div class="plot-row" style="margin-top:10px;">
+        <input type="checkbox" id="windLayersToggle">
+        <label for="windLayersToggle" data-i18n="windLayersLabel">Höhenabhängiger Wind (Test)</label>
+      </div>
+      <div id="windLayersBox" style="display:none;margin:0 0 10px 20px;">
+        <div class="crab-hint" style="margin:-4px 0 8px 0;" data-i18n="windLayersHint">Testfunktion: Windrichtung/-geschwindigkeit oben gilt für den Boden. Zusätzliche Schichten gelten ab ihrer Höhe aufwärts bis zur nächsthöheren. Änderst du die Windrichtung oben (z. B. per Kartenpfeil), die Schichten unten bei Bedarf manuell nachziehen - sie folgen nicht automatisch.</div>
+        <div id="windLayerRows"></div>
+        <button class="link-btn" id="windLayerAddBtn" data-i18n="windLayerAddBtn">+ Höhenschicht</button>
       </div>
     </div>
 
@@ -891,6 +907,13 @@
       <li data-i18n="infoLimit5">Die Reichweiten-Ringe nehmen einen sofortigen Richtungswechsel an - reale Kurvenzeit wird nicht abgezogen, der tatsächlich erreichbare Bereich ist etwas kleiner</li>
     </ul>
 
+    <h3 data-i18n="infoWindLayersH">Höhenabhängiger Wind (Test)</h3>
+    <p data-i18n="infoWindLayersP1">Standardmäßig gilt für den gesamten Sinkflug ein einziger Wind (Windrichtung/-geschwindigkeit oben). Über die Checkbox "Höhenabhängiger Wind (Test)" im Bereich Wind &amp; Fahrt lassen sich zusätzlich bis zu 6 Windwerte für höhere Schichten eintragen - nützlich, wenn am DZ tatsächlich unterschiedliche Winde in unterschiedlichen Höhen herrschen.</p>
+    <p data-i18n="infoWindLayersP2">Jede Schicht gilt ab ihrer eingetragenen Höhe aufwärts bis zur nächsthöheren Schicht (Stufenfunktion, keine Interpolation dazwischen) - der Wert oben bleibt dabei immer der Bodenwert.</p>
+    <p class="muted" data-i18n="infoWindLayersP2b">Wichtig: Die Schichten sind eigenständige Einträge und folgen der Windrichtung oben nicht automatisch. Änderst du die Windrichtung oben - etwa durch Ziehen des Windpfeils auf der Karte - musst du die Richtung in den Schichten bei Bedarf selbst nachziehen.</p>
+    <p data-i18n="infoWindLayersP3">Für jedes der drei Legs wird die Flugzeit auf die betroffenen Höhenschichten aufgeteilt; die Anteile <b>längs</b> und <b>quer</b> werden pro Schicht mit deren eigener Zeit gewichtet und aufsummiert. Eine Windgrenze mitten in einem Leg (z. B. im Downwind) wirkt sich dadurch anteilig aus, nicht nur an einem einzigen Punkt des Legs.</p>
+    <p class="muted" data-i18n="infoWindLayersNote">Der angezeigte Vorhaltewinkel je Leg bleibt eine einzelne Zahl - bei einem geteilten Leg ist das ein zeitgewichteter Mittelwert über die Schichten, kein Wert, der sich über die gesamte Legstrecke exakt halten lässt. Reichweiten-Ringe und Notlandungsreichweite berücksichtigen die Schichten ebenfalls, indem sie die Windverschiebung schichtweise über den Sinkflug aufsummieren.</p>
+
     <h3 data-i18n="infoWingloadH">Wingload-Schätzhilfe</h3>
     <p data-i18n="infoWingloadP">Wingload sagt aus, wie viel Gewicht auf jeden Quadratfuß Kappenfläche entfällt - je höher der Wert, desto schneller und direkter fliegt die Kappe. Aus Gewicht und Kappengröße berechnet die App zuerst diesen Wert und liest dann Fahrt und Sinkrate aus der Tabelle unten ab (zwischen den zwei nächstgelegenen Werten wird interpoliert; außerhalb 0,5–1,8 lb/sqft auf den Rand geklemmt):</p>
     <div class="formula" data-i18n="infoWingloadFormula">Wingload (lb/sqft) = Gewicht (kg) × <span style="color:var(--muted)">2,20462</span> ÷ Kappenfläche (sqft)<br><span style="color:var(--muted);font-size:11px;">(2,20462 = Umrechnung kg → lb, weil Wingload traditionell in lb/sqft angegeben wird)</span></div>
@@ -1026,6 +1049,13 @@ let state = {
   openingAltFt: 4000, // canopy opening altitude, for the reach-ring overlay - always stored in ft
   emergencyPoint: null, // [lat, lon] or null - optional second point for the forward reach rings
   turnCostFt: 100, // altitude spent per 90° turn, deducted from the following leg's budget - 0 = disabled
+  // Local test feature (not yet documented/announced): optional altitude-dependent wind. windDir/
+  // perf.windSpeedKmh above always represent ground level (0 ft, also what "landing into wind" and the
+  // draggable map arrow use); extraLayers adds readings above that. Each layer's wind applies from its
+  // own altFt upward to the next-higher layer's altFt (step function, no interpolation - matches how
+  // DZs actually report wind: a ground reading plus one or two separate "upper wind" readings, not a
+  // continuous profile). Ignored entirely unless enabled.
+  windLayers: { enabled: false, extraLayers: [] },
   plots: { nowind: true, uncorrected: true, corrected: false, reach: true },
   windAnimEnabled: true,
   hasUsedWindDrag: false, // pulses the map wind arrow as a "this is draggable" hint until first used
@@ -1360,6 +1390,90 @@ function getLandingHeading() {
   return state.landingIntoWind ? state.windDir : state.landingHeadingManual;
 }
 
+// Altitude range [low, high] a leg's actual cruise portion descends through, in ft - excludes the
+// turn-cost slice at the top of base/final (that altitude is spent turning, not cruising, so its
+// wind never contributes to this leg). Mirrors the same deduction the tBase/tFinal leg-time formulas
+// already apply.
+function legAltRangeFt(legName) {
+  const { downwind, base, final } = state.altitudes;
+  if (legName === 'downwind') return [base, downwind]; // no preceding turn
+  if (legName === 'base') return [final, base - state.turnCostFt];
+  return [0, final - state.turnCostFt]; // 'final'
+}
+
+// Splits a leg's cruise altitude range into per-wind-layer time slices - {windMs, windDir, dt} - under
+// the layered-wind test feature, so a layer boundary that falls *inside* a leg (e.g. mid-downwind)
+// still gets its own share of that leg's flight time, instead of the whole leg snapping to whichever
+// wind happens to sit at its midpoint. Collapses to a single slice covering the whole leg when
+// layering is off, so every caller below reduces exactly to the pre-layering formulas in that case.
+function legWindSegments(legName) {
+  const [lo, hi] = legAltRangeFt(legName);
+  if (!state.windLayers.enabled) {
+    return [{ windMs: state.perf.windSpeedKmh / 3.6, windDir: state.windDir, dt: legTimeFromAlt(hi - lo) }];
+  }
+  const layers = [{ altFt: 0, dirDeg: state.windDir, speedKmh: state.perf.windSpeedKmh }]
+    .concat(state.windLayers.extraLayers)
+    .sort((a, b) => a.altFt - b.altFt);
+  const segments = [];
+  for (let i = 0; i < layers.length; i++) {
+    const layer = layers[i];
+    const nextAltFt = i + 1 < layers.length ? layers[i + 1].altFt : Infinity;
+    const segLow = Math.max(lo, layer.altFt);
+    const segHigh = Math.min(hi, nextAltFt);
+    if (segHigh <= segLow) continue;
+    segments.push({ windMs: layer.speedKmh / 3.6, windDir: layer.dirDeg, dt: legTimeFromAlt(segHigh - segLow) });
+  }
+  return segments;
+}
+
+// Time-weighted average along/cross components across a leg's wind segments, decomposed against a
+// fixed heading - the single representative number the sidebar/map annotation shows for a leg's crab
+// angle. When the leg spans multiple layers this is an average, not the wind at one specific instant -
+// flagged as a known simplification, same spirit as the existing "instant heading change" caveat on
+// the reach rings.
+function legEffectiveAlongCross(legName, heading) {
+  const segments = legWindSegments(legName);
+  let alongSum = 0, crossSum = 0, timeSum = 0;
+  segments.forEach(seg => {
+    const { along, cross } = windComponents(heading, seg.windMs, seg.windDir);
+    alongSum += along * seg.dt; crossSum += cross * seg.dt; timeSum += seg.dt;
+  });
+  return timeSum > 0 ? { along: alongSum / timeSum, cross: crossSum / timeSum } : { along: 0, cross: 0 };
+}
+
+// Highest wind speed in play anywhere in the descent, for the "wind ≥ forward speed" warning - under
+// layering that's not necessarily the ground reading.
+function maxRelevantWindKmh() {
+  if (!state.windLayers.enabled) return state.perf.windSpeedKmh;
+  return Math.max(state.perf.windSpeedKmh, ...state.windLayers.extraLayers.map(l => l.speedKmh));
+}
+
+// Chains destPoint() across every wind layer between lowAltFt and highAltFt, applying each layer's
+// own direction/speed for only the time spent in that band. Vector addition is commutative, so the
+// order layers are walked in doesn't matter for the final point, even though it isn't the jumper's
+// actual chronological order - this is exactly the same flat-plane approximation destPoint() already
+// makes for a single leg, just applied once per band instead of once for the whole descent.
+// bearingFromDir(dirDeg) picks the shift direction: identity for upwind (reach rings), +180 for
+// downwind (emergency rings).
+function layeredWindOffsetPoint(fromLatLng, lowAltFt, highAltFt, bearingFromDir) {
+  const layers = [{ altFt: 0, dirDeg: state.windDir, speedKmh: state.perf.windSpeedKmh }]
+    .concat(state.windLayers.extraLayers)
+    .sort((a, b) => a.altFt - b.altFt);
+  let point = fromLatLng;
+  for (let i = 0; i < layers.length; i++) {
+    const layer = layers[i];
+    const nextAltFt = i + 1 < layers.length ? layers[i + 1].altFt : Infinity;
+    const segLow = Math.max(lowAltFt, layer.altFt);
+    const segHigh = Math.min(highAltFt, nextAltFt);
+    if (segHigh <= segLow) continue;
+    const t = legTimeFromAlt(segHigh - segLow);
+    const dist = (layer.speedKmh / 3.6) * t;
+    if (dist <= 0) continue;
+    point = destPoint(point[0], point[1], bearingFromDir(layer.dirDeg), dist);
+  }
+  return point;
+}
+
 // Decomposes the wind into components relative to a given ground-track heading:
 // 'along' = tailwind component (negative = headwind), 'cross' = crosswind component (signed).
 function windComponents(heading, windMs, windDir) {
@@ -1367,27 +1481,43 @@ function windComponents(heading, windMs, windDir) {
   return { along: windMs * Math.cos(rad), cross: windMs * Math.sin(rad) };
 }
 
-// Signed nose-vs-track offset needed to crab a given leg's crosswind component away entirely.
-function crabOffsetDeg(heading, fwdMs, windMs, windDir) {
-  if (fwdMs <= 0 || windMs <= 0) return null;
-  const { cross } = windComponents(heading, windMs, windDir);
+// Signed nose-vs-track offset needed to crab a given crosswind component away entirely.
+function crabAngleDeg(fwdMs, cross) {
+  if (fwdMs <= 0 || cross === 0) return null;
   const ratio = cross / fwdMs;
   if (Math.abs(ratio) >= 1) return null; // can't hold this track at all
   return -Math.asin(ratio) * 180 / Math.PI;
 }
 
-// One leg, built backward from its endpoint: 'corrected' crabs to hold the straight track exactly;
-// otherwise the nose stays fixed on 'heading' for the leg's time and the wind pushes it off that line.
-function backwardLeg(to, heading, fwdMs, windMs, windDir, timeS, corrected) {
-  const { along, cross } = windComponents(heading, windMs, windDir);
-  if (corrected) {
+// Total corrected (crabbed) distance along a leg's course, summed across its wind segments - each
+// segment contributes its own groundspeed for only the time it actually applies to (see
+// legWindSegments()). Reduces to the original single-wind gs*time formula when there's one segment.
+function correctedLegDistance(heading, fwdMs, segments) {
+  let dist = 0;
+  segments.forEach(seg => {
+    const { along, cross } = windComponents(heading, seg.windMs, seg.windDir);
     const gsSq = fwdMs * fwdMs - cross * cross;
-    const gs = along + (gsSq > 0 ? Math.sqrt(gsSq) : 0);
-    const dist = Math.max(0, gs) * timeS;
-    return destPoint(to[0], to[1], norm(heading + 180), dist);
+    dist += (along + (gsSq > 0 ? Math.sqrt(gsSq) : 0)) * seg.dt;
+  });
+  return Math.max(0, dist);
+}
+
+// One leg, built backward from its endpoint: 'corrected' crabs to hold the straight track exactly, so
+// per-segment groundspeeds just add up along the same line; 'uncorrected' keeps the nose fixed on
+// 'heading' throughout, so along/cross drift also simply sum in those same two fixed directions even
+// when the wind itself differs segment to segment - no bend in the drawn leg either way.
+function backwardLeg(to, heading, fwdMs, segments, corrected) {
+  if (corrected) {
+    return destPoint(to[0], to[1], norm(heading + 180), correctedLegDistance(heading, fwdMs, segments));
   }
-  const step1 = destPoint(to[0], to[1], norm(heading + 180), (fwdMs + along) * timeS);
-  return destPoint(step1[0], step1[1], norm(heading - 90), cross * timeS);
+  let alongDist = 0, crossDist = 0;
+  segments.forEach(seg => {
+    const { along, cross } = windComponents(heading, seg.windMs, seg.windDir);
+    alongDist += (fwdMs + along) * seg.dt;
+    crossDist += cross * seg.dt;
+  });
+  const step1 = destPoint(to[0], to[1], norm(heading + 180), alongDist);
+  return destPoint(step1[0], step1[1], norm(heading - 90), crossDist);
 }
 
 // Builds one full pattern backward from the fixed target point, for one of 3 flying assumptions.
@@ -1397,10 +1527,9 @@ function backwardLeg(to, heading, fwdMs, windMs, windDir, timeS, corrected) {
 //  'uncorrected' - real wind, pilot holds each leg's heading without crabbing (drifts).
 //  'corrected'   - real wind, pilot crabs every leg to hold its straight ground track (the actual plan).
 function computeVariant(mode) {
-  const { target, windDir, hand, altitudes } = state;
+  const { target, hand, altitudes } = state;
   const landingHeading = getLandingHeading();
   const fwdMs = state.perf.fwdSpeedKmh / 3.6;
-  const windMs = mode === 'nowind' ? 0 : state.perf.windSpeedKmh / 3.6;
   const corrected = mode !== 'uncorrected';
 
   const finalHeading = landingHeading;
@@ -1413,10 +1542,17 @@ function computeVariant(mode) {
   const tBase = legTimeFromAlt(altitudes.base - altitudes.final - state.turnCostFt);
   const tFinal = legTimeFromAlt(altitudes.final - 0 - state.turnCostFt);
 
+  // Each leg is split into per-wind-layer time segments (layered-wind test feature) - collapses to a
+  // single segment covering the whole leg's own global wind when that feature is off.
+  const zeroWind = (segs) => segs.map(s => ({ ...s, windMs: 0 }));
+  const segFinal = legWindSegments('final');
+  const segBase = legWindSegments('base');
+  const segDownwind = legWindSegments('downwind');
+
   const p0 = target;
-  const p1 = backwardLeg(p0, finalHeading, fwdMs, windMs, windDir, tFinal, corrected);
-  const p2 = backwardLeg(p1, baseHeading, fwdMs, windMs, windDir, tBase, corrected);
-  const p3 = backwardLeg(p2, downwindHeading, fwdMs, windMs, windDir, tDownwind, corrected);
+  const p1 = backwardLeg(p0, finalHeading, fwdMs, mode === 'nowind' ? zeroWind(segFinal) : segFinal, corrected);
+  const p2 = backwardLeg(p1, baseHeading, fwdMs, mode === 'nowind' ? zeroWind(segBase) : segBase, corrected);
+  const p3 = backwardLeg(p2, downwindHeading, fwdMs, mode === 'nowind' ? zeroWind(segDownwind) : segDownwind, corrected);
 
   return {
     p0, p1, p2, p3,
@@ -1471,7 +1607,6 @@ function render() {
   const allPts = [state.target];
   const windBlocked = windExceedsForward();
   const fwdMs = state.perf.fwdSpeedKmh / 3.6;
-  const windMs = state.perf.windSpeedKmh / 3.6;
   // A canopy icon is drawn on every leg. The crab-correction annotation (dashed ray + arc + angle
   // label) is separately gated per-leg below on an actually-nonzero offset, so landing-into-wind still
   // shows downwind/final with a plain aligned nose - no correction clutter where none is needed.
@@ -1570,7 +1705,7 @@ function render() {
     annotatedLegs.forEach(legName => {
       const leg = variant.legs.find(l => l.name === legName);
       const iconColor = style.color || leg.hex;
-      const offset = mode === 'corrected' ? crabOffsetDeg(leg.heading, fwdMs, windMs, state.windDir) : null;
+      const offset = mode === 'corrected' ? crabAngleDeg(fwdMs, legEffectiveAlongCross(legName, leg.heading).cross) : null;
       const noseHeading = offset != null ? norm(leg.heading + offset) : leg.heading; // uncorrected: fixed nose
       const iconCenter = midpoint(leg.from, leg.to);
       const icon = canopyMarker(iconCenter, noseHeading, iconColor).addTo(map);
@@ -1657,8 +1792,12 @@ function drawReachRings() {
     const radiusM = fwdMs * t;
     if (radiusM <= 0) return;
     // Upwind of the entry point by wind x t - see function comment for the derivation. windDir is
-    // already "the direction the wind comes from", i.e. upwind, so no extra +/-180 needed.
-    const center = destPoint(entryPoint[0], entryPoint[1], state.windDir, windMs * t);
+    // already "the direction the wind comes from", i.e. upwind, so no extra +/-180 needed. Under the
+    // layered-wind test feature, each band between entry and h contributes its own upwind shift instead
+    // of one uniform shift for the whole climb.
+    const center = state.windLayers.enabled
+      ? layeredWindOffsetPoint(entryPoint, entryAltFt, h, (d) => d)
+      : destPoint(entryPoint[0], entryPoint[1], state.windDir, windMs * t);
     const ring = L.circle(center, {
       radius: radiusM, color: '#8FA6C2', weight: 1.5, opacity: 0.8, fill: false, dashArray: '4 6'
     }).addTo(map);
@@ -1702,7 +1841,9 @@ function drawEmergencyRings() {
     const t = legTimeFromAlt(h);
     const radiusM = fwdMs * t;
     if (radiusM <= 0) return;
-    const center = destPoint(state.emergencyPoint[0], state.emergencyPoint[1], downwindBearing, windMs * t);
+    const center = state.windLayers.enabled
+      ? layeredWindOffsetPoint(state.emergencyPoint, 0, h, (d) => norm(d + 180))
+      : destPoint(state.emergencyPoint[0], state.emergencyPoint[1], downwindBearing, windMs * t);
     const ring = L.circle(center, {
       radius: radiusM, color: '#E85DC0', weight: 1.5, opacity: 0.8, fill: false, dashArray: '4 6'
     }).addTo(map);
@@ -2089,42 +2230,24 @@ const lenInputs = {
   final: document.getElementById('lenFinal')
 };
 function windExceedsForward() {
-  return state.perf.fwdSpeedKmh > 0 && state.perf.windSpeedKmh >= state.perf.fwdSpeedKmh;
-}
-
-// Corrected (crabbed) groundspeed per leg - generalizes to whatever the landing direction actually is;
-// reduces to the classic downwind=fwd+wind / final=fwd-wind / base=√(fwd²−wind²) when landing is into wind.
-function groundspeeds() {
-  const fwdMs = state.perf.fwdSpeedKmh / 3.6;
-  const windMs = state.perf.windSpeedKmh / 3.6;
-  const landingHeading = getLandingHeading();
-  const finalHeading = landingHeading;
-  const baseHeading = norm(state.hand === 'left' ? finalHeading + 90 : finalHeading - 90);
-  const downwindHeading = norm(finalHeading + 180);
-
-  function gsFor(heading) {
-    const { along, cross } = windComponents(heading, windMs, state.windDir);
-    const gsSq = fwdMs * fwdMs - cross * cross;
-    return Math.max(0, along + (gsSq > 0 ? Math.sqrt(gsSq) : 0));
-  }
-
-  return { downwind: gsFor(downwindHeading), base: gsFor(baseHeading), final: gsFor(finalHeading) };
+  return state.perf.fwdSpeedKmh > 0 && maxRelevantWindKmh() >= state.perf.fwdSpeedKmh;
 }
 
 // Wind-drift angle per leg - how far off a straight ground track the wind pushes the nose on that leg.
 // This is the same number whether or not the corrected (crabbed) path is actually being flown or shown;
 // it describes what the wind does, not a correction someone has chosen to apply. Landing into wind,
-// only base ever has a crosswind component; with a prescribed landing direction, any leg can.
+// only base ever has a crosswind component; with a prescribed landing direction, any leg can. Under the
+// layered-wind test feature this is a time-weighted average across the leg (see legEffectiveAlongCross) -
+// a single flyable number, even though the wind driving it may not be literally constant end to end.
 function legDriftAngles() {
   const fwdMs = state.perf.fwdSpeedKmh / 3.6;
-  const windMs = state.perf.windSpeedKmh / 3.6;
   const finalHeading = getLandingHeading();
   const baseHeading = norm(state.hand === 'left' ? finalHeading + 90 : finalHeading - 90);
   const downwindHeading = norm(finalHeading + 180);
   return [
-    { name: 'downwind', deg: crabOffsetDeg(downwindHeading, fwdMs, windMs, state.windDir) },
-    { name: 'base',     deg: crabOffsetDeg(baseHeading,     fwdMs, windMs, state.windDir) },
-    { name: 'final',    deg: crabOffsetDeg(finalHeading,    fwdMs, windMs, state.windDir) },
+    { name: 'downwind', deg: crabAngleDeg(fwdMs, legEffectiveAlongCross('downwind', downwindHeading).cross) },
+    { name: 'base',     deg: crabAngleDeg(fwdMs, legEffectiveAlongCross('base', baseHeading).cross) },
+    { name: 'final',    deg: crabAngleDeg(fwdMs, legEffectiveAlongCross('final', finalHeading).cross) },
   ];
 }
 
@@ -2198,6 +2321,7 @@ function setUnit(u) {
   document.querySelectorAll('.leg-row .unit').forEach(el => el.textContent = u);
   refreshLegInputs();
   refreshAltInputs(); // same toggle drives the altitude (vertical) inputs too
+  renderWindLayerRows(); // layer altitude inputs are shown in the active unit too
   saveState();
   if (hasUserTarget) render(); // on-map labels (altitudes, lengths) are drawn in the active unit too
 }
@@ -2233,21 +2357,28 @@ function recomputeLegs() {
   }
 
   const sinkMs = state.perf.sinkRateMs;
-  const gs = groundspeeds();
+  const fwdMs = state.perf.fwdSpeedKmh / 3.6;
+  const finalHeading = getLandingHeading();
+  const baseHeading = norm(state.hand === 'left' ? finalHeading + 90 : finalHeading - 90);
+  const downwindHeading = norm(finalHeading + 180);
   const { downwind: altDown, base: altBase, final: altFinal } = state.altitudes;
 
-  function legCalc(lossFt, groundspeedMs) {
+  // Distance comes from summing each leg's own wind segments (see correctedLegDistance) rather than a
+  // single groundspeed x time - the only way a layer boundary that falls mid-leg is actually reflected
+  // in the sidebar's numbers, not just on the map.
+  function legCalc(lossFt, heading, legName) {
     const lossM = Math.max(0, lossFt) * M_PER_FT;
     const timeS = sinkMs > 0 ? lossM / sinkMs : 0;
-    const distM = Math.max(0, groundspeedMs) * timeS;
+    const distM = correctedLegDistance(heading, fwdMs, legWindSegments(legName));
     return { distM, timeS };
   }
 
   // Each turn (downwind→base, base→final) spends state.turnCostFt of altitude on the maneuver itself -
-  // that portion no longer contributes ground track distance/time on the following leg (legCalc clamps at 0).
-  const dw = legCalc(altDown - altBase, gs.downwind); // tailwind on downwind - no preceding turn
-  const ba = legCalc(altBase - altFinal - state.turnCostFt, gs.base);
-  const fi = legCalc(altFinal - 0 - state.turnCostFt, gs.final);
+  // that portion no longer contributes ground track distance/time on the following leg (legWindSegments
+  // already excludes it from that leg's altitude range, see legAltRangeFt).
+  const dw = legCalc(altDown - altBase, downwindHeading, 'downwind'); // tailwind on downwind - no preceding turn
+  const ba = legCalc(altBase - altFinal - state.turnCostFt, baseHeading, 'base');
+  const fi = legCalc(altFinal - 0 - state.turnCostFt, finalHeading, 'final');
 
   state.legs = { downwind: dw.distM, base: ba.distM, final: fi.distM };
   state.legTimes = { downwind: dw.timeS, base: ba.timeS, final: fi.timeS };
@@ -2302,6 +2433,84 @@ perfInputs.sinkRate.addEventListener('input', () => {
   recomputeLegs();
 });
 
+// ---------- Layered wind (local test feature) ----------
+const WIND_LAYER_MAX = 6;
+const windLayersToggle = document.getElementById('windLayersToggle');
+const windLayersBox = document.getElementById('windLayersBox');
+const windLayerRows = document.getElementById('windLayerRows');
+const windLayerAddBtn = document.getElementById('windLayerAddBtn');
+
+function renderWindLayerRows() {
+  windLayerRows.innerHTML = '';
+  const altUnit = state.unit === 'm' ? 'm' : 'ft';
+  const speedUnit = state.speedUnit === 'kn' ? 'kn' : 'km/h';
+  state.windLayers.extraLayers.forEach((layer, i) => {
+    const row = document.createElement('div');
+    row.className = 'wind-layer-row';
+
+    const altInput = document.createElement('input');
+    altInput.type = 'number'; altInput.step = '1';
+    altInput.value = round1(ftToAltDisplay(layer.altFt));
+    altInput.addEventListener('input', () => {
+      layer.altFt = Math.max(0, altDisplayToFt(parseFloat(altInput.value) || 0));
+      recomputeLegs();
+    });
+    const altUnitSpan = document.createElement('span');
+    altUnitSpan.className = 'unit'; altUnitSpan.textContent = altUnit;
+
+    const dirInput = document.createElement('input');
+    dirInput.type = 'number'; dirInput.step = '1'; dirInput.min = '0'; dirInput.max = '359';
+    dirInput.value = Math.round(layer.dirDeg);
+    dirInput.addEventListener('input', () => {
+      layer.dirDeg = norm(parseFloat(dirInput.value) || 0);
+      recomputeLegs();
+    });
+    const dirUnitSpan = document.createElement('span');
+    dirUnitSpan.className = 'unit'; dirUnitSpan.textContent = '°';
+
+    const speedInput = document.createElement('input');
+    speedInput.type = 'number'; speedInput.step = '1'; speedInput.min = '0';
+    speedInput.value = round1(kmhToSpeedDisplay(layer.speedKmh));
+    speedInput.addEventListener('input', () => {
+      layer.speedKmh = Math.max(0, speedDisplayToKmh(parseFloat(speedInput.value) || 0));
+      recomputeLegs();
+    });
+    const speedUnitSpan = document.createElement('span');
+    speedUnitSpan.className = 'unit'; speedUnitSpan.textContent = speedUnit;
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'fav-item-delete';
+    delBtn.style.marginLeft = 'auto';
+    delBtn.textContent = '×';
+    delBtn.title = state.lang === 'en' ? 'Remove this layer' : 'Diese Schicht entfernen';
+    delBtn.addEventListener('click', () => {
+      state.windLayers.extraLayers.splice(i, 1);
+      renderWindLayerRows();
+      recomputeLegs();
+    });
+
+    row.append(altInput, altUnitSpan, dirInput, dirUnitSpan, speedInput, speedUnitSpan, delBtn);
+    windLayerRows.appendChild(row);
+  });
+  windLayerAddBtn.style.display = state.windLayers.extraLayers.length >= WIND_LAYER_MAX ? 'none' : '';
+}
+
+windLayersToggle.addEventListener('change', () => {
+  state.windLayers.enabled = windLayersToggle.checked;
+  windLayersBox.style.display = windLayersToggle.checked ? 'block' : 'none';
+  recomputeLegs();
+});
+
+windLayerAddBtn.addEventListener('click', () => {
+  if (state.windLayers.extraLayers.length >= WIND_LAYER_MAX) return;
+  const last = state.windLayers.extraLayers[state.windLayers.extraLayers.length - 1];
+  state.windLayers.extraLayers.push(last
+    ? { altFt: last.altFt + 500, dirDeg: last.dirDeg, speedKmh: last.speedKmh }
+    : { altFt: 500, dirDeg: state.windDir, speedKmh: state.perf.windSpeedKmh });
+  renderWindLayerRows();
+  recomputeLegs();
+});
+
 // ---------- Sink rate unit toggle (m/s / ft/min) ----------
 const sinkUnitMsBtn = document.getElementById('sinkUnitMs');
 const sinkUnitFtminBtn = document.getElementById('sinkUnitFtmin');
@@ -2330,6 +2539,7 @@ function setSpeedUnit(u) {
   fwdSpeedUnitLabel.textContent = label;
   perfInputs.windSpeed.value = round1(kmhToSpeedDisplay(state.perf.windSpeedKmh));
   perfInputs.fwdSpeed.value = round1(kmhToSpeedDisplay(state.perf.fwdSpeedKmh));
+  renderWindLayerRows(); // layer speed inputs are shown in the active unit too
   updateMapWindSpeedReadout();
   updateEstimate();
   saveState();
@@ -2656,6 +2866,9 @@ const I18N_EN = {
   windSpeedLabel: "Wind speed",
   fwdSpeedLabel: "Forward speed",
   sinkRateLabel: "Sink rate",
+  windLayersLabel: "Altitude-dependent wind (test)",
+  windLayersHint: "Test feature: the wind direction/speed above is the ground value. Extra layers apply from their own altitude upward to the next-higher one. If you change the wind direction above (e.g. via the map arrow), update the layers below manually if needed - they don't follow automatically.",
+  windLayerAddBtn: "+ Altitude layer",
   estimatorToggleClosed: "Estimator (wingload) ▾",
   estWeightLabel: "Weight (jumper + gear)",
   estCanopyLabel: "Canopy size",
@@ -2774,6 +2987,13 @@ const I18N_EN = {
   infoLimit4: "Real canopy steering is less precise than the calculated correction angle suggests - it's a target value, not an exactly flyable guide",
   infoLimit5: "The reach rings assume an instant heading change - real turn time isn't subtracted, so the actually reachable area is somewhat smaller",
 
+  infoWindLayersH: "Altitude-dependent wind (test)",
+  infoWindLayersP1: `By default, a single wind applies to the whole descent (the wind direction/speed fields above). The "Altitude-dependent wind (test)" checkbox in the Wind & Airspeed section lets you add up to 6 additional wind readings for higher layers - useful when a dropzone genuinely has different winds at different altitudes.`,
+  infoWindLayersP2: "Each layer applies from its own altitude upward to the next-higher layer (a step function, not interpolated in between) - the value above always stays the ground-level reading.",
+  infoWindLayersP2b: "Important: the layers are independent entries and don't follow the wind direction above automatically. If you change the wind direction above - e.g. by dragging the map's wind arrow - update the layers' directions yourself if needed.",
+  infoWindLayersP3: `For each of the three legs, flight time is split across whichever altitude layers it actually passes through; the <b>along</b> and <b>cross</b> contributions are summed per layer, weighted by that layer's own share of the time. A wind change partway through a leg (e.g. mid-downwind) is therefore reflected proportionally, not just at a single point in the leg.`,
+  infoWindLayersNote: "The correction angle shown per leg stays a single number - for a leg split across layers, that's a time-weighted average, not a value you could hold exactly for the whole leg. The reach rings and emergency reach also take the layers into account, by summing the wind drift layer by layer over the descent.",
+
   infoWingloadH: "Wingload estimator",
   infoWingloadP: "Wingload describes how much weight rests on each square foot of canopy - the higher the value, the faster and more direct the canopy flies. From weight and canopy size, the app calculates this value first, then reads forward speed and sink rate off the table below (interpolating between the two nearest values; clamped to the edge outside 0.5–1.8 lb/sqft):",
   infoWingloadFormula: `Wingload (lb/sqft) = weight (kg) × <span style="color:var(--muted)">2.20462</span> ÷ canopy area (sqft)<br><span style="color:var(--muted);font-size:11px;">(2.20462 = kg → lb conversion, since wingload is traditionally given in lb/sqft)</span>`,
@@ -2854,6 +3074,7 @@ function applyLanguage(lang) {
   setWind(state.windDir, true);
   refreshLegInputs();
   refreshAltInputs();
+  renderWindLayerRows();
   updateEstimatorToggleLabel();
   updateEstimate();
   render();
@@ -2870,6 +3091,9 @@ function syncUIFromState() {
   updateMapHandToggle();
   Object.entries(plotCheckboxes).forEach(([key, el]) => { el.checked = state.plots[key]; });
   plotWindAnimCheckbox.checked = state.windAnimEnabled;
+  windLayersToggle.checked = state.windLayers.enabled;
+  windLayersBox.style.display = state.windLayers.enabled ? 'block' : 'none';
+  renderWindLayerRows();
   if (!state.windAnimEnabled) windCtx.clearRect(0, 0, windCanvasW, windCanvasH);
   if (state.hasUsedWindDrag) mapWindBadge.classList.remove('pulse-hint');
   if (state.hasOpenedSidebar) sidebarToggle.classList.remove('pulse-hint');
