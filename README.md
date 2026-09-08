@@ -14,6 +14,7 @@ A landing pattern simulator for skydivers — plan your downwind/base/final appr
 - Reach rings: at a given opening altitude, how far you could be from the pattern's entry point and still reach it at full flight, wind included
 - Optional emergency landing point: drop a second point on the map to see how far you could get from *there* instead, at each altitude, down to the ground
 - Save favorite locations to jump back to quickly - their surroundings are pre-cached for offline use
+- Pre-jump checklist: summarizes what the app currently knows and adds a few points to confirm by hand, before every jump
 - Works offline for any dropzone you've already viewed or saved as a favorite (service worker-backed)
 - Left-hand / right-hand pattern toggle, metric/imperial + km-h/knots unit toggles
 - Guided spotlight tour of the controls, shown once automatically and replayable anytime from the "?" user guide

@@ -254,9 +254,23 @@
     background:rgba(18,22,29,.92);backdrop-filter:blur(4px);border-radius:8px;
   }
   .map-fav-cluster{display:flex;position:absolute;top:58px;right:12px;z-index:1000;flex-direction:column;gap:8px;}
-  #mapLocateBtn svg,#mapEmergencyBtn svg{width:20px;height:20px;stroke:currentColor;}
+  #mapLocateBtn svg,#mapEmergencyBtn svg,#mapChecklistBtn svg{width:20px;height:20px;stroke:currentColor;}
   #mapEmergencyBtn.armed{color:#E85DC0;border-color:#E85DC0;background:rgba(232,93,192,.15);}
   #mapEmergencyBtn.set{color:#1a1204;border-color:#E85DC0;background:#E85DC0;}
+
+  .checklist-row{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px;}
+  .checklist-row:last-child{border-bottom:none;}
+  .checklist-icon{flex:none;width:20px;height:20px;margin-top:1px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;}
+  .checklist-ok .checklist-icon{background:rgba(62,217,199,.15);color:var(--cyan);}
+  .checklist-info .checklist-icon{background:rgba(124,135,152,.2);color:var(--muted);}
+  .checklist-danger .checklist-icon{background:rgba(255,93,93,.18);color:var(--danger);}
+  .checklist-manual-row{display:flex;align-items:flex-start;gap:10px;padding:8px 0;font-size:13px;cursor:pointer;}
+  .checklist-manual-row input{margin-top:2px;accent-color:var(--amber);width:15px;height:15px;flex:none;cursor:pointer;}
+  .checklist-done{
+    background:rgba(62,217,199,.12);border:1px solid var(--cyan);color:var(--cyan);
+    font-size:13px;line-height:1.5;padding:10px 12px;border-radius:8px;margin-top:14px;font-weight:600;
+    display:none;
+  }
   .fav-panel{
     position:absolute;top:196px;right:12px;z-index:1050;width:240px;
     background:rgba(18,22,29,.96);border:1px solid var(--line);border-radius:10px;
@@ -712,7 +726,7 @@
       Vereinfachtes Modell - Formeln, Skizzen &amp; Grenzen: „i"-Button oben.
     </div>
 
-    <div class="footer">Developed by Tobias Windberg<br><span data-i18n="footerContact">Fragen oder Ideen? <a href="mailto:tobi.windberg@gmail.com" style="color:var(--cyan);">tobi.windberg@gmail.com</a></span><br><span data-i18n="footerVersion" style="opacity:.6;">Stand: 2026-08-20</span></div>
+    <div class="footer">Developed by Tobias Windberg<br><span data-i18n="footerContact">Fragen oder Ideen? <a href="mailto:tobi.windberg@gmail.com" style="color:var(--cyan);">tobi.windberg@gmail.com</a></span><br><span data-i18n="footerVersion" style="opacity:.6;">Stand: 2026-09-09</span></div>
   </div>
 
   <div id="mapWrap" style="position:relative;flex:1;">
@@ -724,6 +738,14 @@
       <button class="map-menu-btn pulse-hint" id="sidebarToggle" aria-label="Menu">☰</button>
       <button class="map-menu-btn" id="mapInfoBtn" data-i18n-title="infoBtnTitle" title="Wie wird berechnet?">i</button>
       <button class="map-menu-btn" id="mapHelpBtn" data-i18n-title="helpBtnTitle" title="Bedienanleitung">?</button>
+      <button class="map-menu-btn pulse-hint" id="mapChecklistBtn" data-i18n-title="checklistBtnTitle" title="Checkliste vor dem Sprung">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="4" width="14" height="17" rx="2"/>
+          <path d="M9 3.2h6a1 1 0 0 1 1 1V6H8V4.2a1 1 0 0 1 1-1Z" fill="currentColor" stroke="none"/>
+          <path d="m8.3 11.3 1.4 1.4 2.5-3"/>
+          <line x1="8.3" y1="16.3" x2="15.5" y2="16.3"/>
+        </svg>
+      </button>
       <button class="map-menu-btn" id="mapHandToggle" title="Platzrunde: Linksplatz (zum Wechseln tippen)">↺</button>
     </div>
     <div class="onboarding-banner" id="onboardingBanner">
@@ -986,6 +1008,22 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="checklistModal">
+  <div class="modal-box">
+    <button class="modal-close" data-close-modal="checklistModal">✕</button>
+    <h2 data-i18n="checklistTitle">Checkliste vor dem Sprung</h2>
+    <p class="muted" data-i18n="checklistIntro">Fasst zusammen, was die App gerade weiß - ersetzt keinen Gear-Check und kein Briefing vor Ort.</p>
+
+    <h3 data-i18n="checklistAutoH">Automatisch geprüft</h3>
+    <div id="checklistAutoItems"></div>
+
+    <h3 data-i18n="checklistManualH">Manuell bestätigen</h3>
+    <div id="checklistManualItems"></div>
+    <div class="checklist-done" id="checklistDone" data-i18n="checklistDoneText">✓ Checkliste durchgegangen.</div>
+    <div class="checklist-done" id="checklistDoneWarn" style="border-color:var(--danger);color:var(--danger);background:rgba(255,93,93,.12);" data-i18n="checklistDoneWarnText">Bestätigt, aber die Windwarnung oben bleibt bestehen - so nicht fliegbar.</div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="helpModal">
   <div class="modal-box">
     <button class="modal-close" data-close-modal="helpModal">✕</button>
@@ -1024,6 +1062,9 @@
 
     <h3 data-i18n="help9H">9. Reichweiten-Ringe &amp; Notlandung</h3>
     <p data-i18n="help9P">Zeigt (falls aktiviert), wie weit du dich bei welcher Höhe maximal vom Einstiegspunkt entfernt aufhalten kannst und ihn bei voller Fahrt noch erreichst. Über den Fallschirm-Button auf der Karte (unter Favoriten und Standort) lässt sich zusätzlich ein zweiter Punkt setzen, der zeigt, welchen Bereich du von dort aus bei einer Notlandung noch erreichen könntest. Details und Herleitung im "i"-Info.</p>
+
+    <h3 data-i18n="help10H">10. Checkliste vor dem Sprung</h3>
+    <p data-i18n="help10P">Der Klemmbrett-Button auf der Karte fasst zusammen, was die App gerade weiß (Zielpunkt, Landerichtung, Fahrt/Sinkrate, Turn Points, Notlandungsreichweite, Offline-Verfügbarkeit) und ergänzt ein paar Punkte zum manuellen Bestätigen. Lohnt sich vor jedem Sprung, nicht nur beim ersten - ersetzt aber keinen Gear-Check und kein Briefing vor Ort.</p>
   </div>
 </div>
 
@@ -1143,7 +1184,10 @@ function tourStepData() {
       text: en ? 'Shows, for a chosen opening altitude, how far you could be from the entry point and still reach it at full flight.' : 'Zeigt bei einer gewählten Öffnungshöhe, wie weit du dich vom Einstiegspunkt entfernt aufhalten kannst und ihn bei voller Fahrt noch erreichst.' },
     { selector: '#mapEmergencyBtn', sidebar: false,
       title: en ? 'Emergency reach' : 'Notlandungsreichweite',
-      text: en ? 'Places a second point on the map and shows what area you could still reach from there in an emergency.' : 'Setzt einen zweiten Punkt auf der Karte und zeigt, welchen Bereich du von dort aus bei einer Notlandung noch erreichen könntest.' }
+      text: en ? 'Places a second point on the map and shows what area you could still reach from there in an emergency.' : 'Setzt einen zweiten Punkt auf der Karte und zeigt, welchen Bereich du von dort aus bei einer Notlandung noch erreichen könntest.' },
+    { selector: '#mapChecklistBtn', sidebar: false,
+      title: en ? 'Pre-jump checklist' : 'Checkliste vor dem Sprung',
+      text: en ? "Summarizes today's settings and adds a few points to confirm by hand - worth a look before every jump, not just the first." : 'Fasst die heutigen Einstellungen zusammen und ergänzt ein paar Punkte zum manuellen Bestätigen - lohnt sich vor jedem Sprung, nicht nur beim ersten.' }
   ];
 }
 
@@ -2810,6 +2854,22 @@ function precacheFavoriteTiles(lat, lon) {
   navigator.serviceWorker.controller.postMessage({ type: 'precache-tiles', urls });
 }
 
+// Whether a point falls within the tile block actually pre-cached around some favorite - not a
+// straight-line distance to the favorite's own pin, since caching is area-based (a 3x3 tile grid), so
+// a different target point nearby, still inside that same grid, is covered too. Checked at the map's
+// current zoom level (clamped to the precached range) rather than a fixed one - that's the zoom the
+// area is actually being viewed/planned at right now, and therefore the most relevant one to answer
+// "would this still be visible offline" for. Exact tile math, not a latitude-dependent meters guess.
+function isFavoriteCached(target) {
+  const zoomMin = Math.min(...PRECACHE_ZOOMS), zoomMax = Math.max(...PRECACHE_ZOOMS);
+  const z = Math.min(Math.max(Math.round(map.getZoom()), zoomMin), zoomMax);
+  const tx = lonToTileX(target[1], z), ty = latToTileY(target[0], z);
+  return state.favorites.some(f => {
+    const fx = lonToTileX(f.target[1], z), fy = latToTileY(f.target[0], z);
+    return Math.abs(tx - fx) <= PRECACHE_RADIUS && Math.abs(ty - fy) <= PRECACHE_RADIUS;
+  });
+}
+
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready).then(() => {
     state.favorites.forEach((fav) => precacheFavoriteTiles(fav.target[0], fav.target[1]));
@@ -2831,6 +2891,107 @@ document.getElementById('mapHelpBtn').addEventListener('click', () => openModal(
 document.querySelectorAll('[data-close-modal]').forEach(btn => {
   btn.addEventListener('click', () => closeModal(btn.dataset.closeModal));
 });
+
+// ---------- Pre-jump checklist ----------
+const checklistAutoItems = document.getElementById('checklistAutoItems');
+const checklistManualItems = document.getElementById('checklistManualItems');
+const checklistDoneEl = document.getElementById('checklistDone');
+const checklistDoneWarnEl = document.getElementById('checklistDoneWarn');
+const CHECKLIST_ICONS = { ok: '✓', info: 'i', danger: '!' };
+function renderChecklist() {
+  const en = state.lang === 'en';
+  const items = [];
+  const windBlocked = windExceedsForward();
+
+  if (windBlocked) {
+    items.push({ status: 'danger', text: en
+      ? 'Wind meets or exceeds forward speed - the corrected path can\'t be flown like this.'
+      : 'Wind erreicht oder übersteigt die Vorwärtsfahrt - die korrigierte Flugbahn ist so nicht fliegbar.' });
+  }
+
+  items.push(hasUserTarget
+    ? { status: 'ok', text: en ? 'Target point set.' : 'Zielpunkt gesetzt.' }
+    : { status: 'info', text: en ? 'No target point set yet.' : 'Noch kein Zielpunkt gesetzt.' });
+
+  // Into-wind is a fact the app actually verified - a real check. A prescribed direction isn't
+  // something the app can verify at all, so that case moves to the manual section below instead of
+  // sitting here as a status that can never turn green.
+  if (state.landingIntoWind) {
+    items.push({ status: 'ok', text: en ? 'Landing direction: into the wind.' : 'Landerichtung: in den Wind gestellt.' });
+  }
+
+  items.push(state.emergencyPoint
+    ? { status: 'ok', text: en ? 'Emergency reach point set.' : 'Notlandungsreichweite gesetzt.' }
+    : { status: 'info', text: en ? 'No emergency reach point set (optional).' : 'Keine Notlandungsreichweite gesetzt (optional).' });
+
+  const nearFav = hasUserTarget && isFavoriteCached(state.target);
+  items.push(nearFav
+    ? { status: 'ok', text: en ? 'This spot is a saved favorite - its map area is cached for offline use.' : 'Dieser Ort ist als Favorit gespeichert - die Kartenumgebung ist offline verfügbar.' }
+    : { status: 'info', text: en ? 'Not a saved favorite - save it for offline use, or view this map area online at least once first.' : 'Kein gespeicherter Favorit - für Offline-Verfügbarkeit speichern, oder den Kartenausschnitt vorher einmal online ansehen.' });
+
+  checklistAutoItems.innerHTML = items.map(it =>
+    `<div class="checklist-row checklist-${it.status}"><span class="checklist-icon">${CHECKLIST_ICONS[it.status]}</span><span>${it.text}</span></div>`
+  ).join('');
+
+  // Manual confirmations always start unchecked - re-confirmed fresh before every jump, not remembered.
+  // Everything here needs a human to actually judge it - the app can show today's numbers, but can't
+  // verify any of them are still right, so none of these could honestly live under "checked automatically".
+  checklistManualItems.innerHTML = '';
+  const speedU = state.speedUnit === 'kn' ? 'kn' : 'km/h';
+  const sinkU = state.sinkUnit === 'ftmin' ? 'ft/min' : 'm/s';
+  const altU = state.unit === 'm' ? 'm' : 'ft';
+  const manualTexts = [
+    en ? 'Ground wind checked against the actual windsock/current call on site?' : 'Bodenwind mit dem tatsächlichen Windsack/der aktuellen Ansage vor Ort abgeglichen?',
+    state.landingIntoWind
+      ? (en ? 'Landing direction confirmed with the DZ/jumpmaster?' : 'Landerichtung mit DZ/Jumpmaster abgestimmt?')
+      : (en
+          ? `Prescribed landing direction (${Math.round(state.landingHeadingManual)}°) confirmed with the DZ/jumpmaster - still correct for today?`
+          : `Vorgeschriebene Landerichtung (${Math.round(state.landingHeadingManual)}°) mit DZ/Jumpmaster abgestimmt - noch aktuell?`),
+    en
+      ? `Forward speed ${round1(kmhToSpeedDisplay(state.perf.fwdSpeedKmh))} ${speedU}, sink rate ${round1(sinkToDisplay(state.perf.sinkRateMs))} ${sinkU} - still right for today's canopy/setup?`
+      : `Vorwärtsfahrt ${round1(kmhToSpeedDisplay(state.perf.fwdSpeedKmh))} ${speedU}, Sinkrate ${round1(sinkToDisplay(state.perf.sinkRateMs))} ${sinkU} - noch passend für die heutige Kappe/Setup?`,
+    en
+      ? `Turn points: downwind ${round1(ftToAltDisplay(state.altitudes.downwind))} ${altU}, base ${round1(ftToAltDisplay(state.altitudes.base))} ${altU}, final ${round1(ftToAltDisplay(state.altitudes.final))} ${altU} (turn cost ${round1(ftToAltDisplay(state.turnCostFt))} ${altU}) - still fitting today's pattern?`
+      : `Turn Points: Downwind ${round1(ftToAltDisplay(state.altitudes.downwind))} ${altU}, Base ${round1(ftToAltDisplay(state.altitudes.base))} ${altU}, Final ${round1(ftToAltDisplay(state.altitudes.final))} ${altU} (Turnkosten ${round1(ftToAltDisplay(state.turnCostFt))} ${altU}) - passt das noch zur heutigen Platzrunde?`,
+  ];
+  if (state.windLayers.enabled) {
+    const n = state.windLayers.extraLayers.length;
+    manualTexts.push(en
+      ? `Altitude-dependent wind active (${n} layer${n === 1 ? '' : 's'}) - still current?`
+      : `Höhenabhängiger Wind aktiv (${n} Schicht${n === 1 ? '' : 'en'}) - noch aktuell?`);
+  }
+  const checkboxes = [];
+  manualTexts.forEach(text => {
+    const row = document.createElement('label');
+    row.className = 'checklist-manual-row';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    const span = document.createElement('span');
+    span.textContent = text;
+    row.append(cb, span);
+    checklistManualItems.appendChild(row);
+    checkboxes.push(cb);
+    cb.addEventListener('change', () => updateChecklistDone(checkboxes, windBlocked));
+  });
+  updateChecklistDone(checkboxes, windBlocked);
+}
+
+// Shown once every manual item is ticked - a plain "all good" if the plan is actually flyable, or a
+// separate, still-red variant if the wind warning is active, so ticking the manual boxes can never be
+// mistaken for clearing the one thing that's actually blocking (see windBlocked in renderChecklist()).
+function updateChecklistDone(checkboxes, windBlocked) {
+  const allChecked = checkboxes.length > 0 && checkboxes.every(cb => cb.checked);
+  checklistDoneEl.style.display = (allChecked && !windBlocked) ? 'block' : 'none';
+  checklistDoneWarnEl.style.display = (allChecked && windBlocked) ? 'block' : 'none';
+}
+const mapChecklistBtn = document.getElementById('mapChecklistBtn');
+mapChecklistBtn.addEventListener('click', () => {
+  renderChecklist();
+  openModal('checklistModal');
+  // Not persisted to state - the pulse should return on every fresh visit, not just before the very
+  // first jump ever, since the checklist is meant to be re-checked before each one.
+  mapChecklistBtn.classList.remove('pulse-hint');
+});
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
   overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(overlay.id); });
 });
@@ -2845,6 +3006,7 @@ const I18N_EN = {
   headerSub: "Tap the map to set the target point. The pattern rotates automatically with the wind.",
   infoBtnTitle__title: "How is this calculated?",
   helpBtnTitle__title: "User guide",
+  checklistBtnTitle__title: "Pre-jump checklist",
   favBtnTitle__title: "Favorites",
   locateBtnTitle__title: "Use my location",
   emergencyBtnTitle__title: "Set emergency reach point",
@@ -2888,7 +3050,7 @@ const I18N_EN = {
   plotReachHint: "Shows the furthest you can be from the entry point at a given altitude and still reach it at full flight.",
   openingAltLabel: "Opening altitude",
   footerContact: `Questions or ideas? <a href="mailto:tobi.windberg@gmail.com" style="color:var(--cyan);">tobi.windberg@gmail.com</a>`,
-  footerVersion: "Updated: 2026-08-20",
+  footerVersion: "Updated: 2026-09-09",
   onboardingIntro: "This tool simulates your landing approach at any dropzone - depending on wind, wing loading, and adjustable turn points.",
   onboardingTitle: "Let's go",
   onboardingStep1: "Set the wind direction",
@@ -3008,6 +3170,13 @@ const I18N_EN = {
       <tr><td>1.8 · 8.79</td><td>46 · 24.8</td><td>4.4 · 866</td></tr>
     </tbody></table>`,
 
+  checklistTitle: "Pre-jump checklist",
+  checklistIntro: "Summarizes what the app currently knows - doesn't replace a gear check or an on-site briefing.",
+  checklistAutoH: "Checked automatically",
+  checklistManualH: "Confirm manually",
+  checklistDoneText: "✓ Checklist reviewed.",
+  checklistDoneWarnText: "Confirmed, but the wind warning above still stands - not flyable like this.",
+
   helpTitle: "User guide",
   tourStartBtn: "Start guided tour",
   tourSkipBtn: "Skip",
@@ -3035,7 +3204,10 @@ const I18N_EN = {
   help8_4: "Blue arrow bottom right: wind direction (where the wind is blowing to) - drag it to change the wind directly on the map",
 
   help9H: "9. Reach rings &amp; emergency landing",
-  help9P: `Shows (when enabled) how far you could be from the pattern's entry point at a given altitude and still reach it at full flight. The parachute button on the map (below favorites and locate) additionally lets you place a second point to see what area you could still reach from there in an emergency. Details and derivation in the "i" info.`
+  help9P: `Shows (when enabled) how far you could be from the pattern's entry point at a given altitude and still reach it at full flight. The parachute button on the map (below favorites and locate) additionally lets you place a second point to see what area you could still reach from there in an emergency. Details and derivation in the "i" info.`,
+
+  help10H: "10. Pre-jump checklist",
+  help10P: `The clipboard button on the map summarizes what the app currently knows (target point, landing direction, forward speed/sink rate, turn points, emergency reach, offline availability) and adds a few points to confirm by hand. Worth a look before every jump, not just the first - but doesn't replace a gear check or an on-site briefing.`
 };
 
 const I18N_DE = {}; // captured live from the DOM's own default (German) text
@@ -3075,6 +3247,7 @@ function applyLanguage(lang) {
   refreshLegInputs();
   refreshAltInputs();
   renderWindLayerRows();
+  renderChecklist();
   updateEstimatorToggleLabel();
   updateEstimate();
   render();
