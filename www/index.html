@@ -1281,6 +1281,13 @@ function setSidebarCollapsedWide(collapsed) {
     : (state.lang === 'en' ? 'Hide menu' : 'Menü ausblenden');
   saveState();
 }
+// This collapse/expand is a CSS width transition on a flex child, not a window resize - no 'resize'
+// event fires for it, so the map would otherwise keep rendering tiles for its pre-collapse size,
+// leaving the newly revealed strip blank until the next real window resize. Tied to the transition's
+// own end so it fires once, after the panel has actually reached its final width.
+panelEl.addEventListener('transitionend', (e) => {
+  if (e.propertyName === 'width') map.invalidateSize();
+});
 sidebarToggle.addEventListener('click', () => {
   // Clearing the hint here (rather than inside setSidebarOpen/setSidebarCollapsedWide) keeps it tied
   // to an actual click - setSidebarCollapsedWide is also called from syncUIFromState() on every load
@@ -3352,11 +3359,43 @@ if ('serviceWorker' in navigator) {
 }
 
 // ---------- Offline indicator ----------
+// navigator.onLine and the online/offline events are unreliable inside the Android app's WebView -
+// commonly stuck reporting "online" regardless of actual connectivity, unlike a real mobile browser.
+// Rather than pull in a native plugin just for this, connectivity is judged by an active probe
+// instead: periodically fetch a small, already-trusted endpoint (a root-level map tile - guaranteed to
+// exist, and tiny) and see whether that actually succeeds. This also catches "on Wi-Fi but no real
+// internet behind it", which neither navigator.onLine nor a native network-status plugin would notice
+// either, since both only see whether a network interface is up, not whether it leads anywhere.
 const offlineBadge = document.getElementById('offlineBadge');
-function updateOfflineBadge() { offlineBadge.classList.toggle('show', !navigator.onLine); }
-window.addEventListener('online', updateOfflineBadge);
-window.addEventListener('offline', updateOfflineBadge);
-updateOfflineBadge();
+const CONNECTIVITY_PROBE_URL = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/0/0/0';
+const CONNECTIVITY_CHECK_INTERVAL_MS = 30000;
+let isOnline = navigator.onLine; // best-effort seed until the first probe below resolves
+
+function updateOfflineBadge() { offlineBadge.classList.toggle('show', !isOnline); }
+
+async function probeConnectivity() {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+  try {
+    // no-cors: the response itself can't be read (opaque), but that's fine here - even a 404 back
+    // means the request actually reached a server, which is exactly what "online" should mean. Only
+    // genuine network failures (DNS, connection refused, timeout) make fetch reject.
+    await fetch(CONNECTIVITY_PROBE_URL, { mode: 'no-cors', cache: 'no-store', signal: controller.signal });
+    isOnline = true;
+  } catch (e) {
+    isOnline = false;
+  } finally {
+    clearTimeout(timeoutId);
+    updateOfflineBadge();
+  }
+}
+
+probeConnectivity();
+setInterval(probeConnectivity, CONNECTIVITY_CHECK_INTERVAL_MS);
+// The browser's own signal isn't trusted outright (that's the whole problem being worked around) -
+// just used as a hint to re-probe sooner than the next interval tick, in either direction.
+window.addEventListener('online', probeConnectivity);
+window.addEventListener('offline', probeConnectivity);
 
 // ---------- Info / Help modals ----------
 function openModal(id) { document.getElementById(id).classList.add('open'); }
@@ -3800,7 +3839,9 @@ function syncUIFromState() {
 captureDefaultTexts();
 if (state.lang === 'en') applyLanguage('en');
 updateEmergencyBtn();
-setWind(state.windDir, true);
+// No skipInput here (unlike windDegInput's own input handler, which passes it to avoid clobbering
+// mid-typing) - this is what populates the wind-degree textbox with a restored value on load at all.
+setWind(state.windDir);
 setUnit(state.unit);
 setSpeedUnit(state.speedUnit);
 setSinkUnit(state.sinkUnit);
@@ -3813,6 +3854,12 @@ windParticles = Array.from({ length: desiredWindParticleCount(state.perf.windSpe
 windAnimRAF = requestAnimationFrame(windAnimFrame);
 window.addEventListener('resize', resizeWindCanvas);
 map.on('resize', resizeWindCanvas);
+// Leaflet caches the container's pixel size and only re-measures it on invalidateSize() - a bare
+// CSS/layout resize (rotating the phone, toggling browser fullscreen, resizing the window) leaves it
+// showing tiles for the old size, with the newly exposed area just blank map background. This is the
+// one trigger that's a genuine window resize; the sidebar collapsing/expanding on wide screens is a
+// separate, non-window-resize case handled where that transition is defined.
+window.addEventListener('resize', () => map.invalidateSize());
 </script>
 </body>
 </html>
