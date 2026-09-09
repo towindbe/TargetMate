@@ -746,7 +746,7 @@
     <div class="section" id="sectionProMode">
       <div class="plot-row">
         <input type="checkbox" id="proModeToggle">
-        <label for="proModeToggle" data-i18n="proModeLabel">Pro-Modus: Jumprun-Schätzung</label>
+        <label for="proModeToggle" data-i18n="proModeLabel">Jumprun-Schätzung</label>
       </div>
       <div class="crab-hint" style="margin:-4px 0 8px 20px;" data-i18n="proModeHint">Schätzt einen Öffnungspunkt aus Exit-Punkt, Jumprun-Richtung, Break-off-Höhe und Trackrichtung/-weite - zum Abgleich mit den Reichweiten-Ringen. Ändert die Reichweiten-Ringe selbst nicht.</div>
       <div id="proModeBox" style="display:none;margin:0 0 4px 20px;">
@@ -1074,8 +1074,8 @@
     <p data-i18n="infoEmergencyP3">Dadurch drehen sich zwei Dinge um: Der Kreis wandert windabwärts statt windwärts, weil du dich jetzt vom Punkt weg bewegst statt auf ihn zu. Und gerechnet wird bis zum Boden (0 ft), nicht bis zur Einstiegshöhe der Platzrunde - hier geht es ja ums Landen, nicht um den Anschluss an die Platzrunde. Der gesetzte Punkt ist deshalb kein fester Landeplatz, sondern nur der Ausgangspunkt für die Berechnung.</p>
     <p class="muted" data-i18n="infoEmergencyNote">Die beiden Ring-Sätze rechnen bis zu unterschiedlichen Höhen (Einstiegshöhe vs. Boden) und sind deshalb nicht direkt vergleichbar - eine Überschneidung der Flächen bedeutet nicht "hier schaffe ich beides". Willst du wissen, ob von der Notlandungsreichweite aus noch eine Rückkehr zum Zielpunkt möglich wäre, schau stattdessen einfach nach: Liegt der gesetzte Punkt selbst innerhalb eines blauen Reichweiten-Rings, ist bei der entsprechenden Höhe noch eine Rückkehr dorthin möglich.</p>
 
-    <h3 data-i18n="infoProModeH">Pro-Modus: Jumprun-Schätzung</h3>
-    <p data-i18n="infoProModeP1">Der Pro-Modus schätzt einen Öffnungspunkt aus vier Eingaben - Exit-Punkt, Jumprun-Richtung, Break-off-Höhe und Trackrichtung/-Gleitverhältnis - und prüft ihn gegen die Reichweiten-Ringe oben. Er läuft unabhängig davon: die Reichweiten-Ringe selbst ändert er nicht.</p>
+    <h3 data-i18n="infoProModeH">Jumprun-Schätzung</h3>
+    <p data-i18n="infoProModeP1">Aus vier Eingaben - Exit-Punkt, Jumprun-Richtung, Break-off-Höhe und Trackrichtung/-Gleitverhältnis - wird ein Öffnungspunkt geschätzt und gegen die Reichweiten-Ringe oben geprüft. Das läuft unabhängig davon: die Reichweiten-Ringe selbst werden dadurch nicht verändert.</p>
     <p data-i18n="infoProModeP2">Anders als die drei Flugbahn-Plots oben nutzt die Schätzung bewusst nicht das Wind-Dreieck: Die Trackgeschwindigkeit im Freifall dominiert den Wind über die paar Sekunden Track so stark, dass eine Windkorrektur hier eine Genauigkeit vortäuschen würde, die die Schätzung nicht hat. Stattdessen ein einfacher geometrischer Vektor:</p>
     <div class="formula" data-i18n="infoProModeFormula">Höhenband = Break-off-Höhe − Öffnungshöhe<br>Strecke = Höhenband × Gleitverhältnis<br>Öffnungspunkt = Exit-Punkt, versetzt um Strecke in Trackrichtung</div>
     <p class="muted" data-i18n="infoProModeNote1">Bewusst keine Zeitangabe für den Track: Dafür bräuchte es zusätzlich eine Sinkrate im Track, für die es keine verlässliche Referenz gibt, die für unterschiedliche Körper und Trackstile gleichermaßen stimmt.</p>
@@ -1158,7 +1158,7 @@
     <h3 data-i18n="help10H">10. Checkliste vor dem Sprung</h3>
     <p data-i18n="help10P">Der Klemmbrett-Button auf der Karte bietet die Möglichkeit zu überprüfen, ob alle Parameter (Zielpunkt, Landerichtung, Fahrt/Sinkrate, Turn Points, Notlandungsreichweite, Offline-Verfügbarkeit) richtig gesetzt sind, und ergänzt ein paar Punkte zum manuellen Bestätigen. Lohnt sich vor jedem Sprung, nicht nur beim ersten - ersetzt aber keinen Gear-Check und kein Briefing vor Ort.</p>
 
-    <h3 data-i18n="help11H">11. Pro-Modus: Jumprun-Schätzung</h3>
+    <h3 data-i18n="help11H">11. Jumprun-Schätzung</h3>
     <p data-i18n="help11P">Optionale Zusatzeingaben im Menü: Exit-Punkt (über den Flugzeug-Button auf der Karte), Jumprun-Richtung, Break-off-Höhe und Trackrichtung/-Gleitverhältnis. Daraus wird ein Öffnungspunkt geschätzt und gegen die Reichweiten-Ringe geprüft - grün heißt erreichbar, rot mit ✗ zeigt den Fehlbetrag. Ändert die Reichweiten-Ringe selbst nicht. Details und Herleitung im "i"-Info.</p>
   </div>
 </div>
@@ -1290,7 +1290,7 @@ function tourStepData() {
       title: en ? 'Pre-jump checklist' : 'Checkliste vor dem Sprung',
       text: en ? "Summarizes the current settings and lets you manually tick off a few points - worth it before every jump, not just the first." : 'Fasst die aktuellen Einstellungen zusammen und lässt dich ein paar Punkte manuell abhaken - lohnt sich vor jedem Sprung, nicht nur beim ersten.' },
     { selector: '#sectionProMode', sidebar: true,
-      title: en ? 'Pro mode: jump run estimate' : 'Pro-Modus: Jumprun-Schätzung',
+      title: en ? 'Jump run estimate' : 'Jumprun-Schätzung',
       text: en ? 'Optional: estimate an opening point from an exit point, jump run heading, break-off altitude, and glide ratio - and check it against the reach rings above.' : 'Optional: schätzt einen Öffnungspunkt aus Exit-Punkt, Jumprun-Richtung, Break-off-Höhe und Gleitverhältnis - und prüft ihn gegen die Reichweiten-Ringe oben.' }
   ];
 }
@@ -3441,7 +3441,7 @@ const I18N_EN = {
   windLayersHint: "Test feature: the wind direction/speed above is the ground value. Extra layers apply from their own altitude upward to the next-higher one. If you change the wind direction above (e.g. via the map arrow), update the layers below manually if needed - they don't follow automatically.",
   windLayerAddBtn: "+ Altitude layer",
 
-  proModeLabel: "Pro mode: jump run estimate",
+  proModeLabel: "Jump run estimate",
   proModeHint: "Estimates an opening point from an exit point, jump run direction, break-off altitude, and track direction/distance - to compare against the reach rings. Doesn't change the reach rings themselves.",
   proModeOpeningAltLabel: "Opening altitude (set above, under reach rings)",
   jumpRunHeadingLabel: "Jump run direction",
@@ -3561,8 +3561,8 @@ const I18N_EN = {
   infoEmergencyP3: `Two things flip as a result: the circle drifts downwind instead of upwind, since you're now moving away from the point instead of toward it. And the calculation runs down to the ground (0 ft) instead of down to the pattern's entry altitude - this is about landing, not about connecting to the pattern. The point you place is therefore not a fixed landing spot, just the starting point for the calculation.`,
   infoEmergencyNote: `The two ring sets are computed down to different altitudes (entry altitude vs. ground) and aren't directly comparable - an overlap between the shaded areas doesn't mean "both are still possible from here." To check whether a return to the target is still possible from the emergency reach point, look at the point itself instead: if it falls inside one of the blue reach rings, a return is still possible at that altitude.`,
 
-  infoProModeH: "Pro mode: jump run estimate",
-  infoProModeP1: "Pro mode estimates an opening point from four inputs - exit point, jump run heading, break-off altitude, and track heading/glide ratio - and checks it against the reach rings above. It runs independently: it doesn't change the reach rings themselves.",
+  infoProModeH: "Jump run estimate",
+  infoProModeP1: "From four inputs - exit point, jump run heading, break-off altitude, and track heading/glide ratio - an opening point is estimated and checked against the reach rings above. This runs independently: it doesn't change the reach rings themselves.",
   infoProModeP2: "Unlike the three flight-path plots above, the estimate deliberately doesn't use the wind triangle: freefall track speed dominates wind so strongly over the few seconds of track involved that a wind correction here would suggest a precision the estimate doesn't have. Instead, a simple geometric vector:",
   infoProModeFormula: `Altitude band = break-off altitude − opening altitude<br>Distance = altitude band × glide ratio<br>Opening point = exit point, offset by distance in the track heading`,
   infoProModeNote1: "Deliberately no time estimate for the track: that would need an additional value - fall rate during track - with no reliable reference that holds equally across different bodies and track styles.",
@@ -3649,7 +3649,7 @@ const I18N_EN = {
   help10H: "10. Pre-jump checklist",
   help10P: `The clipboard button on the map lets you check whether all parameters (target point, landing direction, forward speed/sink rate, turn points, emergency reach, offline availability) are set correctly, and adds a few points to confirm by hand. Worth a look before every jump, not just the first - but doesn't replace a gear check or an on-site briefing.`,
 
-  help11H: "11. Pro mode: jump run estimate",
+  help11H: "11. Jump run estimate",
   help11P: `Optional extra inputs in the menu: exit point (via the plane button on the map), jump run heading, break-off altitude, and track heading/glide ratio. From these, an opening point is estimated and checked against the reach rings - green means reachable, red with a ✗ shows the miss distance. Doesn't change the reach rings themselves. Details and derivation in the "i" info.`
 };
 
