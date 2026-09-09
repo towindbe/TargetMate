@@ -34,4 +34,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- Without this, the WebView's navigator.vibrate() calls silently no-op - the browser-level API
+         still "succeeds", but the OS blocks the actual vibration because the host app was never
+         granted it. Normal protection level, so no runtime prompt - just needs declaring here. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 </manifest>
