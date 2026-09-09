@@ -61,6 +61,10 @@
   #panel{
     width:320px;min-width:320px;background:var(--panel);border-right:1px solid var(--line);
     display:flex;flex-direction:column;overflow-y:auto;
+    transition:width .22s ease, min-width .22s ease;
+  }
+  @media (min-width:761px){
+    #panel.panel-collapsed{width:0;min-width:0;border-right:none;overflow:hidden;}
   }
   #map{position:absolute;inset:0;background:#000;}
 
@@ -74,7 +78,7 @@
     display:flex;position:absolute;top:12px;left:12px;z-index:1100;
     flex-direction:column;gap:8px;
   }
-  #sidebarToggle{display:none;}
+  #sidebarToggle{display:flex;}
   .map-menu-btn{
     width:38px;height:38px;border-radius:8px;background:rgba(18,22,29,.92);border:1px solid var(--line);
     color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;line-height:1;
@@ -465,7 +469,6 @@
       transform:translateX(-100%);transition:transform .22s ease;box-shadow:4px 0 24px rgba(0,0,0,.5);
     }
     #panel.open{transform:translateX(0);}
-    #sidebarToggle{display:flex;}
     .map-search{width:calc(100% - 128px);}
   }
 </style>
@@ -878,6 +881,18 @@
           </g>
         </svg>
       </div>
+      <div class="map-wind-badge pulse-hint" id="mapTrackBadge" title="Trackrichtung - ziehen zum Ändern" data-i18n-title="trackBadgeTitle">
+        <svg viewBox="0 0 24 24" width="44" height="44">
+          <g id="mapTrackCanopyGroup" stroke="#7CE562" fill="#7CE562">
+            <path d="M4 8 Q12 2 20 8" fill="none" stroke-width="2" stroke-linecap="round"/>
+            <line x1="4" y1="8" x2="12" y2="16" stroke-width="1" opacity="0.85"/>
+            <line x1="9" y1="3.5" x2="12" y2="16" stroke-width="1" opacity="0.85"/>
+            <line x1="15" y1="3.5" x2="12" y2="16" stroke-width="1" opacity="0.85"/>
+            <line x1="20" y1="8" x2="12" y2="16" stroke-width="1" opacity="0.85"/>
+            <ellipse cx="12" cy="18.5" rx="1.6" ry="2.8"/>
+          </g>
+        </svg>
+      </div>
     </div>
   </div>
 </div>
@@ -1201,7 +1216,9 @@ let state = {
   windAnimEnabled: true,
   hasUsedWindDrag: false, // pulses the map wind arrow as a "this is draggable" hint until first used
   hasUsedJumprunDrag: false, // same pulse-until-first-use hint, for the jump run heading badge
+  hasUsedTrackDrag: false, // same pulse-until-first-use hint, for the track heading badge
   hasOpenedSidebar: false, // pulses the mobile drawer toggle until first opened
+  sidebarCollapsedWide: false, // remembered separately from the mobile drawer - a wide-screen layout choice, not a per-visit interaction
   hasSeenTour: false, // guided tour auto-launches once for a new visitor, then only from the "?" page
   favorites: [] // [{ name, target: [lat, lon] }, ...] user-saved map locations
 };
@@ -1239,7 +1256,15 @@ function speedDisplayToKmh(v) { return state.speedUnit === 'kn' ? v * KMH_PER_KN
 function sinkToDisplay(ms) { return state.sinkUnit === 'ftmin' ? ms * FTMIN_PER_MS : ms; }
 function sinkDisplayToMs(v) { return state.sinkUnit === 'ftmin' ? v / FTMIN_PER_MS : v; }
 
-// ---------- Sidebar drawer (mobile) ----------
+// ---------- Sidebar drawer (mobile) / collapsible panel (wide screens) ----------
+// Below 760px the panel is an off-canvas overlay (see #panel.open in the media query) - opening it
+// covers the map, so that state is per-visit only, never persisted. Above 760px it's a normal flex
+// column instead; collapsing it just gives the map more room, so that's a real layout preference and
+// worth remembering (state.sidebarCollapsedWide) - useful in landscape phone or a narrow browser
+// window, where the fixed 320px panel otherwise eats a large share of the width.
+const MOBILE_BREAKPOINT = 760;
+function isMobileLayout() { return window.innerWidth <= MOBILE_BREAKPOINT; }
+
 const panelEl = document.getElementById('panel');
 const sidebarToggle = document.getElementById('sidebarToggle');
 const sidebarBackdrop = document.getElementById('sidebarBackdrop');
@@ -1248,7 +1273,22 @@ function setSidebarOpen(open) {
   sidebarBackdrop.classList.toggle('open', open);
   if (open && !state.hasOpenedSidebar) { state.hasOpenedSidebar = true; sidebarToggle.classList.remove('pulse-hint'); saveState(); }
 }
-sidebarToggle.addEventListener('click', () => setSidebarOpen(!panelEl.classList.contains('open')));
+function setSidebarCollapsedWide(collapsed) {
+  state.sidebarCollapsedWide = collapsed;
+  panelEl.classList.toggle('panel-collapsed', collapsed);
+  sidebarToggle.title = collapsed
+    ? (state.lang === 'en' ? 'Show menu' : 'Menü einblenden')
+    : (state.lang === 'en' ? 'Hide menu' : 'Menü ausblenden');
+  saveState();
+}
+sidebarToggle.addEventListener('click', () => {
+  // Clearing the hint here (rather than inside setSidebarOpen/setSidebarCollapsedWide) keeps it tied
+  // to an actual click - setSidebarCollapsedWide is also called from syncUIFromState() on every load
+  // to restore the saved layout, which must never itself count as "the user found this button".
+  if (!state.hasOpenedSidebar) { state.hasOpenedSidebar = true; sidebarToggle.classList.remove('pulse-hint'); saveState(); }
+  if (isMobileLayout()) setSidebarOpen(!panelEl.classList.contains('open'));
+  else setSidebarCollapsedWide(!panelEl.classList.contains('panel-collapsed'));
+});
 sidebarBackdrop.addEventListener('click', () => setSidebarOpen(false));
 
 // ---------- Guided tour ----------
@@ -2261,6 +2301,33 @@ mapJumprunBadge.addEventListener('pointermove', (e) => { if (mapJumprunDragging)
 mapJumprunBadge.addEventListener('pointerup', () => mapJumprunDragging = false);
 mapJumprunBadge.addEventListener('pointercancel', () => mapJumprunDragging = false);
 
+// Second badge in the same cluster, same drag mechanics - sets the freefall track direction rather
+// than the jump run heading. Separate from the exit->opening line itself: that line's geometry also
+// depends on glide ratio, so dragging it directly wouldn't cleanly separate "change heading" from
+// "change distance" the way this fixed dial does.
+const mapTrackBadge = document.getElementById('mapTrackBadge');
+const mapTrackCanopyGroup = document.getElementById('mapTrackCanopyGroup');
+function updateMapTrackIcon() {
+  mapTrackCanopyGroup.setAttribute('transform', `rotate(${state.proMode.trackHeadingDeg} 12 12)`);
+}
+function setTrackHeading(deg) {
+  state.proMode.trackHeadingDeg = norm(Math.round(deg));
+  trackHeadingInput.value = state.proMode.trackHeadingDeg;
+  updateMapTrackIcon();
+  saveState();
+  render();
+}
+let mapTrackDragging = false;
+mapTrackBadge.addEventListener('pointerdown', (e) => {
+  mapTrackDragging = true;
+  mapTrackBadge.setPointerCapture(e.pointerId);
+  if (!state.hasUsedTrackDrag) { state.hasUsedTrackDrag = true; mapTrackBadge.classList.remove('pulse-hint'); }
+  setTrackHeading(dialAngleFromEvent(mapTrackBadge, e.clientX, e.clientY));
+});
+mapTrackBadge.addEventListener('pointermove', (e) => { if (mapTrackDragging) setTrackHeading(dialAngleFromEvent(mapTrackBadge, e.clientX, e.clientY)); });
+mapTrackBadge.addEventListener('pointerup', () => mapTrackDragging = false);
+mapTrackBadge.addEventListener('pointercancel', () => mapTrackDragging = false);
+
 // ---------- Wind streak animation ----------
 // Purely decorative, screen-space particle field (not geo-referenced) - small streaks drifting in the
 // direction the wind is blowing to, faint enough to stay in the background behind the pattern overlay.
@@ -2612,7 +2679,7 @@ function setProModeEnabled(enabled) {
   state.proMode.enabled = enabled;
   proModeBox.style.display = enabled ? 'block' : 'none';
   mapJumprunBtn.style.display = enabled ? '' : 'none';
-  if (enabled) updateMapJumprunArrow();
+  if (enabled) { updateMapJumprunArrow(); updateMapTrackIcon(); }
   if (!enabled && proModeArmed) setProModeArmed(false);
   saveState();
   render();
@@ -2650,6 +2717,7 @@ breakoffAltInput.addEventListener('input', () => {
 });
 trackHeadingInput.addEventListener('input', () => {
   state.proMode.trackHeadingDeg = norm(parseFloat(trackHeadingInput.value) || 0);
+  updateMapTrackIcon();
   saveState();
   render();
 });
@@ -3500,6 +3568,7 @@ const I18N_EN = {
   searchPlaceholder__placeholder: "Search dropzone…",
   windBadgeTitle__title: "Wind direction (arrow shows where the wind is blowing to) - drag to change",
   jumprunBadgeTitle__title: "Jump run direction - drag to change",
+  trackBadgeTitle__title: "Track direction - drag to change",
 
   infoTitle: "How is this calculated?",
   infoSafetyWarning: "⚠ This tool is a planning aid and does not replace an on-site briefing. Always discuss your planned flight route with the dropzone's chief instructor before jumping.",
@@ -3716,12 +3785,15 @@ function syncUIFromState() {
   proModeBox.style.display = state.proMode.enabled ? 'block' : 'none';
   mapJumprunBtn.style.display = state.proMode.enabled ? '' : 'none';
   updateMapJumprunArrow();
+  updateMapTrackIcon();
   refreshProModeInputs();
   updateJumprunBtn();
   if (!state.windAnimEnabled) windCtx.clearRect(0, 0, windCanvasW, windCanvasH);
   if (state.hasUsedWindDrag) mapWindBadge.classList.remove('pulse-hint');
   if (state.hasUsedJumprunDrag) mapJumprunBadge.classList.remove('pulse-hint');
+  if (state.hasUsedTrackDrag) mapTrackBadge.classList.remove('pulse-hint');
   if (state.hasOpenedSidebar) sidebarToggle.classList.remove('pulse-hint');
+  setSidebarCollapsedWide(state.sidebarCollapsedWide);
 }
 
 // ---------- Init ----------
