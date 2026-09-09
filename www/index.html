@@ -2276,9 +2276,16 @@ mapWindBadge.addEventListener('pointerdown', (e) => {
   mapWindDragging = true;
   mapWindBadge.setPointerCapture(e.pointerId);
   if (!state.hasUsedWindDrag) { state.hasUsedWindDrag = true; mapWindBadge.classList.remove('pulse-hint'); }
-  setWind(dialAngleFromEvent(mapWindBadge, e.clientX, e.clientY));
+  const a = dialAngleFromEvent(mapWindBadge, e.clientX, e.clientY);
+  hapticTick15(state.windDir, a);
+  setWind(a);
 });
-mapWindBadge.addEventListener('pointermove', (e) => { if (mapWindDragging) setWind(dialAngleFromEvent(mapWindBadge, e.clientX, e.clientY)); });
+mapWindBadge.addEventListener('pointermove', (e) => {
+  if (!mapWindDragging) return;
+  const a = dialAngleFromEvent(mapWindBadge, e.clientX, e.clientY);
+  hapticTick15(state.windDir, a);
+  setWind(a);
+});
 mapWindBadge.addEventListener('pointerup', () => mapWindDragging = false);
 mapWindBadge.addEventListener('pointercancel', () => mapWindDragging = false);
 
@@ -2302,9 +2309,16 @@ mapJumprunBadge.addEventListener('pointerdown', (e) => {
   mapJumprunDragging = true;
   mapJumprunBadge.setPointerCapture(e.pointerId);
   if (!state.hasUsedJumprunDrag) { state.hasUsedJumprunDrag = true; mapJumprunBadge.classList.remove('pulse-hint'); }
-  setJumpRunHeading(dialAngleFromEvent(mapJumprunBadge, e.clientX, e.clientY));
+  const a = dialAngleFromEvent(mapJumprunBadge, e.clientX, e.clientY);
+  hapticTick15(state.proMode.jumpRunHeadingDeg, a);
+  setJumpRunHeading(a);
 });
-mapJumprunBadge.addEventListener('pointermove', (e) => { if (mapJumprunDragging) setJumpRunHeading(dialAngleFromEvent(mapJumprunBadge, e.clientX, e.clientY)); });
+mapJumprunBadge.addEventListener('pointermove', (e) => {
+  if (!mapJumprunDragging) return;
+  const a = dialAngleFromEvent(mapJumprunBadge, e.clientX, e.clientY);
+  hapticTick15(state.proMode.jumpRunHeadingDeg, a);
+  setJumpRunHeading(a);
+});
 mapJumprunBadge.addEventListener('pointerup', () => mapJumprunDragging = false);
 mapJumprunBadge.addEventListener('pointercancel', () => mapJumprunDragging = false);
 
@@ -2329,9 +2343,16 @@ mapTrackBadge.addEventListener('pointerdown', (e) => {
   mapTrackDragging = true;
   mapTrackBadge.setPointerCapture(e.pointerId);
   if (!state.hasUsedTrackDrag) { state.hasUsedTrackDrag = true; mapTrackBadge.classList.remove('pulse-hint'); }
-  setTrackHeading(dialAngleFromEvent(mapTrackBadge, e.clientX, e.clientY));
+  const a = dialAngleFromEvent(mapTrackBadge, e.clientX, e.clientY);
+  hapticTick15(state.proMode.trackHeadingDeg, a);
+  setTrackHeading(a);
 });
-mapTrackBadge.addEventListener('pointermove', (e) => { if (mapTrackDragging) setTrackHeading(dialAngleFromEvent(mapTrackBadge, e.clientX, e.clientY)); });
+mapTrackBadge.addEventListener('pointermove', (e) => {
+  if (!mapTrackDragging) return;
+  const a = dialAngleFromEvent(mapTrackBadge, e.clientX, e.clientY);
+  hapticTick15(state.proMode.trackHeadingDeg, a);
+  setTrackHeading(a);
+});
 mapTrackBadge.addEventListener('pointerup', () => mapTrackDragging = false);
 mapTrackBadge.addEventListener('pointercancel', () => mapTrackDragging = false);
 
@@ -2472,9 +2493,27 @@ function dialAngleFromEvent(dialEl, clientX, clientY) {
   return norm(deg);
 }
 
+// A short tick as a drag crosses each 15deg step, so the dials/badges feel like they're clicking
+// into place rather than spinning freely - only while actively dragging (called from pointerdown/move
+// handlers with the value from just before the setter runs), never from a setter itself, since those
+// also fire on load/language-switch/typed input, where a buzz would be a surprise, not feedback.
+function hapticTick15(prevDeg, newDeg) {
+  if (navigator.vibrate && Math.floor(norm(prevDeg) / 15) !== Math.floor(norm(newDeg) / 15)) navigator.vibrate(10);
+}
+
 let dragging = false;
-dial.addEventListener('pointerdown', (e) => { dragging = true; dial.setPointerCapture(e.pointerId); setWind(dialAngleFromEvent(dial, e.clientX, e.clientY)); });
-dial.addEventListener('pointermove', (e) => { if (dragging) setWind(dialAngleFromEvent(dial, e.clientX, e.clientY)); });
+dial.addEventListener('pointerdown', (e) => {
+  dragging = true; dial.setPointerCapture(e.pointerId);
+  const a = dialAngleFromEvent(dial, e.clientX, e.clientY);
+  hapticTick15(state.windDir, a);
+  setWind(a);
+});
+dial.addEventListener('pointermove', (e) => {
+  if (!dragging) return;
+  const a = dialAngleFromEvent(dial, e.clientX, e.clientY);
+  hapticTick15(state.windDir, a);
+  setWind(a);
+});
 dial.addEventListener('pointerup', () => dragging = false);
 dial.addEventListener('pointercancel', () => dragging = false);
 
@@ -2538,9 +2577,16 @@ let landingDragging = false;
 landingDial.addEventListener('pointerdown', (e) => {
   if (state.landingIntoWind) return;
   landingDragging = true; landingDial.setPointerCapture(e.pointerId);
-  setLandingHeading(dialAngleFromEvent(landingDial, e.clientX, e.clientY));
+  const a = dialAngleFromEvent(landingDial, e.clientX, e.clientY);
+  hapticTick15(state.landingHeadingManual, a);
+  setLandingHeading(a);
 });
-landingDial.addEventListener('pointermove', (e) => { if (landingDragging) setLandingHeading(dialAngleFromEvent(landingDial, e.clientX, e.clientY)); });
+landingDial.addEventListener('pointermove', (e) => {
+  if (!landingDragging) return;
+  const a = dialAngleFromEvent(landingDial, e.clientX, e.clientY);
+  hapticTick15(state.landingHeadingManual, a);
+  setLandingHeading(a);
+});
 landingDial.addEventListener('pointerup', () => landingDragging = false);
 landingDial.addEventListener('pointercancel', () => landingDragging = false);
 
