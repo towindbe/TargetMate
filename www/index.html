@@ -883,13 +883,12 @@
       </div>
       <div class="map-wind-badge pulse-hint" id="mapTrackBadge" title="Trackrichtung - ziehen zum Ändern" data-i18n-title="trackBadgeTitle">
         <svg viewBox="0 0 24 24" width="44" height="44">
-          <g id="mapTrackCanopyGroup" stroke="#7CE562" fill="#7CE562">
-            <path d="M4 8 Q12 2 20 8" fill="none" stroke-width="2" stroke-linecap="round"/>
-            <line x1="4" y1="8" x2="12" y2="16" stroke-width="1" opacity="0.85"/>
-            <line x1="9" y1="3.5" x2="12" y2="16" stroke-width="1" opacity="0.85"/>
-            <line x1="15" y1="3.5" x2="12" y2="16" stroke-width="1" opacity="0.85"/>
-            <line x1="20" y1="8" x2="12" y2="16" stroke-width="1" opacity="0.85"/>
-            <ellipse cx="12" cy="18.5" rx="1.6" ry="2.8"/>
+          <g id="mapTrackCanopyGroup">
+            <g fill="#7CE562"><circle cx="12" cy="4.3" r="2.1"/><path d="M9 7.5 L15 7.5 L14.5 14.5 L9.5 14.5 Z"/></g>
+            <g stroke="#7CE562" stroke-width="2.3" stroke-linecap="round" fill="none">
+              <line x1="10" y1="8.5" x2="4.5" y2="12.5"/><line x1="14" y1="8.5" x2="19.5" y2="12.5"/>
+              <line x1="10.5" y1="14.5" x2="8" y2="21"/><line x1="13.5" y1="14.5" x2="16" y2="21"/>
+            </g>
           </g>
         </svg>
       </div>
@@ -1211,7 +1210,9 @@ let state = {
   // simple freefall-track vector, purely to compare against the reach rings - doesn't feed into or
   // change the reach rings/emergency reach themselves. altFt values in ft; glideRatio is
   // horizontal:vertical distance while tracking (1 = the classic "45 degree" track reference).
-  proMode: { enabled: false, exitPoint: null, jumpRunHeadingDeg: 0, breakoffAltFt: 4000, trackHeadingDeg: 90, trackGlideRatio: 0.3 },
+  // breakoffAltFt defaults 1000 ft above openingAltFt (both above) so there's a non-zero track band
+  // out of the box, rather than a break-off/opening altitude tie giving zero distance to show.
+  proMode: { enabled: false, exitPoint: null, jumpRunHeadingDeg: 0, breakoffAltFt: 5000, trackHeadingDeg: 90, trackGlideRatio: 0.3 },
   plots: { nowind: true, uncorrected: true, corrected: false, reach: true },
   windAnimEnabled: true,
   hasUsedWindDrag: false, // pulses the map wind arrow as a "this is draggable" hint until first used
