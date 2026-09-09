@@ -12,6 +12,7 @@ A landing pattern simulator for skydivers — plan your downwind/base/final appr
 - Compares three flight paths: no-wind reference, uncorrected (nose held straight), and corrected (crabbed into the wind)
 - Wingload estimator: rough forward speed / sink rate from exit weight and canopy size
 - Reach rings: at a given opening altitude, how far you could be from the pattern's entry point and still reach it at full flight, wind included
+- Optional pro mode: estimate a freefall track's opening point from an exit point, jump run heading, break-off altitude, and glide ratio, and check it against the reach rings
 - Optional emergency landing point: drop a second point on the map to see how far you could get from *there* instead, at each altitude, down to the ground
 - Save favorite locations to jump back to quickly - their surroundings are pre-cached for offline use
 - Pre-jump checklist: summarizes what the app currently knows and adds a few points to confirm by hand, before every jump

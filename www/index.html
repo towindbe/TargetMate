@@ -186,6 +186,14 @@
     width:40px;height:40px;transform-origin:center;
     filter:drop-shadow(0 1px 2px rgba(0,0,0,.95)) drop-shadow(0 0 5px rgba(0,0,0,.85)) drop-shadow(0 0 5px rgba(0,0,0,.85));
   }
+  .plane-icon{
+    width:26px;height:26px;transform-origin:center;
+    filter:drop-shadow(0 1px 2px rgba(0,0,0,.95)) drop-shadow(0 0 5px rgba(0,0,0,.85)) drop-shadow(0 0 5px rgba(0,0,0,.85));
+  }
+  .miss-cross-icon{
+    width:18px;height:18px;
+    filter:drop-shadow(0 1px 2px rgba(0,0,0,.95)) drop-shadow(0 0 5px rgba(0,0,0,.85)) drop-shadow(0 0 5px rgba(0,0,0,.85));
+  }
   .canopy-icon svg{display:block;width:100%;height:100%;overflow:visible;}
   .angle-label{
     font-family:var(--mono);font-size:11px;font-weight:700;white-space:nowrap;line-height:1.4;
@@ -237,6 +245,10 @@
   .map-wind-speed button:hover{color:var(--amber);border-color:var(--amber);}
   .map-wind-speed span{min-width:58px;text-align:center;}
 
+  .map-jumprun-cluster{
+    position:absolute;bottom:24px;left:60px;z-index:1000;
+    display:flex;flex-direction:column;align-items:center;gap:8px;
+  }
   .map-wind-warning{
     background:rgba(255,93,93,.16);border:1px solid var(--danger);color:var(--danger);
     font-family:var(--mono);font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;
@@ -254,9 +266,12 @@
     background:rgba(18,22,29,.92);backdrop-filter:blur(4px);border-radius:8px;
   }
   .map-fav-cluster{display:flex;position:absolute;top:58px;right:12px;z-index:1000;flex-direction:column;gap:8px;}
-  #mapLocateBtn svg,#mapEmergencyBtn svg,#mapChecklistBtn svg{width:20px;height:20px;stroke:currentColor;}
+  #mapLocateBtn svg,#mapEmergencyBtn svg,#mapChecklistBtn svg,#mapJumprunBtn svg{width:20px;height:20px;stroke:currentColor;}
   #mapEmergencyBtn.armed{color:#E85DC0;border-color:#E85DC0;background:rgba(232,93,192,.15);}
   #mapEmergencyBtn.set{color:#1a1204;border-color:#E85DC0;background:#E85DC0;}
+  #mapJumprunBtn svg{fill:currentColor;stroke:none;transform:rotate(90deg);}
+  #mapJumprunBtn.armed{color:#7CE562;border-color:#7CE562;background:rgba(124,229,98,.15);}
+  #mapJumprunBtn.set{color:#1a1204;border-color:#7CE562;background:#7CE562;}
 
   .checklist-row{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px;}
   .checklist-row:last-child{border-bottom:none;}
@@ -368,6 +383,10 @@
     font-family:var(--mono);font-size:13px;padding:6px 8px;border-radius:6px;text-align:right;
   }
   .perf-row .unit{font-size:11px;color:var(--muted);width:38px;}
+  .glide-select{
+    width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+    font-family:var(--sans);font-size:13px;padding:7px 8px;border-radius:6px;cursor:pointer;
+  }
 
   .link-btn{
     background:none;border:none;color:var(--cyan);font-family:var(--sans);font-size:12px;
@@ -719,11 +738,46 @@
       </div>
     </div>
 
-    <div class="hint" id="calcHint" data-i18n="calcHintText">
-      <b>Zeit</b> = Höhenverlust ÷ Sinkrate &nbsp;·&nbsp; <b>Strecke</b> = Zeit × Groundspeed<br>
-      Downwind = Rückenwind &nbsp;·&nbsp; Final = Gegenwind &nbsp;·&nbsp; Base = Vorhaltewinkel gegen Seitenwind<br>
-      <span style="color:var(--danger);">Rot gestrichelt</span> = korrigierte Flugbahn &nbsp;·&nbsp; farbig durchgezogen = reale Flugbahn mit Winddrift<br>
-      Vereinfachtes Modell - Formeln, Skizzen &amp; Grenzen: „i"-Button oben.
+    <div class="hint" id="calcHint">
+      <span data-i18n="calcHintText">Neugierig, wie gerechnet wird?</span>
+      <button class="link-btn" id="calcHintInfoBtn" data-i18n="calcHintBtn" style="margin-left:6px;">Formeln &amp; Grenzen ansehen</button>
+    </div>
+
+    <div class="section" id="sectionProMode">
+      <div class="plot-row">
+        <input type="checkbox" id="proModeToggle">
+        <label for="proModeToggle" data-i18n="proModeLabel">Pro-Modus: Jumprun-Schätzung</label>
+      </div>
+      <div class="crab-hint" style="margin:-4px 0 8px 20px;" data-i18n="proModeHint">Schätzt einen Öffnungspunkt aus Exit-Punkt, Jumprun-Richtung, Break-off-Höhe und Trackrichtung/-weite - zum Abgleich mit den Reichweiten-Ringen. Ändert die Reichweiten-Ringe selbst nicht.</div>
+      <div id="proModeBox" style="display:none;margin:0 0 4px 20px;">
+        <div class="perf-row">
+          <label data-i18n="proModeOpeningAltLabel" style="color:var(--muted);">Öffnungshöhe (oben bei Reichweiten-Ringe)</label>
+          <span id="proModeOpeningAltVal" style="font-family:var(--mono);font-size:13px;color:var(--muted);"></span>
+        </div>
+        <div class="wind-warning" id="proModeAltWarning" style="display:none;" data-i18n="proModeAltWarningText">⚠ Break-off-Höhe liegt unter der Öffnungshöhe - das ergibt keine Trackstrecke.</div>
+        <div class="perf-row">
+          <label data-i18n="jumpRunHeadingLabel">Jumprun-Richtung</label>
+          <input type="number" id="jumpRunHeadingInput" min="0" max="359" step="1"><span class="unit">°</span>
+        </div>
+        <div class="perf-row">
+          <label data-i18n="breakoffAltLabel">Break-off-Höhe</label>
+          <input type="number" id="breakoffAltInput" step="50"><span class="unit" id="breakoffAltUnit">ft</span>
+        </div>
+        <div class="perf-row">
+          <label data-i18n="trackHeadingLabel">Trackrichtung</label>
+          <input type="number" id="trackHeadingInput" min="0" max="359" step="1"><span class="unit">°</span>
+        </div>
+        <div class="perf-row">
+          <label data-i18n="trackGlideLabel">Gleitverhältnis (h:v)</label>
+        </div>
+        <select id="trackGlideSelect" class="glide-select">
+          <option value="0.3" data-i18n="glidePresetConservative">Ungeübter Track · 0,3</option>
+          <option value="0.5" data-i18n="glidePresetStandard">Standard · 0,5</option>
+          <option value="0.7" data-i18n="glidePresetPracticed">Geübter Flat Track · 0,7</option>
+          <option value="0.9" data-i18n="glidePresetGood">Sehr guter Flat Track · 0,9</option>
+        </select>
+        <div class="crab-hint" style="margin:4px 0 0 0;" data-i18n="trackGlideHint">Grobe Richtwerte, keine Präzisionswerte. 0,7 und 0,9 setzen echte Flat-Track-Übung voraus, nicht nur einen normalen Track - im Zweifel konservativ wählen.</div>
+      </div>
     </div>
 
     <div class="footer">Developed by Tobias Windberg<br><span data-i18n="footerContact">Fragen oder Ideen? <a href="mailto:tobi.windberg@gmail.com" style="color:var(--cyan);">tobi.windberg@gmail.com</a></span><br><span data-i18n="footerVersion" style="opacity:.6;">Stand: 2026-09-09</span></div>
@@ -785,6 +839,11 @@
           <ellipse cx="12" cy="19.3" rx="1.8" ry="2.6" fill="currentColor" stroke="none"/>
         </svg>
       </button>
+      <button class="map-menu-btn" id="mapJumprunBtn" data-i18n-title="jumprunBtnTitle" title="Exit-Punkt setzen" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2 L11 7 L2 13 L2 15 L11 12 L11 16.5 L7 19.5 L7 21 L12 19.5 L17 21 L17 19.5 L13 16.5 L13 12 L22 15 L22 13 L13 7 Z"/>
+        </svg>
+      </button>
     </div>
     <div class="fav-panel" id="favPanel">
       <div class="fav-panel-title" data-i18n="favPanelTitle">Favoriten</div>
@@ -810,6 +869,15 @@
         <button id="mapWindSpeedUp" aria-label="+">+</button>
       </div>
       <div class="map-wind-warning" id="mapWindWarning" style="display:none;" title="Windgeschwindigkeit ≥ Vorwärtsfahrt der Kappe - die korrigierte Flugbahn (Plot 3) ist so nicht zu halten, keine Berechnung möglich." data-i18n-title="mapWindWarningTitle" data-i18n="mapWindWarningText">⚠ zu stark</div>
+    </div>
+    <div class="map-jumprun-cluster" id="mapJumprunCluster" style="display:none;">
+      <div class="map-wind-badge pulse-hint" id="mapJumprunBadge" title="Jumprun-Richtung - ziehen zum Ändern" data-i18n-title="jumprunBadgeTitle">
+        <svg viewBox="0 0 24 24" width="44" height="44">
+          <g id="mapJumprunArrowGroup">
+            <path d="M12 2 L11 7 L2 13 L2 15 L11 12 L11 16.5 L7 19.5 L7 21 L12 19.5 L17 21 L17 19.5 L13 16.5 L13 12 L22 15 L22 13 L13 7 Z" fill="#7CE562"/>
+          </g>
+        </svg>
+      </div>
     </div>
   </div>
 </div>
@@ -1005,6 +1073,30 @@
     <p data-i18n="infoEmergencyP2">Die Berechnung ist das Gegenstück zu den Reichweiten-Ringen. Dort fragst du rückwärts: "Von wo aus schaffe ich es noch bis zum Einstiegspunkt?" Hier fragst du vorwärts: "Wie weit komme ich von diesem Punkt aus?"</p>
     <p data-i18n="infoEmergencyP3">Dadurch drehen sich zwei Dinge um: Der Kreis wandert windabwärts statt windwärts, weil du dich jetzt vom Punkt weg bewegst statt auf ihn zu. Und gerechnet wird bis zum Boden (0 ft), nicht bis zur Einstiegshöhe der Platzrunde - hier geht es ja ums Landen, nicht um den Anschluss an die Platzrunde. Der gesetzte Punkt ist deshalb kein fester Landeplatz, sondern nur der Ausgangspunkt für die Berechnung.</p>
     <p class="muted" data-i18n="infoEmergencyNote">Die beiden Ring-Sätze rechnen bis zu unterschiedlichen Höhen (Einstiegshöhe vs. Boden) und sind deshalb nicht direkt vergleichbar - eine Überschneidung der Flächen bedeutet nicht "hier schaffe ich beides". Willst du wissen, ob von der Notlandungsreichweite aus noch eine Rückkehr zum Zielpunkt möglich wäre, schau stattdessen einfach nach: Liegt der gesetzte Punkt selbst innerhalb eines blauen Reichweiten-Rings, ist bei der entsprechenden Höhe noch eine Rückkehr dorthin möglich.</p>
+
+    <h3 data-i18n="infoProModeH">Pro-Modus: Jumprun-Schätzung</h3>
+    <p data-i18n="infoProModeP1">Der Pro-Modus schätzt einen Öffnungspunkt aus vier Eingaben - Exit-Punkt, Jumprun-Richtung, Break-off-Höhe und Trackrichtung/-Gleitverhältnis - und prüft ihn gegen die Reichweiten-Ringe oben. Er läuft unabhängig davon: die Reichweiten-Ringe selbst ändert er nicht.</p>
+    <p data-i18n="infoProModeP2">Anders als die drei Flugbahn-Plots oben nutzt die Schätzung bewusst nicht das Wind-Dreieck: Die Trackgeschwindigkeit im Freifall dominiert den Wind über die paar Sekunden Track so stark, dass eine Windkorrektur hier eine Genauigkeit vortäuschen würde, die die Schätzung nicht hat. Stattdessen ein einfacher geometrischer Vektor:</p>
+    <div class="formula" data-i18n="infoProModeFormula">Höhenband = Break-off-Höhe − Öffnungshöhe<br>Strecke = Höhenband × Gleitverhältnis<br>Öffnungspunkt = Exit-Punkt, versetzt um Strecke in Trackrichtung</div>
+    <p class="muted" data-i18n="infoProModeNote1">Bewusst keine Zeitangabe für den Track: Dafür bräuchte es zusätzlich eine Sinkrate im Track, für die es keine verlässliche Referenz gibt, die für unterschiedliche Körper und Trackstile gleichermaßen stimmt.</p>
+
+    <p data-i18n="infoProModeGlideP">Gleitverhältnis (horizontal : vertikal) ist geometrisch eindeutig - ein Verhältnis von 1 entspricht exakt 45° (Arkustangens). Wie nah ein realer Track diesem Wert kommt, hängt stark von Übung und Technik ab und ist kein Präzisionswert. Vier grobe Anhaltspunkte zur Auswahl:</p>
+    <ul>
+      <li data-i18n="infoProModeGlide1">Ungeübter Track - 0,3 : 1</li>
+      <li data-i18n="infoProModeGlide2">Standard - 0,5 : 1</li>
+      <li data-i18n="infoProModeGlide3">Geübter Flat Track - 0,7 : 1</li>
+      <li data-i18n="infoProModeGlide4">Sehr guter Flat Track - 0,9 : 1</li>
+    </ul>
+    <p class="muted" data-i18n="infoProModeGlideNote">0,7 und 0,9 setzen echte Flat-Track-Übung voraus, nicht nur einen normalen Track - im Zweifel die konservativere Stufe wählen.</p>
+
+    <p data-i18n="infoProModeReachP1">Der geschätzte Öffnungspunkt wird gegen genau den Reichweiten-Ring bei der eigenen Öffnungshöhe geprüft - derselbe Ring wie oben, nur exakt statt in Höhenstufen gerundet.</p>
+    <p>
+      <span class="swatch-inline" style="background:#7CE562;"></span><span data-i18n="infoProModeReachable">Erreichbar - Rückflug-Linie bis zum Einstiegspunkt</span><br>
+      <span class="swatch-inline" style="background:#FF5D5D;"></span><span data-i18n="infoProModeNotReachable">Nicht erreichbar - Linie endet vorzeitig, mit ✗ und Fehlbetrag</span>
+    </p>
+    <p data-i18n="infoProModeReachP2">Der Fehlbetrag im nicht erreichbaren Fall folgt aus derselben Kreis-Geometrie wie die Reichweiten-Ringe selbst: Abstand zum Ringmittelpunkt minus Ringradius. Das ist der bestmögliche Fall bei sofort optimal gewählter Richtung für den Rest des Sinkflugs.</p>
+    <div class="formula" data-i18n="infoProModeReachFormula">Fehlbetrag = Abstand(Öffnungspunkt, Ringmittelpunkt) − Ringradius</div>
+    <p class="muted" data-i18n="infoProModeNote2">Wie bei den Reichweiten-Ringen oben: sofortiger Richtungswechsel angenommen, reale Kurvenzeit nicht abgezogen. Die geschätzte Rückkehr ist eine grobe Orientierung, keine Fluganweisung.</p>
   </div>
 </div>
 
@@ -1065,6 +1157,9 @@
 
     <h3 data-i18n="help10H">10. Checkliste vor dem Sprung</h3>
     <p data-i18n="help10P">Der Klemmbrett-Button auf der Karte bietet die Möglichkeit zu überprüfen, ob alle Parameter (Zielpunkt, Landerichtung, Fahrt/Sinkrate, Turn Points, Notlandungsreichweite, Offline-Verfügbarkeit) richtig gesetzt sind, und ergänzt ein paar Punkte zum manuellen Bestätigen. Lohnt sich vor jedem Sprung, nicht nur beim ersten - ersetzt aber keinen Gear-Check und kein Briefing vor Ort.</p>
+
+    <h3 data-i18n="help11H">11. Pro-Modus: Jumprun-Schätzung</h3>
+    <p data-i18n="help11P">Optionale Zusatzeingaben im Menü: Exit-Punkt (über den Flugzeug-Button auf der Karte), Jumprun-Richtung, Break-off-Höhe und Trackrichtung/-Gleitverhältnis. Daraus wird ein Öffnungspunkt geschätzt und gegen die Reichweiten-Ringe geprüft - grün heißt erreichbar, rot mit ✗ zeigt den Fehlbetrag. Ändert die Reichweiten-Ringe selbst nicht. Details und Herleitung im "i"-Info.</p>
   </div>
 </div>
 
@@ -1097,9 +1192,15 @@ let state = {
   // DZs actually report wind: a ground reading plus one or two separate "upper wind" readings, not a
   // continuous profile). Ignored entirely unless enabled.
   windLayers: { enabled: false, extraLayers: [] },
+  // Pro mode (opt-in, off by default): estimates a likely opening point from an exit point plus a
+  // simple freefall-track vector, purely to compare against the reach rings - doesn't feed into or
+  // change the reach rings/emergency reach themselves. altFt values in ft; glideRatio is
+  // horizontal:vertical distance while tracking (1 = the classic "45 degree" track reference).
+  proMode: { enabled: false, exitPoint: null, jumpRunHeadingDeg: 0, breakoffAltFt: 4000, trackHeadingDeg: 90, trackGlideRatio: 0.3 },
   plots: { nowind: true, uncorrected: true, corrected: false, reach: true },
   windAnimEnabled: true,
   hasUsedWindDrag: false, // pulses the map wind arrow as a "this is draggable" hint until first used
+  hasUsedJumprunDrag: false, // same pulse-until-first-use hint, for the jump run heading badge
   hasOpenedSidebar: false, // pulses the mobile drawer toggle until first opened
   hasSeenTour: false, // guided tour auto-launches once for a new visitor, then only from the "?" page
   favorites: [] // [{ name, target: [lat, lon] }, ...] user-saved map locations
@@ -1187,7 +1288,10 @@ function tourStepData() {
       text: en ? 'Places a second point on the map and shows what area you could still reach from there in an emergency.' : 'Setzt einen zweiten Punkt auf der Karte und zeigt, welchen Bereich du von dort aus bei einer Notlandung noch erreichen könntest.' },
     { selector: '#mapChecklistBtn', sidebar: false,
       title: en ? 'Pre-jump checklist' : 'Checkliste vor dem Sprung',
-      text: en ? "Summarizes the current settings and lets you manually tick off a few points - worth it before every jump, not just the first." : 'Fasst die aktuellen Einstellungen zusammen und lässt dich ein paar Punkte manuell abhaken - lohnt sich vor jedem Sprung, nicht nur beim ersten.' }
+      text: en ? "Summarizes the current settings and lets you manually tick off a few points - worth it before every jump, not just the first." : 'Fasst die aktuellen Einstellungen zusammen und lässt dich ein paar Punkte manuell abhaken - lohnt sich vor jedem Sprung, nicht nur beim ersten.' },
+    { selector: '#sectionProMode', sidebar: true,
+      title: en ? 'Pro mode: jump run estimate' : 'Pro-Modus: Jumprun-Schätzung',
+      text: en ? 'Optional: estimate an opening point from an exit point, jump run heading, break-off altitude, and glide ratio - and check it against the reach rings above.' : 'Optional: schätzt einen Öffnungspunkt aus Exit-Punkt, Jumprun-Richtung, Break-off-Höhe und Gleitverhältnis - und prüft ihn gegen die Reichweiten-Ringe oben.' }
   ];
 }
 
@@ -1340,6 +1444,14 @@ map.on('click', (e) => {
     render();
     return;
   }
+  if (proModeArmed) {
+    state.proMode.exitPoint = [e.latlng.lat, e.latlng.lng];
+    proModeArmed = false;
+    updateJumprunBtn();
+    saveState();
+    render();
+    return;
+  }
   state.target = [e.latlng.lat, e.latlng.lng]; targetMarker.setLatLng(e.latlng); hideOnboarding(); markUserTarget(); render();
 });
 // ---------- Geometry ----------
@@ -1351,6 +1463,14 @@ function destPoint(lat, lon, bearingDeg, distM) {
   return [lat + dLat * 180 / Math.PI, lon + dLon * 180 / Math.PI];
 }
 function norm(deg) { return ((deg % 360) + 360) % 360; }
+// Inverse of destPoint() - initial bearing from a to b, using the same flat-plane approximation (not
+// full spherical trig) so it round-trips consistently with destPoint()/distanceM() elsewhere in the app.
+function bearingTo(a, b) {
+  const R = 6378137;
+  const north = (b[0] - a[0]) * Math.PI / 180 * R;
+  const east = (b[1] - a[1]) * Math.PI / 180 * R * Math.cos(a[0] * Math.PI / 180);
+  return norm(Math.atan2(east, north) * 180 / Math.PI);
+}
 
 // Fixed on-screen pixel offset in the given compass direction (0°=up/north), independent of zoom/meters -
 // used to push labels away from a shared anchor point (e.g. a canopy icon) in different directions per
@@ -1629,6 +1749,36 @@ function canopyMarker(latlng, headingDeg, colorHex) {
   });
 }
 
+// Top-down aircraft silhouette, nose pointing up (0deg/north) before rotation - same compass
+// convention as canopyMarker(), so a heading of e.g. 90 rotates it to point due east.
+function planeIconSvg() {
+  return '<svg viewBox="0 0 24 24"><path d="M12 2 L11 7 L2 13 L2 15 L11 12 L11 16.5 L7 19.5 L7 21 L12 19.5 L17 21 L17 19.5 L13 16.5 L13 12 L22 15 L22 13 L13 7 Z" fill="currentColor"/></svg>';
+}
+function planeMarker(latlng, headingDeg, colorHex) {
+  return L.marker(latlng, {
+    icon: L.divIcon({
+      className: '',
+      html: `<div class="plane-icon" style="color:${colorHex}; transform:rotate(${headingDeg}deg)">${planeIconSvg()}</div>`,
+      iconSize: [26, 26], iconAnchor: [13, 13]
+    })
+  });
+}
+
+function crossIconSvg() {
+  return '<svg viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><line x1="19" y1="5" x2="5" y2="19" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg>';
+}
+// Marks exactly where a not-reachable return line stops - not rotated, a miss is a miss regardless
+// of approach direction.
+function crossMarker(latlng, colorHex) {
+  return L.marker(latlng, {
+    icon: L.divIcon({
+      className: '',
+      html: `<div class="miss-cross-icon" style="color:${colorHex}">${crossIconSvg()}</div>`,
+      iconSize: [18, 18], iconAnchor: [9, 9]
+    })
+  });
+}
+
 const PLOT_STYLE = {
   nowind:      { dashArray: '10 6', weight: 2.5, opacity: 0.9 },
   uncorrected: { dashArray: null,   weight: 3.5, opacity: 0.9 },
@@ -1784,6 +1934,7 @@ function render() {
   // button - drawEmergencyRings() itself already no-ops with nothing to draw when no point is set.
   if (state.plots.reach) drawReachRings();
   drawEmergencyRings();
+  drawJumpRun();
 
   // Auto-zoom/fit-to-pattern was removed by request - the map no longer re-centers or re-zooms itself
   // as the pattern changes. Users navigate the map manually; nothing in render() touches the view.
@@ -1817,6 +1968,25 @@ function reachRingAltitudesFt(lowerFt, upperFt) {
 // no per-direction raycasting needed. See: Zermelo's navigation problem. Ignores turn time (assumes an
 // instant heading change) and is a rough upper bound, not a recommendation - both called out in the
 // on-map label/legend.
+// Center + radius of the single reach-ring disk at one exact altitude - the same math
+// drawReachRings() uses per ring, pulled out so other features (the pro-mode opening-point check)
+// can ask "am I inside the ring for altitude X" without duplicating the formula or being limited to
+// the rounded step list drawReachRings() actually renders. Returns null at/below entry altitude,
+// where the question stops making sense (see drawReachRings()'s own comment).
+function reachRingAt(altFt) {
+  const entryAltFt = state.altitudes.downwind;
+  if (altFt <= entryAltFt) return null;
+  const entryPoint = computeVariant('uncorrected').p3;
+  const fwdMs = state.perf.fwdSpeedKmh / 3.6;
+  const windMs = state.perf.windSpeedKmh / 3.6;
+  const t = legTimeFromAlt(altFt - entryAltFt);
+  const radiusM = fwdMs * t;
+  const center = state.windLayers.enabled
+    ? layeredWindOffsetPoint(entryPoint, entryAltFt, altFt, (d) => d)
+    : destPoint(entryPoint[0], entryPoint[1], state.windDir, windMs * t);
+  return { center, radiusM };
+}
+
 function drawReachRings() {
   const entryAltFt = state.altitudes.downwind;
   const openingAltFt = state.openingAltFt;
@@ -1825,27 +1995,17 @@ function drawReachRings() {
   // Same anchoring convention as the turn-point altitude labels: the entry point's position on the
   // real (uncorrected) path, since that's the one fixed, orientation-independent point to build off.
   const entryPoint = computeVariant('uncorrected').p3;
-
-  const fwdMs = state.perf.fwdSpeedKmh / 3.6;
-  const windMs = state.perf.windSpeedKmh / 3.6;
   const alts = reachRingAltitudesFt(entryAltFt, openingAltFt);
 
   const unitLabel = state.unit === 'm' ? 'm' : 'ft';
   alts.forEach(h => {
-    const t = legTimeFromAlt(h - entryAltFt);
-    const radiusM = fwdMs * t;
-    if (radiusM <= 0) return;
-    // Upwind of the entry point by wind x t - see function comment for the derivation. windDir is
-    // already "the direction the wind comes from", i.e. upwind, so no extra +/-180 needed. Under the
-    // layered-wind test feature, each band between entry and h contributes its own upwind shift instead
-    // of one uniform shift for the whole climb.
-    const center = state.windLayers.enabled
-      ? layeredWindOffsetPoint(entryPoint, entryAltFt, h, (d) => d)
-      : destPoint(entryPoint[0], entryPoint[1], state.windDir, windMs * t);
-    const ring = L.circle(center, {
+    const ring = reachRingAt(h);
+    if (!ring || ring.radiusM <= 0) return;
+    const { center, radiusM } = ring;
+    const ringLayer = L.circle(center, {
       radius: radiusM, color: '#8FA6C2', weight: 1.5, opacity: 0.8, fill: false, dashArray: '4 6'
     }).addTo(map);
-    canopyLayers.push(ring);
+    canopyLayers.push(ringLayer);
     const labelPt = destPoint(center[0], center[1], 0, radiusM);
     const label = textMarker(labelPt, `${round1(ftToAltDisplay(h))} ${unitLabel}`, '#8FA6C2', { plain: true, offsetPx: [0, -10] }).addTo(map);
     canopyLayers.push(label);
@@ -1916,6 +2076,129 @@ function drawEmergencyRings() {
   canopyLayers.push(emergencyLabel);
 }
 
+// Pro mode (opt-in): a straight-line freefall-track estimate from an exit point, drawn independently
+// of everything else on the map - it doesn't feed the reach rings or emergency reach, and they don't
+// feed it. The point is purely visual: does the estimated opening marker actually fall inside the
+// outermost (blue) reach ring? If not, the planned exit/track/break-off wouldn't get you back to the
+// entry point. See estimatedOpeningPoint() for the (deliberately simple, non-wind-triangle) math.
+function drawJumpRun() {
+  // The heading badge only makes sense once there's an actual jump run line on the map to steer - tied
+  // to the exact same condition as the rest of this function, checked here (rather than only at
+  // enable/exit-point mutation sites) so it can never drift out of sync with what's really plotted.
+  const jumpRunPlotted = state.proMode.enabled && !!state.proMode.exitPoint;
+  mapJumprunCluster.style.display = jumpRunPlotted ? 'flex' : 'none';
+  if (!jumpRunPlotted) return;
+  const exit = state.proMode.exitPoint;
+  const proColor = '#7CE562';
+  const en = state.lang === 'en';
+  const unitLabel = state.unit === 'm' ? 'm' : 'ft';
+
+  // Reference line through the exit point, in the direction the aircraft continues - context only,
+  // doesn't feed the estimate itself (only track heading/glide/break-off altitude do). A short tail
+  // behind the exit point too (shorter than the forward stretch, so the plane icon still reads as
+  // the direction of travel) shows this is a line the aircraft flies through, not one starting there.
+  const jumpRunEnd = destPoint(exit[0], exit[1], state.proMode.jumpRunHeadingDeg, 500);
+  const jumpRunStart = destPoint(exit[0], exit[1], norm(state.proMode.jumpRunHeadingDeg + 180), 150);
+  const jumpRunLine = L.polyline([jumpRunStart, jumpRunEnd], {
+    color: '#E7ECF3', weight: 1.5, opacity: 0.6, dashArray: '2 5'
+  }).addTo(map);
+  canopyLayers.push(jumpRunLine);
+  const planeIcon = planeMarker(jumpRunEnd, state.proMode.jumpRunHeadingDeg, '#E7ECF3').addTo(map);
+  canopyLayers.push(planeIcon);
+  const jumpRunLabel = textMarker(jumpRunEnd, en ? 'Jump run' : 'Jumprun', '#E7ECF3', { plain: true, offsetPx: [0, -24] }).addTo(map);
+  canopyLayers.push(jumpRunLabel);
+
+  // Exit point marker - click to remove, same shortcut as the emergency reach point.
+  const exitDot = L.circleMarker(exit, { radius: 5, color: proColor, weight: 2, fillColor: proColor, fillOpacity: 0.9 }).addTo(map);
+  exitDot.on('click', (e) => {
+    L.DomEvent.stopPropagation(e);
+    state.proMode.exitPoint = null;
+    updateJumprunBtn();
+    saveState();
+    render();
+  });
+  canopyLayers.push(exitDot);
+  const exitLabel = textMarker(exit, en ? 'Exit' : 'Exit', proColor, { plain: true, offsetPx: [0, -16] }).addTo(map);
+  canopyLayers.push(exitLabel);
+
+  const track = estimateTrack();
+  // Invalid (break-off below opening altitude) - the sidebar warning already explains why, nothing
+  // meaningful to draw for the track/opening point itself.
+  if (!track || track.invalid) return;
+  const { point: opening, distM } = track;
+
+  const trackLine = L.polyline([exit, opening], { color: proColor, weight: 2.5, opacity: 0.9 }).addTo(map);
+  canopyLayers.push(trackLine);
+  const arrow = L.marker(midpoint(exit, opening), {
+    icon: L.divIcon({ className: '', html: `<div class="leg-arrow" style="color:${proColor}; transform:rotate(${state.proMode.trackHeadingDeg}deg)"></div>`, iconSize: [12, 12], iconAnchor: [6, 6] })
+  }).addTo(map);
+  canopyLayers.push(arrow);
+
+  // Does the estimated opening point actually fall inside the reach ring for that exact altitude?
+  // This is the whole point of pro mode: an early answer to "would this exit/track/break-off plan
+  // actually get me back to the entry point" - reachRingAt() is the same math drawReachRings() uses
+  // per ring, just for one exact altitude instead of the rounded step list it draws.
+  const reachRing = reachRingAt(state.openingAltFt);
+  const reachable = reachRing ? distanceM(opening, reachRing.center) <= reachRing.radiusM : null;
+  const dotColor = reachable === false ? '#FF5D5D' : proColor;
+  // Highlights the one reach ring that actually matters for this check, at the exact opening altitude
+  // rather than the rounded step drawReachRings() renders - drawn on top of it regardless of whether a
+  // normal ring happens to already sit at that exact height (it's added after, so it wins the overlap)
+  // or not (then this is simply the only ring shown there).
+  if (reachRing && reachRing.radiusM > 0) {
+    const highlightRing = L.circle(reachRing.center, {
+      radius: reachRing.radiusM, color: dotColor, weight: 2, opacity: 0.9, fill: false, dashArray: '4 6'
+    }).addTo(map);
+    canopyLayers.push(highlightRing);
+  }
+  const openingDot = L.circleMarker(opening, { radius: 6, color: dotColor, weight: 2, fillColor: dotColor, fillOpacity: 0.25 }).addTo(map);
+  canopyLayers.push(openingDot);
+
+  // Shows the flight toward the entry point either way - reachable: a full line straight to it, in
+  // green, same visual language as the exit->opening track leg (thin line + canopy glyph). Not
+  // reachable: the same idea but deliberately cut off at the ring's own radius, in red - "this is as
+  // far as full flight would get you", stopping visibly short of the entry point instead of a
+  // misleadingly complete-looking line.
+  if (reachable != null) {
+    const entryPoint = computeVariant('uncorrected').p3;
+    const returnBearing = bearingTo(opening, entryPoint);
+    let returnEnd = entryPoint;
+    let shortfallM = 0;
+    if (!reachable) {
+      // Best case for a full-duration flight at the most favorable heading still misses entry by
+      // distance-to-ring-center minus the ring's own radius - the standard "distance from an
+      // external point to a disk" fact, and guaranteed positive precisely because "not reachable"
+      // means opening sits outside this same ring. Pulling the line's end back from entry by exactly
+      // that shortfall (instead of an arbitrary cut length) means the visible gap always equals the
+      // true best-case miss distance.
+      shortfallM = distanceM(opening, reachRing.center) - reachRing.radiusM;
+      const distToEntry = distanceM(opening, entryPoint);
+      const returnLen = Math.max(0, distToEntry - shortfallM);
+      returnEnd = destPoint(opening[0], opening[1], returnBearing, returnLen);
+    }
+    const returnLine = L.polyline([opening, returnEnd], { color: dotColor, weight: 1.5, opacity: 0.75, dashArray: '1 5' }).addTo(map);
+    canopyLayers.push(returnLine);
+    const returnCanopy = canopyMarker(midpoint(opening, returnEnd), returnBearing, dotColor).addTo(map);
+    canopyLayers.push(returnCanopy);
+    if (!reachable) {
+      // Marks exactly where the return flight gives up, with the miss distance right there instead
+      // of making the pilot subtract it from other numbers on screen themselves.
+      const missCross = crossMarker(returnEnd, dotColor).addTo(map);
+      canopyLayers.push(missCross);
+      const missText = en ? `${round1(mToDisplay(shortfallM))} ${unitLabel} short`
+                          : `${round1(mToDisplay(shortfallM))} ${unitLabel} zu kurz`;
+      const missLabel = textMarker(returnEnd, missText, dotColor, { plain: true, offsetPx: [0, 14] }).addTo(map);
+      canopyLayers.push(missLabel);
+    }
+  }
+
+  const distText = en ? `dist. ${round1(mToDisplay(distM))} ${unitLabel}` : `Strecke ${round1(mToDisplay(distM))} ${unitLabel}`;
+  const reachSymbol = reachable == null ? '' : reachable ? ' · ✓' : ' · ✗';
+  const openingLabel = textMarker(opening, `${round1(ftToAltDisplay(state.openingAltFt))} ${unitLabel}<br>${distText}${reachSymbol}`,
+    dotColor, { plain: true, offsetPx: [0, 16] }).addTo(map);
+  canopyLayers.push(openingLabel);
+}
+
 // ---------- Wind dial ----------
 const dial = document.getElementById('dial');
 const needle = document.getElementById('needle');
@@ -1951,6 +2234,32 @@ mapWindBadge.addEventListener('pointerdown', (e) => {
 mapWindBadge.addEventListener('pointermove', (e) => { if (mapWindDragging) setWind(dialAngleFromEvent(mapWindBadge, e.clientX, e.clientY)); });
 mapWindBadge.addEventListener('pointerup', () => mapWindDragging = false);
 mapWindBadge.addEventListener('pointercancel', () => mapWindDragging = false);
+
+// Same fixed-corner-badge pattern as the wind badge above (not a Leaflet marker, so it never competes
+// with the map's own pan-drag) - drag it to set the jump run direction, independent of the exit point.
+const mapJumprunCluster = document.getElementById('mapJumprunCluster');
+const mapJumprunBadge = document.getElementById('mapJumprunBadge');
+const mapJumprunArrowGroup = document.getElementById('mapJumprunArrowGroup');
+function updateMapJumprunArrow() {
+  mapJumprunArrowGroup.setAttribute('transform', `rotate(${state.proMode.jumpRunHeadingDeg} 12 12)`);
+}
+function setJumpRunHeading(deg) {
+  state.proMode.jumpRunHeadingDeg = norm(Math.round(deg));
+  jumpRunHeadingInput.value = state.proMode.jumpRunHeadingDeg;
+  updateMapJumprunArrow();
+  saveState();
+  render();
+}
+let mapJumprunDragging = false;
+mapJumprunBadge.addEventListener('pointerdown', (e) => {
+  mapJumprunDragging = true;
+  mapJumprunBadge.setPointerCapture(e.pointerId);
+  if (!state.hasUsedJumprunDrag) { state.hasUsedJumprunDrag = true; mapJumprunBadge.classList.remove('pulse-hint'); }
+  setJumpRunHeading(dialAngleFromEvent(mapJumprunBadge, e.clientX, e.clientY));
+});
+mapJumprunBadge.addEventListener('pointermove', (e) => { if (mapJumprunDragging) setJumpRunHeading(dialAngleFromEvent(mapJumprunBadge, e.clientX, e.clientY)); });
+mapJumprunBadge.addEventListener('pointerup', () => mapJumprunDragging = false);
+mapJumprunBadge.addEventListener('pointercancel', () => mapJumprunDragging = false);
 
 // ---------- Wind streak animation ----------
 // Purely decorative, screen-space particle field (not geo-referenced) - small streaks drifting in the
@@ -2267,6 +2576,102 @@ mapEmergencyBtn.addEventListener('click', () => {
   setEmergencyArmed(true);
 });
 
+// ---------- Pro mode: jump run / track estimate (opt-in, off by default) ----------
+// Same 3-state toggle pattern as the emergency reach button (see comment above).
+const mapJumprunBtn = document.getElementById('mapJumprunBtn');
+let proModeArmed = false;
+function updateJumprunBtn() {
+  const has = !!state.proMode.exitPoint;
+  mapJumprunBtn.classList.toggle('armed', proModeArmed);
+  mapJumprunBtn.classList.toggle('set', has && !proModeArmed);
+  const en = state.lang === 'en';
+  mapJumprunBtn.title = has && !proModeArmed
+    ? (en ? 'Remove exit point' : 'Exit-Punkt entfernen')
+    : (en ? 'Set exit point' : 'Exit-Punkt setzen');
+}
+function setProModeArmed(armed) {
+  proModeArmed = armed;
+  updateJumprunBtn();
+  if (armed) showMapToast(state.lang === 'en' ? 'Tap the map to place the exit point' : 'Auf die Karte tippen, um den Exit-Punkt zu setzen');
+}
+mapJumprunBtn.addEventListener('click', () => {
+  if (proModeArmed) { setProModeArmed(false); return; }
+  if (state.proMode.exitPoint) {
+    state.proMode.exitPoint = null;
+    saveState();
+    render();
+    updateJumprunBtn();
+    return;
+  }
+  setProModeArmed(true);
+});
+
+const proModeToggle = document.getElementById('proModeToggle');
+const proModeBox = document.getElementById('proModeBox');
+function setProModeEnabled(enabled) {
+  state.proMode.enabled = enabled;
+  proModeBox.style.display = enabled ? 'block' : 'none';
+  mapJumprunBtn.style.display = enabled ? '' : 'none';
+  if (enabled) updateMapJumprunArrow();
+  if (!enabled && proModeArmed) setProModeArmed(false);
+  saveState();
+  render();
+}
+proModeToggle.addEventListener('change', () => setProModeEnabled(proModeToggle.checked));
+
+const jumpRunHeadingInput = document.getElementById('jumpRunHeadingInput');
+const breakoffAltInput = document.getElementById('breakoffAltInput');
+const breakoffAltUnit = document.getElementById('breakoffAltUnit');
+const trackHeadingInput = document.getElementById('trackHeadingInput');
+const trackGlideSelect = document.getElementById('trackGlideSelect');
+const proModeOpeningAltVal = document.getElementById('proModeOpeningAltVal');
+const proModeAltWarning = document.getElementById('proModeAltWarning');
+function refreshProModeInputs() {
+  const altU = state.unit === 'm' ? 'm' : 'ft';
+  proModeOpeningAltVal.textContent = `${round1(ftToAltDisplay(state.openingAltFt))} ${altU}`;
+  proModeAltWarning.style.display = state.proMode.breakoffAltFt < state.openingAltFt ? 'block' : 'none';
+  jumpRunHeadingInput.value = Math.round(state.proMode.jumpRunHeadingDeg);
+  breakoffAltInput.value = round1(ftToAltDisplay(state.proMode.breakoffAltFt));
+  breakoffAltUnit.textContent = altU;
+  trackHeadingInput.value = Math.round(state.proMode.trackHeadingDeg);
+  trackGlideSelect.value = state.proMode.trackGlideRatio;
+}
+jumpRunHeadingInput.addEventListener('input', () => {
+  state.proMode.jumpRunHeadingDeg = norm(parseFloat(jumpRunHeadingInput.value) || 0);
+  updateMapJumprunArrow();
+  saveState();
+  render();
+});
+breakoffAltInput.addEventListener('input', () => {
+  state.proMode.breakoffAltFt = Math.max(0, altDisplayToFt(parseFloat(breakoffAltInput.value) || 0));
+  proModeAltWarning.style.display = state.proMode.breakoffAltFt < state.openingAltFt ? 'block' : 'none';
+  saveState();
+  render();
+});
+trackHeadingInput.addEventListener('input', () => {
+  state.proMode.trackHeadingDeg = norm(parseFloat(trackHeadingInput.value) || 0);
+  saveState();
+  render();
+});
+trackGlideSelect.addEventListener('change', () => {
+  state.proMode.trackGlideRatio = parseFloat(trackGlideSelect.value);
+  saveState();
+  render();
+});
+// Straight-line estimate only: exit point plus a single track vector (heading + glide ratio) applied
+// over the altitude band from break-off down to the opening altitude. Deliberately not the wind-triangle
+// model used for canopy flight - freefall track speed dwarfs wind drift over the few seconds involved,
+// and pretending otherwise would suggest a precision this estimate doesn't have. No time estimate - that
+// would need a track fall rate too, and the app has no reliable reference values for that.
+function estimateTrack() {
+  if (!state.proMode.exitPoint) return null;
+  const bandFt = state.proMode.breakoffAltFt - state.openingAltFt;
+  if (bandFt < 0) return { invalid: true };
+  const distM = bandFt * M_PER_FT * state.proMode.trackGlideRatio;
+  const point = destPoint(state.proMode.exitPoint[0], state.proMode.exitPoint[1], state.proMode.trackHeadingDeg, distM);
+  return { point, distM, invalid: false };
+}
+
 // ---------- Leg length inputs (unit-aware) ----------
 const lenInputs = {
   downwind: document.getElementById('lenDownwind'),
@@ -2366,6 +2771,7 @@ function setUnit(u) {
   refreshLegInputs();
   refreshAltInputs(); // same toggle drives the altitude (vertical) inputs too
   renderWindLayerRows(); // layer altitude inputs are shown in the active unit too
+  refreshProModeInputs(); // break-off altitude is shown in the active unit too
   saveState();
   if (hasUserTarget) render(); // on-map labels (altitudes, lengths) are drawn in the active unit too
 }
@@ -2600,6 +3006,7 @@ Object.values(altInputs).forEach(el => el.addEventListener('input', () => {
 const altOpeningInput = document.getElementById('altOpening');
 altOpeningInput.addEventListener('input', () => {
   state.openingAltFt = altDisplayToFt(parseFloat(altOpeningInput.value) || 0);
+  refreshProModeInputs(); // pro mode mirrors this value read-only, needs a refresh too
   render();
   saveState();
 });
@@ -2888,6 +3295,7 @@ function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 document.getElementById('mapInfoBtn').addEventListener('click', () => openModal('infoModal'));
 document.getElementById('mapHelpBtn').addEventListener('click', () => openModal('helpModal'));
+document.getElementById('calcHintInfoBtn').addEventListener('click', () => openModal('infoModal'));
 document.querySelectorAll('[data-close-modal]').forEach(btn => {
   btn.addEventListener('click', () => closeModal(btn.dataset.closeModal));
 });
@@ -3010,6 +3418,7 @@ const I18N_EN = {
   favBtnTitle__title: "Favorites",
   locateBtnTitle__title: "Use my location",
   emergencyBtnTitle__title: "Set emergency reach point",
+  jumprunBtnTitle__title: "Set exit point",
   offlineBadgeText: "⚠ Offline - showing cached data",
   favPanelTitle: "Favorites",
   favNamePlaceholder__placeholder: "Name this location…",
@@ -3031,6 +3440,20 @@ const I18N_EN = {
   windLayersLabel: "Altitude-dependent wind (test)",
   windLayersHint: "Test feature: the wind direction/speed above is the ground value. Extra layers apply from their own altitude upward to the next-higher one. If you change the wind direction above (e.g. via the map arrow), update the layers below manually if needed - they don't follow automatically.",
   windLayerAddBtn: "+ Altitude layer",
+
+  proModeLabel: "Pro mode: jump run estimate",
+  proModeHint: "Estimates an opening point from an exit point, jump run direction, break-off altitude, and track direction/distance - to compare against the reach rings. Doesn't change the reach rings themselves.",
+  proModeOpeningAltLabel: "Opening altitude (set above, under reach rings)",
+  jumpRunHeadingLabel: "Jump run direction",
+  breakoffAltLabel: "Break-off altitude",
+  trackHeadingLabel: "Track direction",
+  trackGlideLabel: "Glide ratio (h:v)",
+  glidePresetConservative: "Unpracticed track · 0.3",
+  glidePresetStandard: "Standard · 0.5",
+  glidePresetPracticed: "Practiced flat track · 0.7",
+  glidePresetGood: "Very good flat track · 0.9",
+  trackGlideHint: "Rough benchmarks, not precise figures. 0.7 and 0.9 assume real flat-track practice, not just an ordinary track - when in doubt, go conservative.",
+  proModeAltWarningText: "⚠ Break-off altitude is below the opening altitude - that doesn't produce a track distance.",
   estimatorToggleClosed: "Estimator (wingload) ▾",
   estWeightLabel: "Weight (jumper + gear)",
   estCanopyLabel: "Canopy size",
@@ -3071,13 +3494,12 @@ const I18N_EN = {
   streckeSub: "- horizontal, over ground",
   totalLabel: "Total",
 
-  calcHintText: `<b>Time</b> = altitude loss ÷ sink rate &nbsp;·&nbsp; <b>Distance</b> = time × groundspeed<br>
-      Downwind = tailwind &nbsp;·&nbsp; Final = headwind &nbsp;·&nbsp; Base = correction angle against crosswind<br>
-      <span style="color:var(--danger);">Red dashed</span> = corrected path &nbsp;·&nbsp; solid colored = real path with wind drift<br>
-      Simplified model - formulas, diagrams &amp; limits: the "i" button above.`,
+  calcHintText: "Curious how it's calculated?",
+  calcHintBtn: "View formulas & limits",
 
   searchPlaceholder__placeholder: "Search dropzone…",
   windBadgeTitle__title: "Wind direction (arrow shows where the wind is blowing to) - drag to change",
+  jumprunBadgeTitle__title: "Jump run direction - drag to change",
 
   infoTitle: "How is this calculated?",
   infoSafetyWarning: "⚠ This tool is a planning aid and does not replace an on-site briefing. Always discuss your planned flight route with the dropzone's chief instructor before jumping.",
@@ -3138,6 +3560,24 @@ const I18N_EN = {
   infoEmergencyP2: `This calculation is the mirror image of the reach rings. There, you ask backward: "from where could I still reach the entry point?" Here, you ask forward: "how far could I get from this point?"`,
   infoEmergencyP3: `Two things flip as a result: the circle drifts downwind instead of upwind, since you're now moving away from the point instead of toward it. And the calculation runs down to the ground (0 ft) instead of down to the pattern's entry altitude - this is about landing, not about connecting to the pattern. The point you place is therefore not a fixed landing spot, just the starting point for the calculation.`,
   infoEmergencyNote: `The two ring sets are computed down to different altitudes (entry altitude vs. ground) and aren't directly comparable - an overlap between the shaded areas doesn't mean "both are still possible from here." To check whether a return to the target is still possible from the emergency reach point, look at the point itself instead: if it falls inside one of the blue reach rings, a return is still possible at that altitude.`,
+
+  infoProModeH: "Pro mode: jump run estimate",
+  infoProModeP1: "Pro mode estimates an opening point from four inputs - exit point, jump run heading, break-off altitude, and track heading/glide ratio - and checks it against the reach rings above. It runs independently: it doesn't change the reach rings themselves.",
+  infoProModeP2: "Unlike the three flight-path plots above, the estimate deliberately doesn't use the wind triangle: freefall track speed dominates wind so strongly over the few seconds of track involved that a wind correction here would suggest a precision the estimate doesn't have. Instead, a simple geometric vector:",
+  infoProModeFormula: `Altitude band = break-off altitude − opening altitude<br>Distance = altitude band × glide ratio<br>Opening point = exit point, offset by distance in the track heading`,
+  infoProModeNote1: "Deliberately no time estimate for the track: that would need an additional value - fall rate during track - with no reliable reference that holds equally across different bodies and track styles.",
+  infoProModeGlideP: "Glide ratio (horizontal : vertical) is geometrically unambiguous - a ratio of 1 equals exactly 45° (arctangent). How close a real track gets to that depends heavily on practice and technique and isn't a precise figure. Four rough benchmarks to choose from:",
+  infoProModeGlide1: "Unpracticed track - 0.3 : 1",
+  infoProModeGlide2: "Standard - 0.5 : 1",
+  infoProModeGlide3: "Practiced flat track - 0.7 : 1",
+  infoProModeGlide4: "Very good flat track - 0.9 : 1",
+  infoProModeGlideNote: "0.7 and 0.9 assume real flat-track practice, not just an ordinary track - when in doubt, pick the more conservative level.",
+  infoProModeReachP1: "The estimated opening point is then checked against exactly the reach ring at your own opening altitude - the same ring as above, just exact instead of rounded to altitude steps.",
+  infoProModeReachable: "Reachable - return line drawn all the way to the entry point",
+  infoProModeNotReachable: "Not reachable - line stops early, with a ✗ and the miss distance",
+  infoProModeReachP2: "The miss distance in the not-reachable case follows from the same circle geometry as the reach rings themselves: distance to the ring's center minus the ring's radius. That's the best case, assuming an immediately optimal heading for the rest of the descent.",
+  infoProModeReachFormula: `Miss distance = distance(opening point, ring center) − ring radius`,
+  infoProModeNote2: "Same as the reach rings above: assumes an instant heading change, real turn time isn't subtracted. The estimated return is a rough orientation, not a flight instruction.",
 
   infoColorH: "Color legend",
   infoColorTarget: "Target point / corrected path",
@@ -3207,7 +3647,10 @@ const I18N_EN = {
   help9P: `Shows (when enabled) how far you could be from the pattern's entry point at a given altitude and still reach it at full flight. The parachute button on the map (below favorites and locate) additionally lets you place a second point to see what area you could still reach from there in an emergency. Details and derivation in the "i" info.`,
 
   help10H: "10. Pre-jump checklist",
-  help10P: `The clipboard button on the map lets you check whether all parameters (target point, landing direction, forward speed/sink rate, turn points, emergency reach, offline availability) are set correctly, and adds a few points to confirm by hand. Worth a look before every jump, not just the first - but doesn't replace a gear check or an on-site briefing.`
+  help10P: `The clipboard button on the map lets you check whether all parameters (target point, landing direction, forward speed/sink rate, turn points, emergency reach, offline availability) are set correctly, and adds a few points to confirm by hand. Worth a look before every jump, not just the first - but doesn't replace a gear check or an on-site briefing.`,
+
+  help11H: "11. Pro mode: jump run estimate",
+  help11P: `Optional extra inputs in the menu: exit point (via the plane button on the map), jump run heading, break-off altitude, and track heading/glide ratio. From these, an opening point is estimated and checked against the reach rings - green means reachable, red with a ✗ shows the miss distance. Doesn't change the reach rings themselves. Details and derivation in the "i" info.`
 };
 
 const I18N_DE = {}; // captured live from the DOM's own default (German) text
@@ -3247,6 +3690,8 @@ function applyLanguage(lang) {
   refreshLegInputs();
   refreshAltInputs();
   renderWindLayerRows();
+  refreshProModeInputs();
+  updateJumprunBtn();
   renderChecklist();
   updateEstimatorToggleLabel();
   updateEstimate();
@@ -3267,8 +3712,15 @@ function syncUIFromState() {
   windLayersToggle.checked = state.windLayers.enabled;
   windLayersBox.style.display = state.windLayers.enabled ? 'block' : 'none';
   renderWindLayerRows();
+  proModeToggle.checked = state.proMode.enabled;
+  proModeBox.style.display = state.proMode.enabled ? 'block' : 'none';
+  mapJumprunBtn.style.display = state.proMode.enabled ? '' : 'none';
+  updateMapJumprunArrow();
+  refreshProModeInputs();
+  updateJumprunBtn();
   if (!state.windAnimEnabled) windCtx.clearRect(0, 0, windCanvasW, windCanvasH);
   if (state.hasUsedWindDrag) mapWindBadge.classList.remove('pulse-hint');
+  if (state.hasUsedJumprunDrag) mapJumprunBadge.classList.remove('pulse-hint');
   if (state.hasOpenedSidebar) sidebarToggle.classList.remove('pulse-hint');
 }
 
